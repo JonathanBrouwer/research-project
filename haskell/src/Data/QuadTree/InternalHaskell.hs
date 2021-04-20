@@ -82,36 +82,24 @@ instance Functor Quadrant where
 ---- Quadrant lenses:
 
 -- |Lens for the top left 'Quadrant' of a node.
-_a :: forall a. Eq a => CLens (Quadrant a) (Quadrant a)
+_a :: Eq a => CLens (Quadrant a) (Quadrant a)
 _a f (Node a b c d) = fmap (\x -> fuse $ Node x b c d) (f a)
-_a f leaf           = fmap embed (f leaf)
-  where embed :: Quadrant a -> Quadrant a
-        embed x | x == leaf = leaf
-                | otherwise = Node x leaf leaf leaf
+_a f leaf = fmap (\x -> fuse $ Node x leaf leaf leaf) (f leaf)
 
 -- |Lens for the top right 'Quadrant' of a node.
 _b :: forall a. Eq a => CLens (Quadrant a) (Quadrant a)
 _b f (Node a b c d) = fmap (\x -> fuse $ Node a x c d) (f b)
-_b f leaf           = fmap embed (f leaf)
-  where embed :: Quadrant a -> Quadrant a
-        embed x | x == leaf = leaf
-                | otherwise = Node leaf x leaf leaf
+_b f leaf = fmap (\x -> fuse $ Node leaf x leaf leaf) (f leaf)
 
 -- |Lens for the bottom left 'Quadrant' of a node.
 _c :: forall a. Eq a => CLens (Quadrant a) (Quadrant a)
 _c f (Node a b c d) = fmap (\x -> fuse $ Node a b x d) (f c)
-_c f leaf           = fmap embed (f leaf)
-  where embed :: Quadrant a -> Quadrant a
-        embed x | x == leaf = leaf
-                | otherwise = Node leaf leaf x leaf
+_c f leaf = fmap (\x -> fuse $ Node leaf leaf x leaf) (f leaf)
 
 -- |Lens for the bottom right 'Quadrant' of a node.
 _d :: forall a. Eq a => CLens (Quadrant a) (Quadrant a)
 _d f (Node a b c d) = fmap (fuse . Node a b c) (f d)
-_d f leaf           = fmap embed (f leaf)
-  where embed :: Quadrant a -> Quadrant a
-        embed x | x == leaf = leaf
-                | otherwise = Node leaf leaf leaf x
+_d f leaf = fmap (\x -> fuse $ Node leaf leaf leaf x) (f leaf)
 
 -- |Lens for a terminate leaf value of a node.
 _leaf :: CLens (Quadrant a) a
@@ -125,7 +113,7 @@ _wrappedTree f qt = (\x -> qt {wrappedTree = x}) <$> f (wrappedTree qt)
 
 -- |Unsafe sanity test lens that makes sure a given location index exists
 -- within the relevant 'QuadTree'.
-verifyLocation :: Location -> CLens (QuadTree a) (QuadTree a)
+verifyLocation :: (Int, Int) -> CLens (QuadTree a) (QuadTree a)
 verifyLocation index f qt
   | index `outOfBounds` qt = error "Location index out of QuadTree bounds."
   | otherwise              = f qt
@@ -134,11 +122,11 @@ verifyLocation index f qt
 
 -- |Lens for accessing and manipulating data at a specific
 -- location.
-atLocation :: forall a. Eq a => Location -> CLens (QuadTree a) a
+atLocation :: forall a. Eq a => (Int, Int) -> CLens (QuadTree a) a
 atLocation index fn qt = (verifyLocation index . _wrappedTree .
                           go (offsetIndex qt index) (treeDepth qt)) fn qt
   where
-    go :: Location -> Int -> CLens (Quadrant a) a
+    go :: (Int, Int) -> Int -> CLens (Quadrant a) a
     go _     0 = _leaf
     go (x,y) n | y < mid   = if x < mid then _a . recurse
                                         else _b . recurse
@@ -148,27 +136,27 @@ atLocation index fn qt = (verifyLocation index . _wrappedTree .
             mid = 2 ^ (n - 1)
 
 -- |Getter for the value at a given location for a 'QuadTree'.
-getLocation :: Eq a => Location -> QuadTree a -> a
+getLocation :: Eq a => (Int, Int) -> QuadTree a -> a
 getLocation l t = getConst $ atLocation l Const t
 
 -- |Setter for the value at a given location for a 'QuadTree'.
 --
 -- This automatically compresses the 'QuadTree' nodes if possible with
 -- the new value.
-setLocation :: Eq a => Location -> a -> QuadTree a -> QuadTree a
+setLocation :: Eq a => (Int, Int) -> a -> QuadTree a -> QuadTree a
 setLocation l v t = runIdentity $ atLocation l (\_ -> Identity v) t
 
 -- |Modifies value at a given location for a 'QuadTree'.
 --
 -- This automatically compresses the 'QuadTree' nodes if possible with
 -- the new value.
-mapLocation :: Eq a => Location -> (a -> a) -> QuadTree a -> QuadTree a
+mapLocation :: Eq a => (Int, Int) -> (a -> a) -> QuadTree a -> QuadTree a
 mapLocation l f t = runIdentity $ atLocation l (Identity . f) t
 
 ---- Helpers:
 
 -- |Checks if a 'Location' is outside the boundaries of a 'QuadTree'.
-outOfBounds :: Location -> QuadTree a -> Bool
+outOfBounds :: (Int, Int) -> QuadTree a -> Bool
 outOfBounds (x,y) tree = x < 0 || y < 0
                          || x >= treeLength tree
                          || y >= treeWidth  tree
@@ -180,7 +168,7 @@ treeDimensions tree = (treeLength tree, treeWidth tree)
 
 -- |Add offsets to a location index for the purpose of querying
 -- the 'QuadTree' 's true reference frame.
-offsetIndex :: QuadTree a -> Location -> Location
+offsetIndex :: QuadTree a -> (Int, Int) -> (Int, Int)
 offsetIndex tree (x,y) = (x + xOffset, y + yOffset)
   where (xOffset, yOffset) = offsets tree
 
@@ -195,12 +183,8 @@ offsets tree = (xOffset, yOffset)
 -- |Merge 'Quadrant' into a leaf node if possible.
 fuse :: Eq a => Quadrant a -> Quadrant a
 fuse (Node (Leaf a) (Leaf b) (Leaf c) (Leaf d))
-  | allEqual [a,b,c,d] = Leaf a
+  | a == b && b == c && c == d = Leaf a
 fuse oldNode            = oldNode
-
--- |Test if all elements in a list are equal.
-allEqual :: Eq a => [a] -> Bool
-allEqual = and . (zipWith (==) <*> tail)
 
 ---- Functor:
 
@@ -328,7 +312,7 @@ regionArea (xl,yt,xr,yb) = (xr + 1 - xl) * (yb + 1 - yt)
 
 -- |Does the region contain this location?
 
-inRegion :: Location -> Region -> Bool
+inRegion :: (Int, Int) -> Region -> Bool
 inRegion (x,y) (xl,yt,xr,yb) = xl <= x && x <= xr &&
                                yt <= y && y <= yb
 

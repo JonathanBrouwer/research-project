@@ -1,25 +1,65 @@
 module Project where
 
--- we import the Haskell prelude provided by agda2hs
--- It mimics the real Haskell prelude, so agda2hs doesn't compile
--- the agda2hs prelude to Haskell code but uses the Haskell prelude directly
 open import Haskell.Prelude
-  hiding (List; concat; length; map; concatMap)
-open import Agda.Builtin.Equality
 
+-- Quadrants
 
--- {-# FOREIGN AGDA2HS #-} blocks allow you to write Haskell code directly
--- Here, we hide concat & length from the Prelude
-{-# FOREIGN AGDA2HS
-import Prelude hiding (concat, length, map, concatMap)
-#-}
+data Quadrant (a : Set) : Set where
+  Leaf : a -> Quadrant a
+  Node : Quadrant a -> Quadrant a -> Quadrant a -> Quadrant a -> Quadrant a
+{-# COMPILE AGDA2HS Quadrant deriving (Show, Read, Eq) #-}
 
+instance
+  quadrantFunctor : Functor Quadrant
+  quadrantFunctor .fmap fn (Leaf x) = Leaf (fn x) 
+  quadrantFunctor .fmap fn (Node a b c d) = Node (fmap fn a) (fmap fn b) (fmap fn c) (fmap fn d)
+{-# COMPILE AGDA2HS quadrantFunctor #-}
 
-data List (a : Set) : Set where
-  Nil  : List a
-  Cons : a → List a → List a
+-- Functions for quadrant
 
--- You can specify which definitions are compiled to Haskell
--- with a {-# COMPILE AGDA2HS #-} directive
-{-# COMPILE AGDA2HS List deriving (Show, Eq) #-}
--- ^ Here we specify which Haskell instances should be derived
+fuse : {a : Set} -> {{eqA : Eq a}} 
+        -> Quadrant a -> Quadrant a
+fuse old@(Node (Leaf a) (Leaf b) (Leaf c) (Leaf d)) = if a == b && b == c && c == d then Leaf a else old
+fuse old = old
+{-# COMPILE AGDA2HS fuse #-}
+
+-- Lenses for quadrant
+
+-- Eq a => combiner function -> CLens (Quadrant a) (Quadrant a)
+lens_generic : {a : Set} {{eqA : Eq a}} {f : Set -> Set} {{fFunctor : Functor f}} 
+         -> ((Quadrant a) -> (Quadrant a) -> (Quadrant a) -> (Quadrant a) -> (Quadrant a) -> (Quadrant a))
+         -> ((Quadrant a) -> f (Quadrant a)) -> Quadrant a -> f (Quadrant a)
+lens_generic combine f (Node a b c d) = fmap (λ x -> fuse $ (combine a b c d x)) (f a)
+lens_generic combine f l = fmap (λ x -> fuse $ (combine l l l l x)) (f l) where
+{-# COMPILE AGDA2HS lens_generic #-}
+
+-- Eq a => CLens (Quadrant a) (Quadrant a)
+lens_a : {a : Set} {{eqA : Eq a}} {f : Set -> Set} {{fFunctor : Functor f}} 
+         -> ((Quadrant a) -> f (Quadrant a)) -> Quadrant a -> f (Quadrant a)
+lens_a = lens_generic (λ a b c d x -> Node x b c d)
+{-# COMPILE AGDA2HS lens_a #-}
+
+-- Eq a => CLens (Quadrant a) (Quadrant a)
+lens_b : {a : Set} {{eqA : Eq a}} {f : Set -> Set} {{fFunctor : Functor f}} 
+         -> ((Quadrant a) -> f (Quadrant a)) -> Quadrant a -> f (Quadrant a)
+lens_b = lens_generic (λ a b c d x -> Node a x c d)
+{-# COMPILE AGDA2HS lens_b #-}
+
+-- Eq a => CLens (Quadrant a) (Quadrant a)
+lens_c : {a : Set} {{eqA : Eq a}} {f : Set -> Set} {{fFunctor : Functor f}} 
+         -> ((Quadrant a) -> f (Quadrant a)) -> Quadrant a -> f (Quadrant a)
+lens_c = lens_generic (λ a b c d x -> Node a b x d)
+{-# COMPILE AGDA2HS lens_c #-}
+
+-- Eq a => CLens (Quadrant a) (Quadrant a)
+lens_d : {a : Set} {{eqA : Eq a}} {f : Set -> Set} {{fFunctor : Functor f}} 
+         -> ((Quadrant a) -> f (Quadrant a)) -> Quadrant a -> f (Quadrant a)
+lens_d = lens_generic (λ a b c d x -> Node a b c x)
+{-# COMPILE AGDA2HS lens_d #-}
+
+-- QuadTree
+
+data QuadTree (a : Set) : Set where
+  Wrapper : Quadrant a -> Int -> Int -> Int -> QuadTree a
+
+{-# COMPILE AGDA2HS QuadTree #-}

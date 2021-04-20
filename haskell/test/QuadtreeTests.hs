@@ -104,7 +104,7 @@ generateNode n = do
   let [a,b,c,d] = xs
   return (Node a b c d)
     where equalLeaves :: Eq a => [Quadrant a] -> Bool
-          equalLeaves [Leaf a, Leaf b, Leaf c, Leaf d] = allEqual [a,b,c,d]
+          equalLeaves [Leaf a, Leaf b, Leaf c, Leaf d] = a == b && b == c && c == d
           equalLeaves _                                = False
 
 
@@ -155,7 +155,7 @@ prop_APITreeInequality (Constructed qt) = go $ wrappedTree qt
   where go :: Eq a => Quadrant a -> Bool
         go (Leaf _)            = True
         go (Node (Leaf a) (Leaf b) (Leaf c) (Leaf d))
-          | allEqual [a,b,c,d] = False
+          | a == b && b == c && c == d = False
         go (Node a b c d)      = and $ fmap go [a,b,c,d]
 
 
@@ -179,7 +179,7 @@ prop_treeInequality (Generated qt) = go $ wrappedTree qt
   where go :: Eq a => Quadrant a -> Bool
         go (Leaf _)            = True
         go (Node (Leaf a) (Leaf b) (Leaf c) (Leaf d))
-          | allEqual [a,b,c,d] = False
+          | a == b && b == c && c == d = False
         go (Node a b c d)      = and $ fmap go [a,b,c,d]
 
 {- Functor laws
