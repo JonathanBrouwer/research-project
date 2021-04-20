@@ -57,7 +57,7 @@ module Data.QuadTree (
   -- * Miscellaneous helpers
   outOfBounds, treeDimensions, regionArea, inRegion ) where
 
-import Data.QuadTree.Internal
+import Data.QuadTree.InternalHaskell
 
 
 -- $locations

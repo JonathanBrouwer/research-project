@@ -4,7 +4,7 @@
 
 module Main where
 
-import Data.QuadTree.Internal
+import Data.QuadTree.InternalHaskell
 
 import Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
 import Test.QuickCheck.Modifiers (Positive(..), NonNegative(..))
@@ -16,9 +16,6 @@ import Test.QuickCheck.All (quickCheckAll)
 import Text.Show.Functions ()
 import System.Exit (exitSuccess, exitFailure)
 
-import Control.Lens.Type (Lens')
-import Control.Lens.Setter (set)
-import Control.Lens.Getter (view)
 import Control.Monad (replicateM)
 import Data.Functor ((<$>))
 import Data.Composition ((.:))
@@ -203,23 +200,23 @@ prop_functor2 (Generated qt) f g = fmap (f . g) qt == (fmap f . fmap g) qt
   set l (view l a) a  = a
   set l c (set l b a) = set l c a -}
 
-prop_lens1 :: Eq a => GenTree a -> a -> Index -> Property
-prop_lens1 (Generated a) b (MkIndex location) =
-  location `validIndexOf` a  ==>  view l (set l b a) == b
-  where l :: Eq a => Lens' (QuadTree a) a
-        l = atLocation location
-
-prop_lens2 :: Eq a => GenTree a -> Index -> Property
-prop_lens2 (Generated a) (MkIndex location) =
-  location `validIndexOf` a  ==>  set l (view l a) a == a
-  where l :: Eq a => Lens' (QuadTree a) a
-        l = atLocation location
-
-prop_lens3 :: Eq a => GenTree a -> a -> a -> Index -> Property
-prop_lens3 (Generated a) b c (MkIndex location) =
-  location `validIndexOf` a  ==>  set l c (set l b a) == set l c a
-  where l :: Eq a => Lens' (QuadTree a) a
-        l = atLocation location
+--prop_lens1 :: Eq a => GenTree a -> a -> Index -> Property
+--prop_lens1 (Generated a) b (MkIndex location) =
+--  location `validIndexOf` a  ==>  view l (set l b a) == b
+--  where l :: Eq a => CLens (QuadTree a) a
+--        l = atLocation location
+--
+--prop_lens2 :: Eq a => GenTree a -> Index -> Property
+--prop_lens2 (Generated a) (MkIndex location) =
+--  location `validIndexOf` a  ==>  set l (view l a) a == a
+--  where l :: Eq a => CLens (QuadTree a) a
+--        l = atLocation location
+--
+--prop_lens3 :: Eq a => GenTree a -> a -> a -> Index -> Property
+--prop_lens3 (Generated a) b c (MkIndex location) =
+--  location `validIndexOf` a  ==>  set l c (set l b a) == set l c a
+--  where l :: Eq a => CLens (QuadTree a) a
+--        l = atLocation location
 
 
 validIndexOf :: Location -> QuadTree a -> Bool

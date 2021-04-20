@@ -18,15 +18,17 @@ the QuadTree library, strictly for the purpose of exposing inner
 structure and functions to the testing suites.
 |-}
 
-module Data.QuadTree.Internal where
-
-import Control.Lens.Type (Lens')
-import Control.Lens.Setter (over, set)
-import Control.Lens.Getter (view)
+module Data.QuadTree.InternalHaskell where
 
 import Data.List (find, sortBy)
 import Data.Function (on)
 import Data.Composition ((.:))
+import Data.Functor.Const
+import Data.Functor.Identity
+
+---- Lens redef
+
+type CLens s a = forall f. Functor f => (a -> f a) -> s -> f s
 
 ---- Structures:
 
@@ -81,7 +83,7 @@ instance Functor Quadrant where
 ---- Quadrant lenses:
 
 -- |Lens for the top left 'Quadrant' of a node.
-_a :: forall a. Eq a => Lens' (Quadrant a) (Quadrant a)
+_a :: forall a. Eq a => CLens (Quadrant a) (Quadrant a)
 _a f (Node a b c d) = fmap (\x -> fuse $ Node x b c d) (f a)
 _a f leaf           = fmap embed (f leaf)
   where embed :: Quadrant a -> Quadrant a
@@ -89,7 +91,7 @@ _a f leaf           = fmap embed (f leaf)
                 | otherwise = Node x leaf leaf leaf
 
 -- |Lens for the top right 'Quadrant' of a node.
-_b :: forall a. Eq a => Lens' (Quadrant a) (Quadrant a)
+_b :: forall a. Eq a => CLens (Quadrant a) (Quadrant a)
 _b f (Node a b c d) = fmap (\x -> fuse $ Node a x c d) (f b)
 _b f leaf           = fmap embed (f leaf)
   where embed :: Quadrant a -> Quadrant a
@@ -97,7 +99,7 @@ _b f leaf           = fmap embed (f leaf)
                 | otherwise = Node leaf x leaf leaf
 
 -- |Lens for the bottom left 'Quadrant' of a node.
-_c :: forall a. Eq a => Lens' (Quadrant a) (Quadrant a)
+_c :: forall a. Eq a => CLens (Quadrant a) (Quadrant a)
 _c f (Node a b c d) = fmap (\x -> fuse $ Node a b x d) (f c)
 _c f leaf           = fmap embed (f leaf)
   where embed :: Quadrant a -> Quadrant a
@@ -105,7 +107,7 @@ _c f leaf           = fmap embed (f leaf)
                 | otherwise = Node leaf leaf x leaf
 
 -- |Lens for the bottom right 'Quadrant' of a node.
-_d :: forall a. Eq a => Lens' (Quadrant a) (Quadrant a)
+_d :: forall a. Eq a => CLens (Quadrant a) (Quadrant a)
 _d f (Node a b c d) = fmap (fuse . Node a b c) (f d)
 _d f leaf           = fmap embed (f leaf)
   where embed :: Quadrant a -> Quadrant a
@@ -113,18 +115,18 @@ _d f leaf           = fmap embed (f leaf)
                 | otherwise = Node leaf leaf leaf x
 
 -- |Lens for a terminate leaf value of a node.
-_leaf :: Lens' (Quadrant a) a
+_leaf :: CLens (Quadrant a) a
 _leaf f (Leaf leaf) = Leaf <$> f leaf
 _leaf _ _           = error "Wrapped tree is deeper than cached tree depth."
 
 -- |Lens to zoom into the internal data structure of a 'QuadTree',
 -- lensing past the metadata to reveal the 'Quadrant' inside.
-_wrappedTree :: Lens' (QuadTree a) (Quadrant a)
+_wrappedTree :: CLens (QuadTree a) (Quadrant a)
 _wrappedTree f qt = (\x -> qt {wrappedTree = x}) <$> f (wrappedTree qt)
 
 -- |Unsafe sanity test lens that makes sure a given location index exists
 -- within the relevant 'QuadTree'.
-verifyLocation :: Location -> Lens' (QuadTree a) (QuadTree a)
+verifyLocation :: Location -> CLens (QuadTree a) (QuadTree a)
 verifyLocation index f qt
   | index `outOfBounds` qt = error "Location index out of QuadTree bounds."
   | otherwise              = f qt
@@ -133,11 +135,11 @@ verifyLocation index f qt
 
 -- |Lens for accessing and manipulating data at a specific
 -- location.
-atLocation :: forall a. Eq a => Location -> Lens' (QuadTree a) a
+atLocation :: forall a. Eq a => Location -> CLens (QuadTree a) a
 atLocation index fn qt = (verifyLocation index . _wrappedTree .
                           go (offsetIndex qt index) (treeDepth qt)) fn qt
   where
-    go :: Eq a => Location -> Int -> Lens' (Quadrant a) a
+    go :: Eq a => Location -> Int -> CLens (Quadrant a) a
     go _     0 = _leaf
     go (x,y) n | y < mid   = if x < mid then _a . recurse
                                         else _b . recurse
@@ -148,21 +150,21 @@ atLocation index fn qt = (verifyLocation index . _wrappedTree .
 
 -- |Getter for the value at a given location for a 'QuadTree'.
 getLocation :: Eq a => Location -> QuadTree a -> a
-getLocation = view . atLocation
+getLocation l t = getConst $ atLocation l Const t
 
 -- |Setter for the value at a given location for a 'QuadTree'.
 --
 -- This automatically compresses the 'QuadTree' nodes if possible with
 -- the new value.
 setLocation :: Eq a => Location -> a -> QuadTree a -> QuadTree a
-setLocation = set . atLocation
+setLocation l v t = runIdentity $ atLocation l (\_ -> Identity v) t
 
 -- |Modifies value at a given location for a 'QuadTree'.
 --
 -- This automatically compresses the 'QuadTree' nodes if possible with
 -- the new value.
 mapLocation :: Eq a => Location -> (a -> a) -> QuadTree a -> QuadTree a
-mapLocation = over . atLocation
+mapLocation l f t = runIdentity $ atLocation l (Identity . f) t
 
 ---- Helpers:
 
