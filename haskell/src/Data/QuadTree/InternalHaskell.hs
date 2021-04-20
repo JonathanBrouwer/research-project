@@ -138,7 +138,7 @@ atLocation :: forall a. Eq a => Location -> CLens (QuadTree a) a
 atLocation index fn qt = (verifyLocation index . _wrappedTree .
                           go (offsetIndex qt index) (treeDepth qt)) fn qt
   where
-    go :: Eq a => Location -> Int -> CLens (Quadrant a) a
+    go :: Location -> Int -> CLens (Quadrant a) a
     go _     0 = _leaf
     go (x,y) n | y < mid   = if x < mid then _a . recurse
                                         else _b . recurse
