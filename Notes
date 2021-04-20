@@ -1,0 +1,3 @@
+- QuadTree makes use of Lens, had to take a few definitions from lens and put them in the file
+- Type synonyms not supported by agda2hs, I raised issue + switched everything away from using type synonyms
+- With not supported by agda2hs (known), used if instead
