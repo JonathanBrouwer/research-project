@@ -22,8 +22,6 @@ description:         Please see the README on GitHub at <https://github.com/gith
 dependencies:
 - base
 - QuickCheck
-- containers
-- composition
 
 library:
   source-dirs: src

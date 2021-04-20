@@ -22,7 +22,6 @@ module Data.QuadTree.InternalHaskell where
 
 import Data.List (find, sortBy)
 import Data.Function (on)
-import Data.Composition ((.:))
 import Data.Functor.Const
 import Data.Functor.Identity
 
@@ -239,7 +238,7 @@ fuseTree = onQuads fuseQuads
 --
 -- prop> tmap fn tree == fuseTree $ fmap fn tree
 tmap :: Eq b => (a -> b) -> QuadTree a -> QuadTree b
-tmap = fuseTree .: fmap
+tmap f x = fuseTree $ fmap f x
 
 ---- Foldable:
 
@@ -408,4 +407,4 @@ showTree printer tree = breakString (treeLength tree) string
 printTree :: Eq a => (a -> Char) -- ^ Function to generate characters for each
                                  -- 'QuadTree' element.
                   -> QuadTree a -> IO ()
-printTree = putStr .: showTree
+printTree f x = putStr $ showTree f x

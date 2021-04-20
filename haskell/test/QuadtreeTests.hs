@@ -18,7 +18,6 @@ import System.Exit (exitSuccess, exitFailure)
 
 import Control.Monad (replicateM)
 import Data.Functor ((<$>))
-import Data.Composition ((.:))
 
 {- Structure
 
@@ -220,7 +219,7 @@ prop_functor2 (Generated qt) f g = fmap (f . g) qt == (fmap f . fmap g) qt
 
 
 validIndexOf :: Location -> QuadTree a -> Bool
-validIndexOf = not .: outOfBounds
+validIndexOf l x = not $ outOfBounds l x
 
 
 ---- Collate and run tests:
