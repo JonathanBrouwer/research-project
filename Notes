@@ -1,3 +1,6 @@
 - QuadTree makes use of Lens, had to take a few definitions from lens and put them in the file
 - Type synonyms not supported by agda2hs, I raised issue + switched everything away from using type synonyms
 - With not supported by agda2hs (known), used if instead
+- Writing code in agda is hard, writing code in this limited subset of agda is near impossible (would love to use dependent types)
+- Using nats is annoying, because the constructors aren't compiled correctly
+- Need to use ifc to proof some stuff in agda, needs compiler mod to compile correctly
