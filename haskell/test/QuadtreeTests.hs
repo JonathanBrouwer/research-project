@@ -12,7 +12,7 @@ import Test.QuickCheck.Modifiers (Positive(..), NonNegative(..))
 import Test.QuickCheck.Gen (Gen, choose, oneof, suchThat,
                             listOf, infiniteListOf)
 import Test.QuickCheck.Property (Property, (==>))
-import Test.QuickCheck.All (quickCheckAll)
+import Test.QuickCheck.All (quickCheckAll, forAllProperties)
 
 import Text.Show.Functions ()
 import System.Exit (exitSuccess, exitFailure)
@@ -20,6 +20,7 @@ import System.Exit (exitSuccess, exitFailure)
 import Control.Monad (replicateM)
 import Data.Functor ((<$>))
 import Data.Foldable (find)
+import Test.QuickCheck.Test
 
 {- Structure
 
@@ -145,17 +146,17 @@ validIndexOf l x = not $ outOfBounds l x
 
 ---- Test things
 
-prop_getcreate :: Eq a => Index -> a -> Index -> Property
+prop_getcreate :: Index -> Bool -> Index -> Property
 prop_getcreate (MkIndex size) v (MkIndex loc) =
   fst loc < fst size && snd loc < snd size ==>
     getLocation loc (makeTree size v) == v
 
-prop_getset :: Eq a => GenTree a -> a -> Index -> Property
+prop_getset :: GenTree Bool -> Bool -> Index -> Property
 prop_getset (Generated qt) v (MkIndex loc) =
   loc `validIndexOf` qt  ==>
     getLocation loc (setLocation loc v qt) == v
 
-prop_getset_other :: Eq a => GenTree a -> a -> Index -> Index -> Property
+prop_getset_other :: GenTree Bool -> Bool -> Index -> Index -> Property
 prop_getset_other (Generated qt) v (MkIndex loc) (MkIndex otherloc) =
   loc `validIndexOf` qt && otherloc `validIndexOf` qt && loc /= otherloc ==>
     getLocation otherloc (setLocation loc v qt) == getLocation otherloc qt
@@ -170,11 +171,40 @@ prop_getmap_other (Generated qt) (MkIndex loc) (MkIndex otherloc) =
   loc `validIndexOf` qt && otherloc `validIndexOf` qt && loc /= otherloc ==>
     getLocation otherloc (mapLocation loc not qt) == getLocation otherloc qt
 
+prop_iscompressed_make :: GenTree Bool -> Bool
+prop_iscompressed_make (Generated qt) = isCompressed qt
+
+prop_iscompressed_set :: GenTree Bool -> Bool -> Index -> Property
+prop_iscompressed_set (Generated qt) v (MkIndex loc) =
+  loc `validIndexOf` qt  ==>
+    isCompressed (setLocation loc v qt)
+
+prop_iscompressed_map :: GenTree Bool -> Index -> Property
+prop_iscompressed_map (Generated qt) (MkIndex loc) =
+  loc `validIndexOf` qt  ==>
+    isCompressed (mapLocation loc not qt)
+
+isCompressed :: Eq a => QuadTree a -> Bool
+isCompressed (Wrapper qd _ _ _) = isCompressedSub qd where
+  isCompressedSub :: Eq a => Quadrant a -> Bool
+  isCompressedSub (Node (Leaf a) (Leaf b) (Leaf c) (Leaf d)) = not (a == b && b == c && c == d)
+  isCompressedSub (Node a b c d) = isCompressedSub a && isCompressedSub b && isCompressedSub c && isCompressedSub d
+  isCompressedSub (Leaf _) = True
+
 ---- Collate and run tests:
 
 return [] -- Template Haskell splice. See QuickCheck hackage docs.
+
+args :: Args
+args = stdArgs
+  {
+    maxSize = 1000,
+    maxSuccess = 1000,
+    maxDiscardRatio = 100 -- Raise discard ratio a bit
+  }
+
 runTests :: IO Bool
-runTests = $quickCheckAll
+runTests = $(forAllProperties) (quickCheckWithResult args)
 
 main :: IO ()
 main = do
