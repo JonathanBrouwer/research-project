@@ -32,10 +32,6 @@ type CLens s a = forall f. Functor f => (a -> f a) -> s -> f s
 
 ---- Structures:
 
--- |Tuple corresponds to (X, Y) co-ordinates.
-
-type Location = (Int, Int)
-
 -- |The eponymous data type.
 --
 -- 'QuadTree' is itself a wrapper around an internal tree structure
@@ -83,24 +79,24 @@ instance Functor Quadrant where
 ---- Quadrant lenses:
 
 -- |Lens for the top left 'Quadrant' of a node.
-_a :: Eq a => CLens (Quadrant a) (Quadrant a)
-_a f (Node a b c d) = fmap (\x -> fuse $ Node x b c d) (f a)
-_a f leaf = fmap (\x -> fuse $ Node x leaf leaf leaf) (f leaf)
+lensA :: Eq a => CLens (Quadrant a) (Quadrant a)
+lensA f (Node a b c d) = fmap (\x -> fuse $ Node x b c d) (f a)
+lensA f leaf = fmap (\x -> fuse $ Node x leaf leaf leaf) (f leaf)
 
 -- |Lens for the top right 'Quadrant' of a node.
-_b :: forall a. Eq a => CLens (Quadrant a) (Quadrant a)
-_b f (Node a b c d) = fmap (\x -> fuse $ Node a x c d) (f b)
-_b f leaf = fmap (\x -> fuse $ Node leaf x leaf leaf) (f leaf)
+lensB :: forall a. Eq a => CLens (Quadrant a) (Quadrant a)
+lensB f (Node a b c d) = fmap (\x -> fuse $ Node a x c d) (f b)
+lensB f leaf = fmap (\x -> fuse $ Node leaf x leaf leaf) (f leaf)
 
 -- |Lens for the bottom left 'Quadrant' of a node.
-_c :: forall a. Eq a => CLens (Quadrant a) (Quadrant a)
-_c f (Node a b c d) = fmap (\x -> fuse $ Node a b x d) (f c)
-_c f leaf = fmap (\x -> fuse $ Node leaf leaf x leaf) (f leaf)
+lensC :: forall a. Eq a => CLens (Quadrant a) (Quadrant a)
+lensC f (Node a b c d) = fmap (\x -> fuse $ Node a b x d) (f c)
+lensC f leaf = fmap (\x -> fuse $ Node leaf leaf x leaf) (f leaf)
 
 -- |Lens for the bottom right 'Quadrant' of a node.
-_d :: forall a. Eq a => CLens (Quadrant a) (Quadrant a)
-_d f (Node a b c d) = fmap (fuse . Node a b c) (f d)
-_d f leaf = fmap (\x -> fuse $ Node leaf leaf leaf x) (f leaf)
+lensD :: forall a. Eq a => CLens (Quadrant a) (Quadrant a)
+lensD f (Node a b c d) = fmap (fuse . Node a b c) (f d)
+lensD f leaf = fmap (\x -> fuse $ Node leaf leaf leaf x) (f leaf)
 
 -- |Lens for a terminate leaf value of a node.
 _leaf :: CLens (Quadrant a) a
@@ -129,10 +125,10 @@ atLocation index fn qt = (verifyLocation index . _wrappedTree .
   where
     go :: (Int, Int) -> Int -> CLens (Quadrant a) a
     go _     0 = _leaf
-    go (x,y) n | y < mid   = if x < mid then _a . recurse
-                                        else _b . recurse
-               | otherwise = if x < mid then _c . recurse
-                                        else _d . recurse
+    go (x,y) n | y < mid   = if x < mid then lensA . recurse
+                                        else lensB . recurse
+               | otherwise = if x < mid then lensC . recurse
+                                        else lensD . recurse
       where recurse = go (x `mod` mid, y `mod` mid) (n - 1)
             mid = 2 ^ (n - 1)
 

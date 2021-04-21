@@ -1,10 +1,11 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Main where
 
-import Data.QuadTree.InternalHaskell
+import Data.QuadTree
 
 import Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
 import Test.QuickCheck.Modifiers (Positive(..), NonNegative(..))
@@ -18,6 +19,7 @@ import System.Exit (exitSuccess, exitFailure)
 
 import Control.Monad (replicateM)
 import Data.Functor ((<$>))
+import Data.Foldable (find)
 
 {- Structure
 
@@ -65,10 +67,10 @@ instance (Eq a, Arbitrary a) => Arbitrary (APITree a) where
     return . Constructed $ foldr (uncurry setLocation) baseTree setList
 
 -- Generates a random valid location index for a quadtree
-generateIndexOf :: QuadTree a -> Gen Location
-generateIndexOf qt = do
-  x <- choose (0, treeLength qt - 1)
-  y <- choose (0, treeWidth qt  - 1)
+generateIndexOf :: QuadTree a -> Gen (Int, Int)
+generateIndexOf (Wrapper _ l w _) = do
+  x <- choose (0, l - 1)
+  y <- choose (0, w - 1)
   return (x,y)
 
 
@@ -79,6 +81,13 @@ newtype GenTree a = Generated (QuadTree a)
 instance Show a => Show (GenTree a) where
   show (Generated qt) = show qt
 
+smallestDepth :: (Int, Int) -> Int
+smallestDepth (x,y) = depth
+  where (depth, _)         = smallestPower
+        Just smallestPower = find bigEnough powersZip
+        bigEnough (_, e)   = e >= max x y
+        powersZip          = zip [0..] $ iterate (* 2) 1
+
 instance (Eq a, Arbitrary a) => Arbitrary (GenTree a) where
   arbitrary = do
     Positive len <- arbitrary
@@ -86,10 +95,7 @@ instance (Eq a, Arbitrary a) => Arbitrary (GenTree a) where
     let depth = smallestDepth (len, wid)
     tree <- generateQuadrant depth
 
-    return . Generated $ Wrapper { treeLength = len,
-                                   treeWidth = wid,
-                                   treeDepth = depth,
-                                   wrappedTree = tree }
+    return . Generated $ Wrapper tree len wid depth
 
 generateQuadrant :: (Eq a, Arbitrary a) => Int -> Gen (Quadrant a)
 generateQuadrant 0 = generateLeaf
@@ -134,93 +140,35 @@ instance Arbitrary Index where
 instance Show Index where
   show (MkIndex index) = show index
 
-
----- APITree structural tests
-
--- We use Bools here since they're the most trivial Eq type.
--- A QuadTree constructed with Bool insertions is the fastest way
--- to build/fuse up a complex set of nodes at various heights.
-
--- Inner tree representation cannot be deeper than defined depth
-prop_APITreeDepth :: APITree Bool -> Bool
-prop_APITreeDepth (Constructed qt) = go (treeDepth qt) (wrappedTree qt)
-  where go :: Int -> Quadrant a -> Bool
-        go _ (Leaf _)       = True
-        go 0 _              = False
-        go n (Node a b c d) = and $ fmap (go (n - 1)) [a,b,c,d]
-
--- Inner tree representation cannot have branches holding four equal leaves
-prop_APITreeInequality :: APITree Bool -> Bool
-prop_APITreeInequality (Constructed qt) = go $ wrappedTree qt
-  where go :: Eq a => Quadrant a -> Bool
-        go (Leaf _)            = True
-        go (Node (Leaf a) (Leaf b) (Leaf c) (Leaf d))
-          | a == b && b == c && c == d = False
-        go (Node a b c d)      = and $ fmap go [a,b,c,d]
-
-
----- Ex Nihilo QuadTree tests
-
--- For completeness, we'll test the structural requirements here as well.
--- The requirements are baked into the generator, but this lets us test
--- that generator.
-
--- Inner tree representation cannot be deeper than defined depth
-prop_treeDepth :: GenTree Bool -> Bool
-prop_treeDepth (Generated qt) = go (treeDepth qt) (wrappedTree qt)
-  where go :: Int -> Quadrant a -> Bool
-        go _ (Leaf _)       = True
-        go 0 _              = False
-        go n (Node a b c d) = and $ fmap (go (n - 1)) [a,b,c,d]
-
--- Inner tree representation cannot have branches holding four equal leaves
-prop_treeInequality :: GenTree Bool -> Bool
-prop_treeInequality (Generated qt) = go $ wrappedTree qt
-  where go :: Eq a => Quadrant a -> Bool
-        go (Leaf _)            = True
-        go (Node (Leaf a) (Leaf b) (Leaf c) (Leaf d))
-          | a == b && b == c && c == d = False
-        go (Node a b c d)      = and $ fmap go [a,b,c,d]
-
-{- Functor laws
-
-  fmap id = id
-  fmap (f . g) = fmap f . fmap g -}
-
-prop_functor1 :: Eq a => GenTree a -> Bool
-prop_functor1 (Generated qt)     = fmap id qt == qt
-
-prop_functor2 :: Eq c => GenTree a -> (b -> c) -> (a -> b) -> Bool
-prop_functor2 (Generated qt) f g = fmap (f . g) qt == (fmap f . fmap g) qt
-
-{- Lens laws
-
-  view l (set l b a)  = b
-  set l (view l a) a  = a
-  set l c (set l b a) = set l c a -}
-
---prop_lens1 :: Eq a => GenTree a -> a -> Index -> Property
---prop_lens1 (Generated a) b (MkIndex location) =
---  location `validIndexOf` a  ==>  view l (set l b a) == b
---  where l :: Eq a => CLens (QuadTree a) a
---        l = atLocation location
---
---prop_lens2 :: Eq a => GenTree a -> Index -> Property
---prop_lens2 (Generated a) (MkIndex location) =
---  location `validIndexOf` a  ==>  set l (view l a) a == a
---  where l :: Eq a => CLens (QuadTree a) a
---        l = atLocation location
---
---prop_lens3 :: Eq a => GenTree a -> a -> a -> Index -> Property
---prop_lens3 (Generated a) b c (MkIndex location) =
---  location `validIndexOf` a  ==>  set l c (set l b a) == set l c a
---  where l :: Eq a => CLens (QuadTree a) a
---        l = atLocation location
-
-
-validIndexOf :: Location -> QuadTree a -> Bool
+validIndexOf :: (Int, Int) -> QuadTree a -> Bool
 validIndexOf l x = not $ outOfBounds l x
 
+---- Test things
+
+prop_getcreate :: Eq a => Index -> a -> Index -> Property
+prop_getcreate (MkIndex size) v (MkIndex loc) =
+  fst loc < fst size && snd loc < snd size ==>
+    getLocation loc (makeTree size v) == v
+
+prop_getset :: Eq a => GenTree a -> a -> Index -> Property
+prop_getset (Generated qt) v (MkIndex loc) =
+  loc `validIndexOf` qt  ==>
+    getLocation loc (setLocation loc v qt) == v
+
+prop_getset_other :: Eq a => GenTree a -> a -> Index -> Index -> Property
+prop_getset_other (Generated qt) v (MkIndex loc) (MkIndex otherloc) =
+  loc `validIndexOf` qt && otherloc `validIndexOf` qt && loc /= otherloc ==>
+    getLocation otherloc (setLocation loc v qt) == getLocation otherloc qt
+
+prop_getmap :: GenTree Bool -> Index -> Property
+prop_getmap (Generated qt) (MkIndex loc) =
+  loc `validIndexOf` qt  ==>
+    getLocation loc (mapLocation loc not qt) /= getLocation loc qt
+
+prop_getmap_other :: GenTree Bool -> Index -> Index -> Property
+prop_getmap_other (Generated qt) (MkIndex loc) (MkIndex otherloc) =
+  loc `validIndexOf` qt && otherloc `validIndexOf` qt && loc /= otherloc ==>
+    getLocation otherloc (mapLocation loc not qt) == getLocation otherloc qt
 
 ---- Collate and run tests:
 
@@ -234,37 +182,3 @@ main = do
   if allClear
     then exitSuccess
     else exitFailure
-
---------- Manual repl test fragments:
-
--- x' :: QuadTree Int
--- x' = Wrapper { treeLength = 6
---              , treeWidth = 5
---              , treeDepth = 3
---              , wrappedTree = y' }
-
--- y' :: Quadrant Int
--- y' = Node (Leaf 0)
---           (Node (Leaf 2)
---                 (Leaf 3)
---                 (Leaf 4)
---                 (Leaf 5))
---           (Leaf 1)
---           (Leaf 9)
-
--- basic :: QuadTree Int
--- basic = Wrapper {treeLength = 4, treeWidth = 5, treeDepth = 3,
---                  wrappedTree = Node (Leaf 0)
---                                     (Leaf 1)
---                                     (Leaf 2)
---                                     (Leaf 3)}
-
--- x5 = set (atLocation (2,3)) 1 (makeTree (5,7) 0)
--- x6 = set (atLocation (2,3)) 1 (makeTree (6,7) 0)
--- p n = printTree (head . show) n
-
--- test = set (atLocation (0,0)) 'd' $
---        set (atLocation (5,5)) 'c' $
---        set (atLocation (3,2)) 'b' $
---        set (atLocation (2,4)) 'a' $
---        makeTree (6,6) '.'

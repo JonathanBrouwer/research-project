@@ -5,57 +5,18 @@
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-{-|
-Module      : Data.QuadTree
-Description : Region quadtrees with lens support.
-Copyright   : (c) Ashley Moni, 2015
-License     : BSD3
-Maintainer  : Ashley Moni <ashley.moni1@gmail.com>
-Stability   : Stable
-
-The purpose of this module is to provide discrete region quadtrees
-that can be used as simple functional alternatives to 2D arrays,
-with lens support.
-
-@
-test = set ('atLocation' (0,0)) \'d\' $
-       set ('atLocation' (5,5)) \'c\' $
-       set ('atLocation' (3,2)) \'b\' $
-       set ('atLocation' (2,4)) \'a\' $
-       'makeTree' (6,6) \'.\'
-@
-
->>> printTree id test
-d.....
-......
-...b..
-......
-..a...
-.....c
--}
-
 module Data.QuadTree (
-  -- * Data Type & Constructor
-  QuadTree, makeTree,
-  -- * Index access
-  -- $locations
+  -- QuadTree + Constructor
+  QuadTree (Wrapper), makeTree,
+  -- Quadrant + Constructors
+  Quadrant (Node, Leaf),
+  -- Index access
   atLocation, getLocation, setLocation, mapLocation,
-  -- * Functor
-  fuseTree, tmap,
-  -- * Foldable
-  -- $foldables
-  filterTree, sortTreeBy,
-  -- ** Tiles
-  -- $tiles
-  Region, Tile,
-  -- ** Tile functions
-  -- $tileuse
-  tile, expand, foldTiles,
-  filterTiles, sortTilesBy,
-  -- * Printers
-  showTree, printTree,
-  -- * Miscellaneous helpers
-  outOfBounds, treeDimensions, regionArea, inRegion ) where
+  -- Utils
+  outOfBounds,
+  -- Lens stuff
+  CLens, --view, set,
+  ) where
 
 import Data.QuadTree.InternalHaskell
 
