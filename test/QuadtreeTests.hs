@@ -21,6 +21,8 @@ import Control.Monad (replicateM)
 import Data.Functor ((<$>))
 import Data.Foldable (find)
 import Test.QuickCheck.Test
+import Numeric.Natural (Natural)
+import GHC.Natural (naturalFromInteger)
 
 {- Structure
 
@@ -68,11 +70,11 @@ instance (Eq a, Arbitrary a) => Arbitrary (APITree a) where
     return . Constructed $ foldr (uncurry setLocation) baseTree setList
 
 -- Generates a random valid location index for a quadtree
-generateIndexOf :: QuadTree a -> Gen (Int, Int)
+generateIndexOf :: QuadTree a -> Gen (Natural, Natural)
 generateIndexOf (Wrapper _ l w _) = do
-  x <- choose (0, l - 1)
-  y <- choose (0, w - 1)
-  return (x,y)
+  x <- choose (0, toInteger l - 1)
+  y <- choose (0, toInteger w - 1)
+  return (naturalFromInteger x, naturalFromInteger y)
 
 
 ---- Ex-nihilo QuadTree generator
@@ -82,7 +84,7 @@ newtype GenTree a = Generated (QuadTree a)
 instance Show a => Show (GenTree a) where
   show (Generated qt) = show qt
 
-smallestDepth :: (Int, Int) -> Int
+smallestDepth :: (Natural, Natural) -> Natural
 smallestDepth (x,y) = depth
   where (depth, _)         = smallestPower
         Just smallestPower = find bigEnough powersZip
@@ -98,14 +100,14 @@ instance (Eq a, Arbitrary a) => Arbitrary (GenTree a) where
 
     return . Generated $ Wrapper tree len wid depth
 
-generateQuadrant :: (Eq a, Arbitrary a) => Int -> Gen (Quadrant a)
+generateQuadrant :: (Eq a, Arbitrary a) => Natural -> Gen (Quadrant a)
 generateQuadrant 0 = generateLeaf
 generateQuadrant n = oneof [generateLeaf, generateNode (n - 1)]
 
 generateLeaf :: Arbitrary a => Gen (Quadrant a)
 generateLeaf = Leaf <$> arbitrary
 
-generateNode :: (Eq a, Arbitrary a) => Int -> Gen (Quadrant a)
+generateNode :: (Eq a, Arbitrary a) => Natural -> Gen (Quadrant a)
 generateNode n = do
   xs <- replicateM 4 (generateQuadrant n) `suchThat` (not . equalLeaves)
   let [a,b,c,d] = xs
@@ -130,7 +132,12 @@ instance (Eq a, Arbitrary a) => Arbitrary (Quadrant a) where
 -- independent random lenses and only test the ones that would work with
 -- the tree.
 
-newtype Index = MkIndex (Int, Int)
+newtype Index = MkIndex (Natural, Natural)
+
+instance Arbitrary Natural where
+  arbitrary = do
+    NonNegative x <- arbitrary
+    return x
 
 instance Arbitrary Index where
   arbitrary = do
@@ -141,7 +148,12 @@ instance Arbitrary Index where
 instance Show Index where
   show (MkIndex index) = show index
 
-validIndexOf :: (Int, Int) -> QuadTree a -> Bool
+outOfBounds :: (Natural, Natural) -> QuadTree a -> Bool
+outOfBounds (x,y) (Wrapper _ l w _) = x < 0 || y < 0
+                         || x >= l
+                         || y >= w
+
+validIndexOf :: (Natural, Natural) -> QuadTree a -> Bool
 validIndexOf l x = not $ outOfBounds l x
 
 ---- Test things

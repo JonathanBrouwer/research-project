@@ -11,11 +11,7 @@ module Data.QuadTree (
   -- Quadrant + Constructors
   Quadrant (Node, Leaf),
   -- Index access
-  atLocation, getLocation, setLocation, mapLocation,
-  -- Utils
-  outOfBounds,
-  -- Lens stuff
-  CLens, --view, set,
+  atLocation, getLocation, setLocation, mapLocation
   ) where
 
-import Data.QuadTree.InternalHaskell
+import Data.QuadTree.InternalAgda

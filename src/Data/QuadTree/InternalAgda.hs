@@ -33,6 +33,7 @@ depth (Node a b c d)
   = 1 + max (max (depth a) (depth b)) (max (depth c) (depth d))
 
 data QuadTree a = Wrapper (Quadrant a) Natural Natural Natural
+                    deriving (Show, Read, Eq)
 
 instance Functor QuadTree where
     fmap fn (Wrapper q l w d) = Wrapper (fmap fn q) l w d
@@ -100,7 +101,8 @@ atLocation index fn (Wrapper qd l w d)
                  Leaf v -> Leaf <$> f v
                  Node a b c d₂ -> Leaf <$> f (temporary_impossible a))
           (ifc_then_else_ (y < 2 ^ d₁ - 1)
-             (ifc_then_else_ (x < 2 ^ d₁ - 1) (lensA . go (x, y) (d₁ - 1))
+             (ifc_then_else_ (x < 2 ^ d₁ - 1) 
+                (lensA . go (x, y) (d₁ - 1))
                 (lensB . go (x - 2 ^ d₁ - 1, y) (d₁ - 1)))
              (ifc_then_else_ (x < 2 ^ d₁ - 1)
                 (lensC . go (x, y - 2 ^ d₁ - 1) (d₁ - 1))

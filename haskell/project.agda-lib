@@ -1,3 +1,0 @@
-name: project
-depend: agda2hs, standard-library
-include: src

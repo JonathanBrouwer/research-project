@@ -1,4 +1,4 @@
-module Test.InternalAgda where
+module Data.QuadTree.InternalAgda where
 
 open import Haskell.Prelude
 open import Data.Nat.DivMod
@@ -24,9 +24,10 @@ div : Nat -> (divisor : Nat) -> {≢0 : False (divisor ≟ 0)} -> Nat
 div a b {p} = _/_ a b {p}
 -- Does not need compile, since it is already defined in haskell
 
-_^_ : Nat -> Nat -> Nat
-_^_ b zero = 1
-_^_ b (suc e) = b * (b ^ e)
+
+pow : Nat -> Nat -> Nat
+pow b zero = 1
+pow b (suc e) = b * pow b e
 -- Does not need compile, since it is already defined in haskell
 
 {-# TERMINATING #-}
@@ -66,7 +67,7 @@ depth (Node a b c d) = 1 + max (max (depth a) (depth b)) (max(depth c) (depth d)
 data QuadTree (a : Set) : Set where
   -- wrappedTree, treeLength, treeWidth, treeDepth
   Wrapper : Quadrant a -> Nat -> Nat -> Nat -> QuadTree a
-{-# COMPILE AGDA2HS QuadTree #-}
+{-# COMPILE AGDA2HS QuadTree deriving (Show, Read, Eq) #-}
 
 instance
   quadTreeFunctor : Functor QuadTree
@@ -148,7 +149,7 @@ atLocation index fn qt@(Wrapper qd l w d) = (lensWrappedTree ∘ (go index d)) f
           hn : Nat
           hn = _-_ d 1 {{proof_not_zero_implies_lt_one d p}}
           mid : Nat
-          mid = 2 ^ hn
+          mid = pow 2 hn
         in
           ifc y < mid then
             ifc x < mid then         lensA ∘ (go (x , y) hn)
@@ -156,7 +157,7 @@ atLocation index fn qt@(Wrapper qd l w d) = (lensWrappedTree ∘ (go index d)) f
           else (λ {{y_gt_mid}} ->
             ifc x < mid then         lensC ∘ (go (x , _-_ y mid {{y_gt_mid}}) hn)
             else (λ {{x_gt_mid}} ->  lensD ∘ (go (_-_ x mid {{x_gt_mid}} , _-_ y mid {{y_gt_mid}}) hn)   )
-          )
+          ) 
       )
 {-# COMPILE AGDA2HS atLocation #-}
 
@@ -190,7 +191,7 @@ instance
 
 getLocation : {a : Set} {{eqA : Eq a}}
   -> (Nat × Nat) -> QuadTree a -> a
-getLocation {a} index qt = getConst (atLocation index CConst qt)
+getLocation index qt = getConst (atLocation index CConst qt)
 {-# COMPILE AGDA2HS getLocation #-}
 
 setLocation : {a : Set} {{eqA : Eq a}}
