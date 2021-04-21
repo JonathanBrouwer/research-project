@@ -5,6 +5,12 @@ open import Data.Nat.DivMod
 open import Data.Nat.Properties
 open import Relation.Nullary.Decidable using (False)
 
+---- General purpose proofs
+
+proof_not_zero_implies_lt_one : (x : Nat) -> IsFalse (x == 0) -> IsFalse (x < 1)
+proof_not_zero_implies_lt_one zero notzero = notzero
+proof_not_zero_implies_lt_one (suc x) notzero = IsFalse.itsFalse
+
 ---- Useful functions
 
 infix -2 ifc_then_else_
@@ -24,11 +30,11 @@ div : Nat -> (divisor : Nat) -> {≢0 : False (divisor ≟ 0)} -> Nat
 div a b {p} = _/_ a b {p}
 -- Does not need compile, since it is already defined in haskell
 
-
+{-# TERMINATING #-}
+-- UNSAFE: This terminates e always decreases
 pow : Nat -> Nat -> Nat
-pow b zero = 1
-pow b (suc e) = b * pow b e
--- Does not need compile, since it is already defined in haskell
+pow b e = ifc e == 0 then 1 else (λ {{p}} -> b * pow b (_-_ e 1 {{proof_not_zero_implies_lt_one e p}}))
+{-# COMPILE AGDA2HS pow #-}
 
 {-# TERMINATING #-}
 log2up : Nat -> Nat
@@ -76,36 +82,37 @@ instance
 
 ---- Lenses
 
--- Eq a => combiner function -> CLens (Quadrant a) (Quadrant a)
+-- Eq a => combiner function -> selecter function -> CLens (Quadrant a) (Quadrant a)
 lensABCD : {a : Set} {{eqA : Eq a}} {f : Set -> Set} {{fFunctor : Functor f}}
          -> ((Quadrant a) -> (Quadrant a) -> (Quadrant a) -> (Quadrant a) -> (Quadrant a) -> (Quadrant a))
+         -> ((Quadrant a) -> (Quadrant a) -> (Quadrant a) -> (Quadrant a) -> (Quadrant a))
          -> ((Quadrant a) -> f (Quadrant a)) -> Quadrant a -> f (Quadrant a)
-lensABCD combine f (Node a b c d) = fmap (fuse ∘ (combine a b c d)) (f a)
-lensABCD combine f l = fmap (fuse ∘ (combine l l l l)) (f l) where
+lensABCD combine select f (Node a b c d) = fmap (fuse ∘ (combine a b c d)) (f (select a b c d))
+lensABCD combine select f l = fmap (fuse ∘ (combine l l l l)) (f l) where
 {-# COMPILE AGDA2HS lensABCD #-}
 
 -- Eq a => CLens (Quadrant a) (Quadrant a)
 lensA : {a : Set} {{eqA : Eq a}} {f : Set -> Set} {{fFunctor : Functor f}}
          -> ((Quadrant a) -> f (Quadrant a)) -> Quadrant a -> f (Quadrant a)
-lensA = lensABCD (λ a b c d x -> Node x b c d)
+lensA = lensABCD (λ a b c d x -> Node x b c d) (λ a b c d -> a)
 {-# COMPILE AGDA2HS lensA #-}
 
 -- Eq a => CLens (Quadrant a) (Quadrant a)
 lensB : {a : Set} {{eqA : Eq a}} {f : Set -> Set} {{fFunctor : Functor f}}
          -> ((Quadrant a) -> f (Quadrant a)) -> Quadrant a -> f (Quadrant a)
-lensB = lensABCD (λ a b c d x -> Node a x c d)
+lensB = lensABCD (λ a b c d x -> Node a x c d) (λ a b c d -> b)
 {-# COMPILE AGDA2HS lensB #-}
 
 -- Eq a => CLens (Quadrant a) (Quadrant a)
 lensC : {a : Set} {{eqA : Eq a}} {f : Set -> Set} {{fFunctor : Functor f}}
          -> ((Quadrant a) -> f (Quadrant a)) -> Quadrant a -> f (Quadrant a)
-lensC = lensABCD (λ a b c d x -> Node a b x d)
+lensC = lensABCD (λ a b c d x -> Node a b x d) (λ a b c d -> c)
 {-# COMPILE AGDA2HS lensC #-}
 
 -- Eq a => CLens (Quadrant a) (Quadrant a)
 lensD : {a : Set} {{eqA : Eq a}} {f : Set -> Set} {{fFunctor : Functor f}}
          -> ((Quadrant a) -> f (Quadrant a)) -> Quadrant a -> f (Quadrant a)
-lensD = lensABCD (λ a b c d x -> Node a b c x)
+lensD = lensABCD (λ a b c d x -> Node a b c x) (λ a b c d -> d)
 {-# COMPILE AGDA2HS lensD #-}
 
 lensWrappedTree : {a : Set} {f : Set -> Set} {{fFunctor : Functor f}}
@@ -115,50 +122,47 @@ lensWrappedTree f (Wrapper quad l w d) = fmap (λ q -> (Wrapper q l w d)) (f qua
 
 ---- Data access
 
-proof_not_zero_implies_lt_one : (x : Nat) -> IsFalse (x == 0) -> IsFalse (x < 1)
-proof_not_zero_implies_lt_one zero notzero = notzero
-proof_not_zero_implies_lt_one (suc x) notzero = IsFalse.itsFalse
+temporaryImpossible : {a : Set} {{eqA : Eq a}} -> Quadrant a -> a
+temporaryImpossible (Leaf v) = v
+temporaryImpossible (Node a b c d) = temporaryImpossible d
+{-# COMPILE AGDA2HS temporaryImpossible #-}
 
-temporary_impossible : {a : Set} {{eqA : Eq a}} -> Quadrant a -> a
-temporary_impossible (Leaf v) = v
-temporary_impossible (Node a b c d) = temporary_impossible a
-{-# COMPILE AGDA2HS temporary_impossible #-}
+-- Eq a => (Nat, Nat) -> Nat -> CLens (QuadTree a) a
+{-# TERMINATING #-}
+go : {a : Set} {{eqA : Eq a}}
+  -> {f : Set -> Set} {{fFunctor : Functor f}}
+  -> (Nat × Nat) -> Nat
+  -> (a -> f a) -> (Quadrant a) -> f (Quadrant a)
+go (x , y) d = matchnat d
+  ifzero ( λ {{p}} ->
+    λ f node -> case node of
+      λ { (Leaf v) -> Leaf <$> f v
+        ; (Node a b c d) -> Leaf <$> f (temporaryImpossible a) -- Impossible
+        }
+  )
+  ifsuc ( λ {{p}} ->
+    let
+      hn : Nat
+      hn = _-_ d 1 {{proof_not_zero_implies_lt_one d p}}
+      mid : Nat
+      mid = pow 2 hn
+    in
+      ifc y < mid then
+        ifc x < mid then         lensA ∘ (go (x , y) hn)
+        else (λ {{x_gt_mid}} ->  lensB ∘ (go (_-_ x mid {{x_gt_mid}} , y) hn)   )
+      else (λ {{y_gt_mid}} ->
+        ifc x < mid then         lensC ∘ (go (x , _-_ y mid {{y_gt_mid}}) hn)
+        else (λ {{x_gt_mid}} ->  lensD ∘ (go (_-_ x mid {{x_gt_mid}} , _-_ y mid {{y_gt_mid}}) hn)   )
+      ) 
+  )
+{-# COMPILE AGDA2HS go #-}
 
 -- Eq a => (Nat, Nat) -> CLens (QuadTree a) a
-{-# TERMINATING #-}
 atLocation : {a : Set} {{eqA : Eq a}}
   -> {f : Set -> Set} {{fFunctor : Functor f}}
   -> (Nat × Nat)
   -> (a -> f a) -> (QuadTree a) -> f (QuadTree a)
 atLocation index fn qt@(Wrapper qd l w d) = (lensWrappedTree ∘ (go index d)) fn qt
-  where
-    -- Eq a => (Nat, Nat) -> Nat -> CLens (QuadTree a) a
-    go : {a : Set} {{eqA : Eq a}}
-      -> {f : Set -> Set} {{fFunctor : Functor f}}
-      -> (Nat × Nat) -> Nat
-      -> (a -> f a) -> (Quadrant a) -> f (Quadrant a)
-    go (x , y) d = matchnat d
-      ifzero ( λ {{p}} ->
-        λ f node -> case node of
-          λ { (Leaf v) -> Leaf <$> f v
-            ; (Node a b c d) -> Leaf <$> f (temporary_impossible a) -- Impossible
-            }
-      )
-      ifsuc ( λ {{p}} ->
-        let
-          hn : Nat
-          hn = _-_ d 1 {{proof_not_zero_implies_lt_one d p}}
-          mid : Nat
-          mid = pow 2 hn
-        in
-          ifc y < mid then
-            ifc x < mid then         lensA ∘ (go (x , y) hn)
-            else (λ {{x_gt_mid}} ->  lensB ∘ (go (_-_ x mid {{x_gt_mid}} , y) hn)   )
-          else (λ {{y_gt_mid}} ->
-            ifc x < mid then         lensC ∘ (go (x , _-_ y mid {{y_gt_mid}}) hn)
-            else (λ {{x_gt_mid}} ->  lensD ∘ (go (_-_ x mid {{x_gt_mid}} , _-_ y mid {{y_gt_mid}}) hn)   )
-          ) 
-      )
 {-# COMPILE AGDA2HS atLocation #-}
 
 data Const (a : Set) (b : Set) : Set where
@@ -208,5 +212,6 @@ makeTree : {a : Set} {{eqA : Eq a}} -> (Nat × Nat) -> a -> QuadTree a
 makeTree (w , h) a = Wrapper (Leaf a) w h (log2up (max w h) )
 {-# COMPILE AGDA2HS makeTree #-}
 
--- x = makeTree (4 , 4) 'x'
--- y = getLocation (2 , 2) x
+x = makeTree (2 , 2) 'x'
+y = setLocation (1 , 1) 'y' x
+z = getLocation (1 , 1) y

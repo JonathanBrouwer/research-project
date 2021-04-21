@@ -9,6 +9,9 @@ ifc_then_else_ True x y = x
 matchnat_ifzero_ifsuc_ :: Natural -> a -> a -> a
 matchnat_ifzero_ifsuc_ x t f = ifc_then_else_ (x == 0) t f
 
+pow :: Natural -> Natural -> Natural
+pow b e = ifc_then_else_ (e == 0) 1 (b * pow b (e - 1))
+
 log2up :: Natural -> Natural
 log2up x = if x <= 1 then 0 else 1 + log2up (div x 2)
 
@@ -43,34 +46,37 @@ lensABCD ::
              Functor f =>
              (Quadrant a ->
                 Quadrant a -> Quadrant a -> Quadrant a -> Quadrant a -> Quadrant a)
-               -> (Quadrant a -> f (Quadrant a)) -> Quadrant a -> f (Quadrant a)
-lensABCD combine f (Node a b c d)
-  = fmap (fuse . combine a b c d) (f a)
-lensABCD combine f l = fmap (fuse . combine l l l l) (f l)
+               ->
+               (Quadrant a ->
+                  Quadrant a -> Quadrant a -> Quadrant a -> Quadrant a)
+                 -> (Quadrant a -> f (Quadrant a)) -> Quadrant a -> f (Quadrant a)
+lensABCD combine select f (Node a b c d)
+  = fmap (fuse . combine a b c d) (f (select a b c d))
+lensABCD combine select f l = fmap (fuse . combine l l l l) (f l)
 
 lensA ::
         Eq a =>
           Functor f =>
           (Quadrant a -> f (Quadrant a)) -> Quadrant a -> f (Quadrant a)
-lensA = lensABCD (\ a b c d x -> Node x b c d)
+lensA = lensABCD (\ a b c d x -> Node x b c d) (\ a b c d -> a)
 
 lensB ::
         Eq a =>
           Functor f =>
           (Quadrant a -> f (Quadrant a)) -> Quadrant a -> f (Quadrant a)
-lensB = lensABCD (\ a b c d x -> Node a x c d)
+lensB = lensABCD (\ a b c d x -> Node a x c d) (\ a b c d -> b)
 
 lensC ::
         Eq a =>
           Functor f =>
           (Quadrant a -> f (Quadrant a)) -> Quadrant a -> f (Quadrant a)
-lensC = lensABCD (\ a b c d x -> Node a b x d)
+lensC = lensABCD (\ a b c d x -> Node a b x d) (\ a b c d -> c)
 
 lensD ::
         Eq a =>
           Functor f =>
           (Quadrant a -> f (Quadrant a)) -> Quadrant a -> f (Quadrant a)
-lensD = lensABCD (\ a b c d x -> Node a b c x)
+lensD = lensABCD (\ a b c d x -> Node a b c x) (\ a b c d -> d)
 
 lensWrappedTree ::
                   Functor f =>
@@ -78,9 +84,27 @@ lensWrappedTree ::
 lensWrappedTree f (Wrapper quad l w d)
   = fmap (\ q -> Wrapper q l w d) (f quad)
 
-temporary_impossible :: Eq a => Quadrant a -> a
-temporary_impossible (Leaf v) = v
-temporary_impossible (Node a b c d) = temporary_impossible a
+temporaryImpossible :: Eq a => Quadrant a -> a
+temporaryImpossible (Leaf v) = v
+temporaryImpossible (Node a b c d) = temporaryImpossible d
+
+go ::
+     Eq a =>
+       Functor f =>
+       (Natural, Natural) ->
+         Natural -> (a -> f a) -> Quadrant a -> f (Quadrant a)
+go (x, y) d
+  = matchnat_ifzero_ifsuc_ d
+      (\ f node ->
+         case node of
+             Leaf v -> Leaf <$> f v
+             Node a b c d₁ -> Leaf <$> f (temporaryImpossible a))
+      (ifc_then_else_ (y < pow 2 (d - 1))
+         (ifc_then_else_ (x < pow 2 (d - 1)) (lensA . go (x, y) (d - 1))
+            (lensB . go (x - pow 2 (d - 1), y) (d - 1)))
+         (ifc_then_else_ (x < pow 2 (d - 1))
+            (lensC . go (x, y - pow 2 (d - 1)) (d - 1))
+            (lensD . go (x - pow 2 (d - 1), y - pow 2 (d - 1)) (d - 1))))
 
 atLocation ::
              Eq a =>
@@ -88,25 +112,6 @@ atLocation ::
                (Natural, Natural) -> (a -> f a) -> QuadTree a -> f (QuadTree a)
 atLocation index fn (Wrapper qd l w d)
   = (lensWrappedTree . go index d) fn (Wrapper qd l w d)
-  where
-    go ::
-         Eq a =>
-           Functor f =>
-           (Natural, Natural) ->
-             Natural -> (a -> f a) -> Quadrant a -> f (Quadrant a)
-    go (x, y) d₁
-      = matchnat_ifzero_ifsuc_ d₁
-          (\ f node ->
-             case node of
-                 Leaf v -> Leaf <$> f v
-                 Node a b c d₂ -> Leaf <$> f (temporary_impossible a))
-          (ifc_then_else_ (y < 2 ^ d₁ - 1)
-             (ifc_then_else_ (x < 2 ^ d₁ - 1) 
-                (lensA . go (x, y) (d₁ - 1))
-                (lensB . go (x - 2 ^ d₁ - 1, y) (d₁ - 1)))
-             (ifc_then_else_ (x < 2 ^ d₁ - 1)
-                (lensC . go (x, y - 2 ^ d₁ - 1) (d₁ - 1))
-                (lensD . go (x - 2 ^ d₁ - 1, y - 2 ^ d₁ - 1) (d₁ - 1))))
 
 data Const a b = CConst a
 
