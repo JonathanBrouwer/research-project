@@ -82,9 +82,10 @@ ifc false then x else y = y {{IsFalse.itsFalse}}
 ifc true then x else y = x {{IsTrue.itsTrue}}
 {-# COMPILE AGDA2HS ifc_then_else_ #-}
 
-pow : Nat -> Nat -> Nat
-pow b n = 100
-{-# COMPILE AGDA2HS pow #-}
+_^_ : Nat -> Nat -> Nat
+_^_ b zero = 1
+_^_ b (suc e) = b * (b ^ e)
+-- Does not need compile, since it is already defined in haskell
 
 getLocation : {a : Set} {{eqA : Eq a}} -> (Nat × Nat) -> QuadTree a -> a
 getLocation (x , y) (Wrapper quad l w d) = go (x , y) d quad 
@@ -106,5 +107,5 @@ getLocation (x , y) (Wrapper quad l w d) = go (x , y) d quad
         hn : Nat
         hn = ifc depth < 1 then 0 else depth - 1 -- depth < 1 is IMPOSSIBLE
         mid : Nat
-        mid = pow 2 hn   
+        mid = 2 ^ hn   
 {-# COMPILE AGDA2HS getLocation #-}
