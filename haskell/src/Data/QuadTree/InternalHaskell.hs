@@ -393,7 +393,3 @@ printTree :: Eq a => (a -> Char) -- ^ Function to generate characters for each
                                  -- 'QuadTree' element.
                   -> QuadTree a -> IO ()
 printTree f x = putStr $ showTree f x
-
-pow :: Natural -> Natural -> Natural
-pow b 0 = 0
-pow b n = 0
