@@ -36,7 +36,7 @@ data QuadTree a = Wrapper (Quadrant a) Natural Natural Natural
 instance Functor QuadTree where
     fmap fn (Wrapper q l w d) = Wrapper (fmap fn q) l w d
 
-depth :: Eq a => Quadrant a -> Natural
+depth :: Quadrant a -> Natural
 depth (Leaf x) = 0
 depth (Node a b c d)
   = 1 + max (max (depth a) (depth b)) (max (depth c) (depth d))
@@ -108,13 +108,6 @@ go (x, y) d
          (ifc_then_else_ (x < pow 2 (d - 1))
             (lensC . go (x, y - pow 2 (d - 1)) (d - 1))
             (lensD . go (x - pow 2 (d - 1), y - pow 2 (d - 1)) (d - 1))))
-
-atLocation ::
-             Eq a =>
-               Functor f =>
-               (Natural, Natural) -> (a -> f a) -> QuadTree a -> f (QuadTree a)
-atLocation index fn (Wrapper qd l w d)
-  = (lensWrappedTree . go index d) fn (Wrapper qd l w d)
 
 data Const a b = CConst a
 

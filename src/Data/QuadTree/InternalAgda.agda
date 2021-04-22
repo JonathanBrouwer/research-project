@@ -78,7 +78,7 @@ instance
 
 ---- Check if valid
 
-depth : {a : Set} {{eqA : Eq a}} -> Quadrant a -> Nat
+depth : {a : Set} -> Quadrant a -> Nat
 depth (Leaf x) = 0
 depth (Node a b c d) = 1 + max (max (depth a) (depth b)) (max(depth c) (depth d))
 {-# COMPILE AGDA2HS depth #-}
@@ -90,13 +90,13 @@ checkValid (Wrapper qd _ _ d) = d >= depth qd
 data IsValid : {a : Set} {{eqA : Eq a}} -> QuadTree a -> Set where
   valid : {a} -> {{eqA : Eq a}} -> (qt : QuadTree a) -> IsTrue (checkValid qt) -> IsValid qt
 
-data MaxDepth : {a : Set} {{eqA : Eq a}} -> Quadrant a -> Nat -> Set where
-  maxDepth : {a} -> {{eqA : Eq a}} -> (qd : Quadrant a) -> (d : Nat) -> IsTrue ((depth qd) <= d) -> MaxDepth qd d 
+data MaxDepth : {a : Set} -> Quadrant a -> Nat -> Set where
+  maxDepth : (qd : Quadrant a) -> (d : Nat) -> IsTrue ((depth qd) <= d) -> MaxDepth qd d 
 
 ---- Properties of depth
 
-useEq : (x y : Bool) -> x ≡ y -> IsTrue x -> IsTrue y
-useEq true true eq is = IsTrue.itsTrue
+useEq : {x y : Bool} -> x ≡ y -> IsTrue x -> IsTrue y
+useEq {true} {true} eq is = IsTrue.itsTrue
 
 -- symmetry of equality
 sym : {A : Set} {x y : A} → x ≡ y → y ≡ x
@@ -162,8 +162,11 @@ propMaxRefl (suc x) (suc y) =
     max (suc y) (suc x)
   end
 
-propIsTrueCombine : (a b : Bool) -> IsTrue a -> IsTrue b -> IsTrue (a && b)
-propIsTrueCombine true true ta tb = IsTrue.itsTrue
+propIsTrueCombine2 : {a b : Bool} -> IsTrue a -> IsTrue b -> IsTrue (a && b)
+propIsTrueCombine2 {true} {true} ta tb = IsTrue.itsTrue
+
+propIsTrueCombine4 : {a b c d : Bool} -> IsTrue a -> IsTrue b -> IsTrue c -> IsTrue d -> IsTrue ((a && b) && (c && d))
+propIsTrueCombine4 {true} {true} {true} {true} ta tb tc td = IsTrue.itsTrue
 
 andRefl : (a b : Bool) -> (a && b) ≡ (b && a)
 andRefl false false = refl
@@ -254,12 +257,12 @@ propMaxLte4 w x y z d =
   end
 
 -- If we merge four quadrants, the depth is suc of the max depth of the quadrants
-prop_depth_recursive : {a : Set} {{eqA : Eq a}} 
-  -> (qda qdb qdc qdd : Quadrant a)
+prop_depth_recursive : (tt : Set)
+  -> (qda qdb qdc qdd : Quadrant tt)
   -> (d : Nat) -> MaxDepth qda d -> MaxDepth qdb d -> MaxDepth qdc d -> MaxDepth qdd d
   -> MaxDepth (Node qda qdb qdc qdd) (suc d)
-prop_depth_recursive qda qdb qdc qdd d (maxDepth .qda .d mda) (maxDepth .qdb .d mdb) (maxDepth .qdc .d mdc) (maxDepth .qdd .d mdd) 
-  = maxDepth (Node qda qdb qdc qdd) (suc d) {! propMaxLte !}
+prop_depth_recursive t qda qdb qdc qdd d (maxDepth .qda .d mda) (maxDepth .qdb .d mdb) (maxDepth .qdc .d mdc) (maxDepth .qdd .d mdd) 
+  = maxDepth (Node qda qdb qdc qdd) (suc d) (useEq (propMaxLte4 (depth qda) (depth qdb) (depth qdc) (depth qdd) d) (propIsTrueCombine4 mda mdb mdc mdd))
 
 ---- Lenses
 
