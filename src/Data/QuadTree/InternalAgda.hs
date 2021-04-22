@@ -30,16 +30,19 @@ fuse (Node (Leaf a) (Leaf b) (Leaf c) (Leaf d))
       Node (Leaf a) (Leaf b) (Leaf c) (Leaf d)
 fuse old = old
 
-depth :: Eq a => Quadrant a -> Natural
-depth (Leaf x) = 0
-depth (Node a b c d)
-  = 1 + max (max (depth a) (depth b)) (max (depth c) (depth d))
-
 data QuadTree a = Wrapper (Quadrant a) Natural Natural Natural
                     deriving (Show, Read, Eq)
 
 instance Functor QuadTree where
     fmap fn (Wrapper q l w d) = Wrapper (fmap fn q) l w d
+
+depth :: Eq a => Quadrant a -> Natural
+depth (Leaf x) = 0
+depth (Node a b c d)
+  = 1 + max (max (depth a) (depth b)) (max (depth c) (depth d))
+
+checkValid :: Eq a => QuadTree a -> Bool
+checkValid (Wrapper qd _ _ d) = d >= depth qd
 
 lensABCD ::
            Eq a =>
@@ -128,20 +131,4 @@ runIdentity (CIdentity a) = a
 
 instance Functor Identity where
     fmap f (CIdentity v) = CIdentity (f v)
-
-getLocation :: Eq a => (Natural, Natural) -> QuadTree a -> a
-getLocation index qt = getConst (atLocation index CConst qt)
-
-setLocation ::
-              Eq a => (Natural, Natural) -> a -> QuadTree a -> QuadTree a
-setLocation index v qt
-  = runIdentity (atLocation index (\ _ -> CIdentity v) qt)
-
-mapLocation ::
-              Eq a => (Natural, Natural) -> (a -> a) -> QuadTree a -> QuadTree a
-mapLocation index f qt
-  = runIdentity (atLocation index (CIdentity . f) qt)
-
-makeTree :: Eq a => (Natural, Natural) -> a -> QuadTree a
-makeTree (w, h) a = Wrapper (Leaf a) w h (log2up (max w h))
 
