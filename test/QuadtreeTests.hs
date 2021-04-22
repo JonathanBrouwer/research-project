@@ -137,7 +137,7 @@ newtype Index = MkIndex (Natural, Natural)
 instance Arbitrary Natural where
   arbitrary = do
     NonNegative x <- arbitrary
-    return x
+    return $ naturalFromInteger x
 
 instance Arbitrary Index where
   arbitrary = do

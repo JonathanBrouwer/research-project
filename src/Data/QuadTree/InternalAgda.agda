@@ -211,7 +211,3 @@ mapLocation index f qt = runIdentity (atLocation index (CIdentity ∘ f) qt)
 makeTree : {a : Set} {{eqA : Eq a}} -> (Nat × Nat) -> a -> QuadTree a
 makeTree (w , h) a = Wrapper (Leaf a) w h (log2up (max w h) )
 {-# COMPILE AGDA2HS makeTree #-}
-
-x = makeTree (2 , 2) 'x'
-y = setLocation (1 , 1) 'y' x
-z = getLocation (1 , 1) y
