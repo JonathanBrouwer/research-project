@@ -6,6 +6,7 @@ open import Data.QuadTree.Logic
 open import Data.QuadTree.PropDepthRelation
 
 {-# FOREIGN AGDA2HS
+{-# LANGUAGE LambdaCase #-}
 import Data.QuadTree.Functors
 import Data.QuadTree.Logic
 #-}
@@ -97,9 +98,9 @@ lensWrappedTree : {t : Set} {{eqT : Eq t}} {f : Set -> Set} {{fFunctor : Functor
   -> ((ValidQuadrant t {dep}) -> f (ValidQuadrant t {dep})) 
   -> ValidQuadTree t {dep} -> f (ValidQuadTree t {dep})
 lensWrappedTree {dep = dep} fun (CValidQuadTree (Wrapper qd l w) {p}) = 
-  (fmap qdToQt (fun (CValidQuadrant qd {p}))) where
-    qdToQt : {t : Set} {{eqT : Eq t}} -> ValidQuadrant t {dep} -> ValidQuadTree t {dep}
-    qdToQt (CValidQuadrant qd {p}) = CValidQuadTree (Wrapper qd l w) {p}
+  fmap 
+    (λ where (CValidQuadrant qd {p}) → CValidQuadTree (Wrapper qd l w) {p})
+    (fun (CValidQuadrant qd {p}))
 {-# COMPILE AGDA2HS lensWrappedTree #-}
 
 combine : {t : Set} {{eqT : Eq t}} -> {dep : Nat}
@@ -167,59 +168,74 @@ lensLeaf : {t : Set} {{eqT : Eq t}} {f : Set -> Set} {{fFunctor : Functor f}}
 lensLeaf f (CValidQuadrant (Leaf v)) = fmap (λ x -> CValidQuadrant (Leaf x) {IsTrue.itsTrue}) (f v)
 {-# COMPILE AGDA2HS lensLeaf #-}
 
-
-
 ---- Data access
 
--- bottom = ⊥
+toZeroMaxDepth : {t : Set} {{eqT : Eq t}} -> {dep : Nat} -> (qd : ValidQuadrant t {dep}) -> {IsTrue (dep == 0)} -> ValidQuadrant t {0}
+toZeroMaxDepth {dep = zero} qd {p} = qd
+-- Agda2hs does not compile this function correctly because of pattern matching on nats
+{-# FOREIGN AGDA2HS toZeroMaxDepth = id #-}
 
--- readLeaf : {t : Set} {{eqT : Eq t}} -> (qd : Quadrant t) -> {MaxDepth qd 0} -> t
--- readLeaf (Leaf v) {md} = v
--- readLeaf (Node a b c d) {maxDepth .(Node a b c d) .0 ()}
--- {-# COMPILE AGDA2HS readLeaf #-}
+-- This is terminating, since dep always decreases when calling recursively
+-- Agda would understand this if we could match on Nats...
+{-# TERMINATING #-}
+go : {t : Set} {{eqT : Eq t}}
+  -> {f : Set -> Set} {{fFunctor : Functor f}}
+  -> (Nat × Nat) -> (dep : Nat)
+  -> (t -> f t)
+  -> ValidQuadrant t {dep} -> f (ValidQuadrant t {dep})
+go {t} {f} (x , y) dep = matchnat dep
+  ifzero ( λ {{p1}} g qd →
+    fmap 
+      -- fmap result from f (CValidQuadrant qd 0) to f (CValidQuadrant qd dep), so we can return it.
+      (λ where (CValidQuadrant qd {p2}) -> CValidQuadrant qd {lteTransitive (depth qd) 0 dep p2 (zeroLteAny dep)})
+      -- Call lensLeaf, using the fact that depth = 0 to proof that this is a leaf
+      (lensLeaf g (toZeroMaxDepth {dep = dep} qd {p1}))
+  ) 
+  ifsuc ( λ {{p1}} g vqd -> 
+    let
+      -- ds is dep - 1
+      deps = _-_ dep 1 {{propZeroImpliesLtOne dep p1}}
+      -- Find the middle of [0, dep]
+      mid = pow 2 deps
 
--- transformMaxDepth : {t : Set} {{eqT : Eq t}} -> (qd : Quadrant t) -> (d : Nat) -> {MaxDepth qd d} -> {IsTrue (d == 0)} -> MaxDepth qd 0
--- transformMaxDepth qd zero {maxDepth .qd .0 x} {d0} = maxDepth qd 0 x
+      -- Figure out which lens to use based on (x , y)
+      -- TODO: Proof correctness of this part
+      lensToUse = ifc y < mid then
+          ifc x < mid then         lensA {t} {f} {deps} (go (x , y) deps g)
+          else (λ {{x_gt_mid}} ->  lensB {t} {f} {deps} (go (_-_ x mid {{x_gt_mid}} , y) deps g))
+        else (λ {{y_gt_mid}} ->
+          ifc x < mid then         lensC {t} {f} {deps} (go (x , _-_ y mid {{y_gt_mid}}) deps g)
+          else (λ {{x_gt_mid}} ->  lensD {t} {f} {deps} (go (_-_ x mid {{x_gt_mid}} , _-_ y mid {{y_gt_mid}}) deps g)))
+      test = lensA {t} {f} {deps} (go (x , y) deps g) 
 
--- af : Bool -> {Bool} -> (Bool × Bool)
--- af y = (y , y)
+      -- Convert (ValidQuadrant t dep) to (ValidQuadrant t (suc deps))
+      -- dep = suc deps, but I was not able to convince agda that this is true
+      vqdm : ValidQuadrant t {suc deps}
+      vqdm = case vqd of λ where
+        (CValidQuadrant qd {p2}) → CValidQuadrant qd {transformLteRight (natPlusMinNat dep {{(propZeroImpliesLtOne dep p1)}}) p2 }
 
--- {-# COMPILE AGDA2HS af #-}
--- -- Eq a => (Nat, Nat) -> Nat -> CLens (QuadTree a) a
--- {-# TERMINATING #-}
--- go : {a : Set} {{eqT : Eq a}}
---   -> {f : Set -> Set} {{fFunctor : Functor f}}
---   -> (Nat × Nat) -> (d : Nat)
---   -> (a -> f a) -> (qd : Quadrant a) -> {MaxDepth qd d} -> f (Quadrant a)
--- go (x , y) d = matchnat d
---   ifzero ( λ {{p}} ->
---     -- Uses readLeaf and transformMaxDepth to proof that qd must be a Leaf, and not a Node
---     λ f qd {md} -> Leaf <$> (f $ readLeaf qd { transformMaxDepth qd d {md} {p} })
---   )
---   ifsuc ( λ {{p}} ->
---     let
---       -- Subtract one from d (d sub), using the fact that d > 0 from ifsuc
---       ds = _-_ d 1 {{propNotZeroImpliesLtOne d p}}
---       mid = pow 2 ds
---     in
---       {!   !}
---     --   ifc y < mid then
---     --     ifc x < mid then         lensA ∘ (go (x , y) ds)
---     --     else (λ {{x_gt_mid}} ->  lensB ∘ (go (_-_ x mid {{x_gt_mid}} , y) ds)   )
---     --   else (λ {{y_gt_mid}} ->
---     --     ifc x < mid then         lensC ∘ (go (x , _-_ y mid {{y_gt_mid}}) ds)
---     --     else (λ {{x_gt_mid}} ->  lensD ∘ (go (_-_ x mid {{x_gt_mid}} , _-_ y mid {{y_gt_mid}}) ds)   )
---     --   ) 
---   )
--- {-# COMPILE AGDA2HS go #-}
+      -- Apply the lens to v1dm
+      intermediate = lensToUse vqdm
+
+      -- Convert back from (ValidQuadrant t (suc deps)) to (ValidQuadrant t dep)
+      bqdm : f (ValidQuadrant t {dep})
+      bqdm = fmap (λ where 
+        (CValidQuadrant qd {p2}) -> CValidQuadrant qd {transformLteRight (sym $ natPlusMinNat dep {{(propZeroImpliesLtOne dep p1)}}) p2}) intermediate
+    in
+      bqdm
+  ) 
+{-# COMPILE AGDA2HS go #-}
+
 
 -- Eq a => (Nat, Nat) -> CLens (QuadTree a) a
--- atLocation : {a : Set} {{eqT : Eq a}}
---   -> {f : Set -> Set} {{fFunctor : Functor f}}
---   -> (Nat × Nat)
---   -> (a -> f a) -> (qt : QuadTree a) -> {{IsValid qt}} -> f (QuadTree a)
+atLocation : {a : Set} {{eqT : Eq a}}
+  -> {f : Set -> Set} {{fFunctor : Functor f}}
+  -> (Nat × Nat) -> (dep : Nat)
+  -> (a -> f a) 
+  -> (qt : ValidQuadTree a {dep}) -> f (ValidQuadTree a {dep})
+atLocation (x , y) fn vqt = {!   !}
 -- atLocation index fn qt@(Wrapper qd l w d) ⦃ valid .(Wrapper qd l w d) x ⦄ = (lensWrappedTree ∘ (go index d)) fn {!  !}
--- {-# COMPILE AGDA2HS atLocation #-}
+{-# COMPILE AGDA2HS atLocation #-}
 
 ---- Functions using functors
 

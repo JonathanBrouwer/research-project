@@ -1,6 +1,9 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Data.QuadTree.InternalAgda where
 
 import Numeric.Natural (Natural)
+
 
 import Data.QuadTree.Functors
 import Data.QuadTree.Logic
@@ -47,10 +50,10 @@ lensWrappedTree ::
                     (ValidQuadrant t -> f (ValidQuadrant t)) ->
                       ValidQuadTree t -> f (ValidQuadTree t)
 lensWrappedTree fun (CValidQuadTree (Wrapper qd l w))
-  = fmap qdToQt (fun (CValidQuadrant qd))
-  where
-    qdToQt :: Eq t => ValidQuadrant t -> ValidQuadTree t
-    qdToQt (CValidQuadrant qd₁) = CValidQuadTree (Wrapper qd₁ l w)
+  = fmap
+      (\case
+           CValidQuadrant qd₁ -> CValidQuadTree (Wrapper qd₁ l w))
+      (fun (CValidQuadrant qd))
 
 combine ::
           Eq t =>
@@ -148,4 +151,33 @@ lensLeaf f (CValidQuadrant (Leaf v))
   = fmap (\ x -> CValidQuadrant (Leaf x)) (f v)
 lensLeaf x (CValidQuadrant (Node qd qd₁ qd₂ qd₃))
   = error "lensLeaf: impossible"
+
+toZeroMaxDepth = id
+
+go ::
+     Eq t =>
+       Functor f =>
+       (Natural, Natural) ->
+         Natural -> (t -> f t) -> ValidQuadrant t -> f (ValidQuadrant t)
+go (x, y) dep
+  = matchnat_ifzero_ifsuc_ dep
+      (\ g qd ->
+         fmap
+           (\case
+                CValidQuadrant qd₁ -> CValidQuadrant qd₁)
+           (lensLeaf g (toZeroMaxDepth qd)))
+      (\ g vqd ->
+         fmap
+           (\case
+                CValidQuadrant qd -> CValidQuadrant qd)
+           (ifc_then_else_ (y < pow 2 (dep - 1))
+              (ifc_then_else_ (x < pow 2 (dep - 1))
+                 (lensA (go (x, y) (dep - 1) g))
+                 (lensB (go (x - pow 2 (dep - 1), y) (dep - 1) g)))
+              (ifc_then_else_ (x < pow 2 (dep - 1))
+                 (lensC (go (x, y - pow 2 (dep - 1)) (dep - 1) g))
+                 (lensD
+                    (go (x - pow 2 (dep - 1), y - pow 2 (dep - 1)) (dep - 1) g)))
+              (case vqd of
+                   CValidQuadrant qd -> CValidQuadrant qd)))
 

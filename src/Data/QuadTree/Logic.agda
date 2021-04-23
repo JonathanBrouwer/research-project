@@ -1,7 +1,7 @@
 module Data.QuadTree.Logic where
 
 open import Haskell.Prelude
-open import Relation.Nullary.Decidable using (False)
+open import Relation.Nullary.Decidable
 open import Data.Nat.DivMod
 open import Data.Nat.Properties
 
@@ -41,9 +41,9 @@ infixr  2  _=⟨⟩_
 
 ---- General purpose proofs
 
-propNotZeroImpliesLtOne : (x : Nat) -> IsFalse (x == 0) -> IsFalse (x < 1)
-propNotZeroImpliesLtOne zero notzero = notzero
-propNotZeroImpliesLtOne (suc x) notzero = IsFalse.itsFalse
+propZeroImpliesLtOne : (x : Nat) -> IsFalse (x == 0) -> IsFalse (x < 1)
+propZeroImpliesLtOne zero notzero = notzero
+propZeroImpliesLtOne (suc x) notzero = IsFalse.itsFalse
 
 propFnIf : {a b : Set} -> (c : Bool) (x : a) (y : a) (f : a -> b) -> (if c then f x else f y) ≡ f (if c then x else y)
 propFnIf false x y f = refl
@@ -129,7 +129,7 @@ div a b {p} = _/_ a b {p}
 {-# TERMINATING #-}
 -- UNSAFE: This terminates e always decreases
 pow : Nat -> Nat -> Nat
-pow b e = ifc e == 0 then 1 else (λ {{p}} -> b * pow b (_-_ e 1 {{propNotZeroImpliesLtOne e p}}))
+pow b e = ifc e == 0 then 1 else (λ {{p}} -> b * pow b (_-_ e 1 {{propZeroImpliesLtOne e p}}))
 {-# COMPILE AGDA2HS pow #-}
 
 {-# TERMINATING #-}
@@ -143,7 +143,18 @@ zeroLteAny : (a : Nat) -> IsTrue (0 <= a)
 zeroLteAny zero = IsTrue.itsTrue
 zeroLteAny (suc a) = IsTrue.itsTrue
 
+lteTransitive : (a b c : Nat) -> IsTrue (a <= b) -> IsTrue (b <= c) -> IsTrue (a <= c)
+lteTransitive zero zero c ab bc = bc
+lteTransitive zero (suc b) (suc c) ab bc = IsTrue.itsTrue
+lteTransitive (suc a) (suc b) (suc c) ab bc = lteTransitive a b c ab bc
+
 incrLte : (a b : Nat) -> IsTrue (a <= b) -> IsTrue (a <= suc b)
 incrLte zero zero altb = IsTrue.itsTrue
 incrLte zero (suc b) altb = IsTrue.itsTrue
 incrLte (suc a) (suc b) altb = incrLte a b altb
+
+natPlusMinNat : (x : Nat) -> {{p : IsFalse (x < 1)}} -> x ≡ (suc (x - 1))
+natPlusMinNat (suc x) = refl
+
+transformLteRight : {a b c : Nat} -> b ≡ c -> IsTrue (a <= b) -> IsTrue (a <= c)
+transformLteRight {a} {b} {.b} refl ab = ab
