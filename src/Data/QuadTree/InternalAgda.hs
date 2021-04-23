@@ -14,44 +14,43 @@ instance Functor Quadrant where
     fmap fn (Node a b c d)
       = Node (fmap fn a) (fmap fn b) (fmap fn c) (fmap fn d)
 
-data QuadTree t = Wrapper (Quadrant t) Natural Natural Natural
+data QuadTree t = Wrapper (Quadrant t) Natural Natural
                     deriving (Show, Read, Eq)
 
 instance Functor QuadTree where
-    fmap fn (Wrapper q l w d) = Wrapper (fmap fn q) l w d
+    fmap fn (Wrapper q l w) = Wrapper (fmap fn q) l w
 
 makeTree :: Eq t => (Natural, Natural) -> t -> QuadTree t
-makeTree (w, h) v = Wrapper (Leaf v) w h (log2up (max w h))
+makeTree (w, h) v = Wrapper (Leaf v) w h
 
 depth :: Quadrant t -> Natural
 depth (Leaf x) = 0
 depth (Node a b c d)
   = 1 + max (max (depth a) (depth b)) (max (depth c) (depth d))
 
-isValidQuadTree :: Eq t => QuadTree t -> Bool
-isValidQuadTree (Wrapper qd₁ _ _ d) = depth qd₁ <= d
+treeToQuadrant :: QuadTree t -> Quadrant t
+treeToQuadrant (Wrapper qd _ _) = qd
 
-data ValidQuadrant t = CValidQuadrant (Quadrant t)
+newtype ValidQuadrant t = CValidQuadrant (Quadrant t)
 
-data ValidQuadTree t = CValidQuadTree (QuadTree t)
-
-qd :: Quadrant Bool
-qd = Node (Leaf True) (Leaf True) (Leaf False) (Leaf False)
-
-vqd :: ValidQuadrant Bool
-vqd = CValidQuadrant qd
-
-qt :: QuadTree Bool
-qt = Wrapper qd 2 2 1
-
-vqt :: ValidQuadTree Bool
-vqt = CValidQuadTree qt
+newtype ValidQuadTree t = CValidQuadTree (QuadTree t)
 
 fuse :: Eq t => ValidQuadrant t -> ValidQuadrant t
 fuse (CValidQuadrant (Node (Leaf a) (Leaf b) (Leaf c) (Leaf d)))
   = if a == b && b == c && c == d then CValidQuadrant (Leaf a) else
       CValidQuadrant (Node (Leaf a) (Leaf b) (Leaf c) (Leaf d))
 fuse old = old
+
+lensWrappedTree ::
+                  Eq t =>
+                    Functor f =>
+                    (ValidQuadrant t -> f (ValidQuadrant t)) ->
+                      ValidQuadTree t -> f (ValidQuadTree t)
+lensWrappedTree fun (CValidQuadTree (Wrapper qd l w))
+  = fmap qdToQt (fun (CValidQuadrant qd))
+  where
+    qdToQt :: Eq t => ValidQuadrant t -> ValidQuadTree t
+    qdToQt (CValidQuadrant qd₁) = CValidQuadTree (Wrapper qd₁ l w)
 
 combine ::
           Eq t =>
@@ -64,17 +63,16 @@ combine (CValidQuadrant a) (CValidQuadrant b) (CValidQuadrant c)
 lensA ::
         Eq t =>
           Functor f =>
-          Natural ->
-            (ValidQuadrant t -> f (ValidQuadrant t)) ->
-              ValidQuadrant t -> f (ValidQuadrant t)
-lensA dep f (CValidQuadrant (Leaf v))
+          (ValidQuadrant t -> f (ValidQuadrant t)) ->
+            ValidQuadrant t -> f (ValidQuadrant t)
+lensA f (CValidQuadrant (Leaf v))
   = fmap
       (\ x ->
          fuse
            (combine x (CValidQuadrant (Leaf v)) (CValidQuadrant (Leaf v))
               (CValidQuadrant (Leaf v))))
       (f (CValidQuadrant (Leaf v)))
-lensA dep f (CValidQuadrant (Node a b c d))
+lensA f (CValidQuadrant (Node a b c d))
   = fmap
       (\ x ->
          fuse
@@ -85,17 +83,16 @@ lensA dep f (CValidQuadrant (Node a b c d))
 lensB ::
         Eq t =>
           Functor f =>
-          Natural ->
-            (ValidQuadrant t -> f (ValidQuadrant t)) ->
-              ValidQuadrant t -> f (ValidQuadrant t)
-lensB dep f (CValidQuadrant (Leaf v))
+          (ValidQuadrant t -> f (ValidQuadrant t)) ->
+            ValidQuadrant t -> f (ValidQuadrant t)
+lensB f (CValidQuadrant (Leaf v))
   = fmap
       (\ x ->
          fuse
            (combine (CValidQuadrant (Leaf v)) x (CValidQuadrant (Leaf v))
               (CValidQuadrant (Leaf v))))
       (f (CValidQuadrant (Leaf v)))
-lensB dep f (CValidQuadrant (Node a b c d))
+lensB f (CValidQuadrant (Node a b c d))
   = fmap
       (\ x ->
          fuse
@@ -106,17 +103,16 @@ lensB dep f (CValidQuadrant (Node a b c d))
 lensC ::
         Eq t =>
           Functor f =>
-          Natural ->
-            (ValidQuadrant t -> f (ValidQuadrant t)) ->
-              ValidQuadrant t -> f (ValidQuadrant t)
-lensC dep f (CValidQuadrant (Leaf v))
+          (ValidQuadrant t -> f (ValidQuadrant t)) ->
+            ValidQuadrant t -> f (ValidQuadrant t)
+lensC f (CValidQuadrant (Leaf v))
   = fmap
       (\ x ->
          fuse
            (combine (CValidQuadrant (Leaf v)) (CValidQuadrant (Leaf v)) x
               (CValidQuadrant (Leaf v))))
       (f (CValidQuadrant (Leaf v)))
-lensC dep f (CValidQuadrant (Node a b c d))
+lensC f (CValidQuadrant (Node a b c d))
   = fmap
       (\ x ->
          fuse
@@ -127,10 +123,9 @@ lensC dep f (CValidQuadrant (Node a b c d))
 lensD ::
         Eq t =>
           Functor f =>
-          Natural ->
-            (ValidQuadrant t -> f (ValidQuadrant t)) ->
-              ValidQuadrant t -> f (ValidQuadrant t)
-lensD dep f (CValidQuadrant (Leaf v))
+          (ValidQuadrant t -> f (ValidQuadrant t)) ->
+            ValidQuadrant t -> f (ValidQuadrant t)
+lensD f (CValidQuadrant (Leaf v))
   = fmap
       (\ x ->
          fuse
@@ -138,11 +133,19 @@ lensD dep f (CValidQuadrant (Leaf v))
               (CValidQuadrant (Leaf v))
               x))
       (f (CValidQuadrant (Leaf v)))
-lensD dep f (CValidQuadrant (Node a b c d))
+lensD f (CValidQuadrant (Node a b c d))
   = fmap
       (\ x ->
          fuse
            (combine (CValidQuadrant d) (CValidQuadrant d) (CValidQuadrant d)
               x))
       (f (CValidQuadrant d))
+
+lensLeaf ::
+           Eq t =>
+             Functor f => (t -> f t) -> ValidQuadrant t -> f (ValidQuadrant t)
+lensLeaf f (CValidQuadrant (Leaf v))
+  = fmap (\ x -> CValidQuadrant (Leaf x)) (f v)
+lensLeaf x (CValidQuadrant (Node qd qd₁ qd₂ qd₃))
+  = error "lensLeaf: impossible"
 

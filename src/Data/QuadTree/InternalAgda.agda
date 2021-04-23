@@ -26,17 +26,17 @@ instance
 ---- QuadTree
 
 data QuadTree (t : Set) : Set where
-  -- wrappedTree, treeLength, treeWidth, treeDepth
-  Wrapper : Quadrant t -> Nat -> Nat -> Nat -> QuadTree t
+  -- wrappedTree, treeLength, treeWidth
+  Wrapper : Quadrant t -> Nat -> Nat -> QuadTree t
 {-# COMPILE AGDA2HS QuadTree deriving (Show, Read, Eq) #-}
 
 instance
   quadTreeFunctor : Functor QuadTree
-  quadTreeFunctor .fmap fn (Wrapper q l w d) = Wrapper (fmap fn q) l w d
+  quadTreeFunctor .fmap fn (Wrapper q l w) = Wrapper (fmap fn q) l w
 {-# COMPILE AGDA2HS quadTreeFunctor #-}
 
 makeTree : {t : Set} {{eqT : Eq t}} -> (Nat × Nat) -> t -> QuadTree t
-makeTree (w , h) v = Wrapper (Leaf v) w h (log2up (max w h) )
+makeTree (w , h) v = Wrapper (Leaf v) w h
 {-# COMPILE AGDA2HS makeTree #-}
 
 ---- Check if valid
@@ -46,44 +46,27 @@ depth (Leaf x) = 0
 depth (Node a b c d) = 1 + max (max (depth a) (depth b)) (max(depth c) (depth d))
 {-# COMPILE AGDA2HS depth #-}
 
-isValidQuadTree : {t : Set} {{eqT : Eq t}} -> QuadTree t -> Bool
-isValidQuadTree (Wrapper qd _ _ d) = depth qd <= d
-{-# COMPILE AGDA2HS isValidQuadTree #-}
+treeToQuadrant : {t : Set} -> QuadTree t -> Quadrant t
+treeToQuadrant (Wrapper qd _ _) = qd
+{-# COMPILE AGDA2HS treeToQuadrant #-}
 
 data ValidQuadrant (t : Set) {{eqT : Eq t}} {d : Nat} : Set where
   CValidQuadrant : (qd : Quadrant t) -> {IsTrue (depth qd <= d)} -> ValidQuadrant t {d}
 {-# FOREIGN AGDA2HS
-data ValidQuadrant t = CValidQuadrant (Quadrant t)
+newtype ValidQuadrant t = CValidQuadrant (Quadrant t)
 #-}
 
-data ValidQuadTree (t : Set) {{eqT : Eq t}} : Set where
-  CValidQuadTree : (qt : QuadTree t) -> {IsTrue (isValidQuadTree qt)} -> ValidQuadTree t
+data ValidQuadTree (t : Set) {{eqT : Eq t}} {d : Nat} : Set where
+  CValidQuadTree : (qt : QuadTree t) -> {IsTrue (depth (treeToQuadrant qt) <= d)} -> ValidQuadTree t
 {-# FOREIGN AGDA2HS
-data ValidQuadTree t = CValidQuadTree (QuadTree t)
+newtype ValidQuadTree t = CValidQuadTree (QuadTree t)
 #-}
-
----- Temp test
-
-qd = Node (Leaf true) (Leaf true) (Leaf false) (Leaf false)
-
-vqd : ValidQuadrant Bool {1}
-vqd = CValidQuadrant qd {IsTrue.itsTrue}
-
-qt = Wrapper qd 2 2 1
-vqt : ValidQuadTree Bool
-vqt = CValidQuadTree qt {IsTrue.itsTrue}
-
-{-# COMPILE AGDA2HS qd #-}
-{-# COMPILE AGDA2HS vqd #-}
-{-# COMPILE AGDA2HS qt #-}
-{-# COMPILE AGDA2HS vqt #-}
 
 ---- Fuse function
 
 fuse : {t : Set} -> {{eqT : Eq t}}
   -> {dep : Nat}
   -> ValidQuadrant t {dep} -> ValidQuadrant t {dep}
-
 fuse {t} {dep} old@(CValidQuadrant (Node (Leaf a) (Leaf b) (Leaf c) (Leaf d)) {p}) = 
   if a == b && b == c && c == d 
     then CValidQuadrant (Leaf a) {zeroLteAny dep} 
@@ -109,6 +92,16 @@ propDepthRelationLte a b c d dep =
 
 ---- Lenses
 
+lensWrappedTree : {t : Set} {{eqT : Eq t}} {f : Set -> Set} {{fFunctor : Functor f}}
+  -> {dep : Nat}
+  -> ((ValidQuadrant t {dep}) -> f (ValidQuadrant t {dep})) 
+  -> ValidQuadTree t {dep} -> f (ValidQuadTree t {dep})
+lensWrappedTree {dep = dep} fun (CValidQuadTree (Wrapper qd l w) {p}) = 
+  (fmap qdToQt (fun (CValidQuadrant qd {p}))) where
+    qdToQt : {t : Set} {{eqT : Eq t}} -> ValidQuadrant t {dep} -> ValidQuadTree t {dep}
+    qdToQt (CValidQuadrant qd {p}) = CValidQuadTree (Wrapper qd l w) {p}
+{-# COMPILE AGDA2HS lensWrappedTree #-}
+
 combine : {t : Set} {{eqT : Eq t}} -> {dep : Nat}
   -> (a b c d : ValidQuadrant t {dep})
   -> (ValidQuadrant t {suc dep})
@@ -118,87 +111,63 @@ combine {t} {dep} (CValidQuadrant a {pa}) (CValidQuadrant b {pb}) (CValidQuadran
 
 lensA : 
   {t : Set} {{eqT : Eq t}} {f : Set -> Set} {{fFunctor : Functor f}}
-  -> (dep : Nat)
+  -> {dep : Nat}
   -> ((ValidQuadrant t {dep}) -> f (ValidQuadrant t {dep})) 
   -> ValidQuadrant t {suc dep} -> f (ValidQuadrant t {suc dep})
-lensA {t} dep f (CValidQuadrant (Leaf v) {p}) = 
+lensA {_} {_} {dep} f (CValidQuadrant (Leaf v) {p}) = 
   let sub = CValidQuadrant (Leaf v) {zeroLteAny dep}
-  in fmap (λ x -> fuse (combine x sub sub sub) ) (f sub) where
-lensA {t} dep f (CValidQuadrant (Node a b c d) {p}) = 
+  in fmap (λ x -> fuse (combine x sub sub sub) ) (f sub)
+lensA {_} {_} {dep} f (CValidQuadrant (Node a b c d) {p}) = 
   let sub = CValidQuadrant a {andFst $ andFst {(depth a <= dep && depth b <= dep)} $ useEq (sym (propDepthRelationLte a b c d dep)) p}
-  in fmap (λ x -> fuse (combine x sub sub sub) ) (f sub) where
+  in fmap (λ x -> fuse (combine x sub sub sub) ) (f sub)
 {-# COMPILE AGDA2HS lensA #-}
 
 lensB : 
   {t : Set} {{eqT : Eq t}} {f : Set -> Set} {{fFunctor : Functor f}}
-  -> (dep : Nat)
+  -> {dep : Nat}
   -> ((ValidQuadrant t {dep}) -> f (ValidQuadrant t {dep})) 
   -> ValidQuadrant t {suc dep} -> f (ValidQuadrant t {suc dep})
-lensB {t} dep f (CValidQuadrant (Leaf v) {p}) = 
+lensB {_} {_} {dep} f (CValidQuadrant (Leaf v) {p}) = 
   let sub = CValidQuadrant (Leaf v) {zeroLteAny dep}
-  in fmap (λ x -> fuse (combine sub x sub sub) ) (f sub) where
-lensB {t} dep f (CValidQuadrant (Node a b c d) {p}) = 
+  in fmap (λ x -> fuse (combine sub x sub sub) ) (f sub)
+lensB {_} {_} {dep} f (CValidQuadrant (Node a b c d) {p}) = 
   let sub = CValidQuadrant b { andSnd $ andFst {(depth a <= dep && depth b <= dep)} $ useEq (sym (propDepthRelationLte a b c d dep)) p }
-  in fmap (λ x -> fuse (combine sub x sub sub) ) (f sub) where
+  in fmap (λ x -> fuse (combine sub x sub sub) ) (f sub)
 {-# COMPILE AGDA2HS lensB #-}
 
 lensC : 
   {t : Set} {{eqT : Eq t}} {f : Set -> Set} {{fFunctor : Functor f}}
-  -> (dep : Nat)
+  -> {dep : Nat}
   -> ((ValidQuadrant t {dep}) -> f (ValidQuadrant t {dep})) 
   -> ValidQuadrant t {suc dep} -> f (ValidQuadrant t {suc dep})
-lensC {t} dep f (CValidQuadrant (Leaf v) {p}) = 
+lensC {_} {_} {dep} f (CValidQuadrant (Leaf v) {p}) = 
   let sub = CValidQuadrant (Leaf v) {zeroLteAny dep}
-  in fmap (λ x -> fuse (combine sub sub x sub) ) (f sub) where
-lensC {t} dep f (CValidQuadrant (Node a b c d) {p}) = 
+  in fmap (λ x -> fuse (combine sub sub x sub) ) (f sub)
+lensC {_} {_} {dep} f (CValidQuadrant (Node a b c d) {p}) = 
   let sub = CValidQuadrant c {andFst $ andSnd {(depth a <= dep && depth b <= dep)} $ useEq (sym (propDepthRelationLte a b c d dep)) p}
-  in fmap (λ x -> fuse (combine sub sub x sub) ) (f sub) where
+  in fmap (λ x -> fuse (combine sub sub x sub) ) (f sub)
 {-# COMPILE AGDA2HS lensC #-}
 
 lensD : 
   {t : Set} {{eqT : Eq t}} {f : Set -> Set} {{fFunctor : Functor f}}
-  -> (dep : Nat)
+  -> {dep : Nat}
   -> ((ValidQuadrant t {dep}) -> f (ValidQuadrant t {dep})) 
   -> ValidQuadrant t {suc dep} -> f (ValidQuadrant t {suc dep})
-lensD {t} dep f (CValidQuadrant (Leaf v) {p}) = 
+lensD {_} {_} {dep} f (CValidQuadrant (Leaf v) {p}) = 
   let sub = CValidQuadrant (Leaf v) {zeroLteAny dep}
-  in fmap (λ x -> fuse (combine sub sub sub x) ) (f sub) where
-lensD {t} dep f (CValidQuadrant (Node a b c d) {p}) = 
+  in fmap (λ x -> fuse (combine sub sub sub x) ) (f sub)
+lensD {_} {_} {dep} f (CValidQuadrant (Node a b c d) {p}) = 
   let sub = CValidQuadrant d {andSnd $ andSnd {(depth a <= dep && depth b <= dep)} $ useEq (sym (propDepthRelationLte a b c d dep)) p}
-  in fmap (λ x -> fuse (combine sub sub sub x) ) (f sub) where
+  in fmap (λ x -> fuse (combine sub sub sub x) ) (f sub)
 {-# COMPILE AGDA2HS lensD #-}
 
+lensLeaf : {t : Set} {{eqT : Eq t}} {f : Set -> Set} {{fFunctor : Functor f}}
+  -> (t -> f t)
+  -> (ValidQuadrant t {0}) -> f (ValidQuadrant t {0})
+lensLeaf f (CValidQuadrant (Leaf v)) = fmap (λ x -> CValidQuadrant (Leaf x) {IsTrue.itsTrue}) (f v)
+{-# COMPILE AGDA2HS lensLeaf #-}
 
--- Can we define a type with an implicit argument, and define a different haskell type??6
--- propLensA : {a : Set} {{eqT : Eq a}} {f : Set -> Set} {{fFunctor : Functor f}} ->
---   (qd : Quadrant a) -> lensA f qd ≡ lensA f qd
--- propLensA = {!   !}
 
--- -- Eq a => CLens (Quadrant a) (Quadrant a)
--- lensB : {a : Set} {{eqT : Eq a}} {f : Set -> Set} {{fFunctor : Functor f}}
---          -> ((Quadrant a) -> f (Quadrant a)) -> Quadrant a -> f (Quadrant a)
--- lensB f (Node a b c d) = fmap (λ x -> fuse ( Node a x c d)) (f b)
--- lensB f l = fmap ((λ x -> fuse $  Node l x l l)) (f l)
--- {-# COMPILE AGDA2HS lensB #-}
-
--- -- Eq a => CLens (Quadrant a) (Quadrant a)
--- lensC : {a : Set} {{eqT : Eq a}} {f : Set -> Set} {{fFunctor : Functor f}}
---          -> ((Quadrant a) -> f (Quadrant a)) -> Quadrant a -> f (Quadrant a)
--- lensC f (Node a b c d) = fmap (λ x -> fuse ( Node a b x d)) (f c)
--- lensC f l = fmap ((λ x -> fuse $  Node l l x l)) (f l)
--- {-# COMPILE AGDA2HS lensC #-}
-
--- -- Eq a => CLens (Quadrant a) (Quadrant a)
--- lensD : {a : Set} {{eqT : Eq a}} {f : Set -> Set} {{fFunctor : Functor f}}
---          -> ((Quadrant a) -> f (Quadrant a)) -> Quadrant a -> f (Quadrant a)
--- lensD f (Node a b c d) = fmap (λ x -> fuse ( Node a b c x)) (f d)
--- lensD f l = fmap ((λ x -> fuse $ Node l l l x)) (f l)
--- {-# COMPILE AGDA2HS lensD #-}
-
--- lensWrappedTree : {a : Set} {f : Set -> Set} {{fFunctor : Functor f}}
---         -> ((Quadrant a) -> f (Quadrant a)) -> QuadTree a -> f (QuadTree a)
--- lensWrappedTree f (Wrapper quad l w d) = fmap (λ q -> (Wrapper q l w d)) (f quad)
--- {-# COMPILE AGDA2HS lensWrappedTree #-}
 
 ---- Data access
 
