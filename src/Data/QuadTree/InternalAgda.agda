@@ -7,9 +7,9 @@ open import Relation.Nullary.Decidable using (False)
 
 ---- General purpose proofs
 
-prop_not_zero_implies_lt_one : (x : Nat) -> IsFalse (x == 0) -> IsFalse (x < 1)
-prop_not_zero_implies_lt_one zero notzero = notzero
-prop_not_zero_implies_lt_one (suc x) notzero = IsFalse.itsFalse
+propNotZeroImpliesLtOne : (x : Nat) -> IsFalse (x == 0) -> IsFalse (x < 1)
+propNotZeroImpliesLtOne zero notzero = notzero
+propNotZeroImpliesLtOne (suc x) notzero = IsFalse.itsFalse
 
 ---- Useful functions
 
@@ -33,7 +33,7 @@ div a b {p} = _/_ a b {p}
 {-# TERMINATING #-}
 -- UNSAFE: This terminates e always decreases
 pow : Nat -> Nat -> Nat
-pow b e = ifc e == 0 then 1 else (λ {{p}} -> b * pow b (_-_ e 1 {{prop_not_zero_implies_lt_one e p}}))
+pow b e = ifc e == 0 then 1 else (λ {{p}} -> b * pow b (_-_ e 1 {{propNotZeroImpliesLtOne e p}}))
 {-# COMPILE AGDA2HS pow #-}
 
 {-# TERMINATING #-}
@@ -41,6 +41,36 @@ log2up : Nat -> Nat
 -- UNSAFE: This terminates since x/2 always decreases if x > 1
 log2up x = if x <= 1 then 0 else 1 + log2up (div x 2)
 {-# COMPILE AGDA2HS log2up #-}
+
+---- Functors
+
+data Const (a : Set) (b : Set) : Set where
+  CConst : a -> Const a b
+
+getConst : {a : Set} {b : Set} -> Const a b -> a
+getConst (CConst a) = a
+
+instance
+  constFunctor : {a : Set} -> Functor (Const a)
+  constFunctor .fmap f (CConst v) = CConst v
+
+{-# COMPILE AGDA2HS Const #-}
+{-# COMPILE AGDA2HS getConst #-}
+{-# COMPILE AGDA2HS constFunctor #-}
+
+data Identity (a : Set) : Set where
+  CIdentity : a -> Identity a
+
+runIdentity : {a : Set} -> Identity a -> a
+runIdentity (CIdentity a) = a
+
+instance
+  identityFunctor : Functor Identity
+  identityFunctor .fmap f (CIdentity v) = CIdentity (f v)
+
+{-# COMPILE AGDA2HS Identity #-}
+{-# COMPILE AGDA2HS runIdentity #-}
+{-# COMPILE AGDA2HS identityFunctor #-}
 
 ---- Quadrants
 
@@ -74,6 +104,10 @@ instance
   quadTreeFunctor : Functor QuadTree
   quadTreeFunctor .fmap fn (Wrapper q l w d) = Wrapper (fmap fn q) l w d
 {-# COMPILE AGDA2HS quadTreeFunctor #-}
+
+makeTree : {a : Set} {{eqA : Eq a}} -> (Nat × Nat) -> a -> QuadTree a
+makeTree (w , h) a = Wrapper (Leaf a) w h (log2up (max w h) )
+{-# COMPILE AGDA2HS makeTree #-}
 
 
 ---- Check if valid
@@ -256,47 +290,53 @@ propMaxLte4 w x y z d =
     (max (max w x) (max y z) <= d)
   end
 
--- If we merge four quadrants, the depth is suc of the max depth of the quadrants
-prop_depth_recursive : (tt : Set)
-  -> (qda qdb qdc qdd : Quadrant tt)
-  -> (d : Nat) -> MaxDepth qda d -> MaxDepth qdb d -> MaxDepth qdc d -> MaxDepth qdd d
-  -> MaxDepth (Node qda qdb qdc qdd) (suc d)
-prop_depth_recursive t qda qdb qdc qdd d (maxDepth .qda .d mda) (maxDepth .qdb .d mdb) (maxDepth .qdc .d mdc) (maxDepth .qdd .d mdd) 
-  = maxDepth (Node qda qdb qdc qdd) (suc d) (useEq (propMaxLte4 (depth qda) (depth qdb) (depth qdc) (depth qdd) d) (propIsTrueCombine4 mda mdb mdc mdd))
+propDepthRelationEq : {t : Set} -> (a b c d : Quadrant t) -> depth (Node a b c d) ≡ (1 + (max (max (depth a) (depth b)) (max (depth c) (depth d))))
+propDepthRelationEq a b c d = refl
+
+propDepthRelationLte : {t : Set} -> (a b c d : Quadrant t) -> (dep : Nat) 
+  -> ((depth a <= dep && depth b <= dep) && (depth c <= dep && depth d <= dep)) ≡ (depth (Node a b c d) <= (suc dep))
+propDepthRelationLte a b c d dep =
+  begin 
+    ((depth a <= dep && depth b <= dep) && (depth c <= dep && depth d <= dep))
+  =⟨ propMaxLte4 (depth a) (depth b) (depth c) (depth d) dep ⟩
+    (max (max (depth a) (depth b)) (max (depth c) (depth d)) <= dep)
+  =⟨⟩
+    (depth (Node a b c d) <= suc dep)
+  end
 
 ---- Lenses
-
--- Eq a => combiner function -> selecter function -> CLens (Quadrant a) (Quadrant a)
-lensABCD : {a : Set} {{eqA : Eq a}} {f : Set -> Set} {{fFunctor : Functor f}}
-         -> ((Quadrant a) -> (Quadrant a) -> (Quadrant a) -> (Quadrant a) -> (Quadrant a) -> (Quadrant a))
-         -> ((Quadrant a) -> (Quadrant a) -> (Quadrant a) -> (Quadrant a) -> (Quadrant a))
-         -> ((Quadrant a) -> f (Quadrant a)) -> Quadrant a -> f (Quadrant a)
-lensABCD combine select f (Node a b c d) = fmap (fuse ∘ (combine a b c d)) (f (select a b c d))
-lensABCD combine select f l = fmap (fuse ∘ (combine l l l l)) (f l) where
-{-# COMPILE AGDA2HS lensABCD #-}
 
 -- Eq a => CLens (Quadrant a) (Quadrant a)
 lensA : {a : Set} {{eqA : Eq a}} {f : Set -> Set} {{fFunctor : Functor f}}
          -> ((Quadrant a) -> f (Quadrant a)) -> Quadrant a -> f (Quadrant a)
-lensA = lensABCD (λ a b c d x -> Node x b c d) (λ a b c d -> a)
+lensA f (Node a b c d) = fmap (λ x -> fuse ( Node x b c d)) (f a)
+lensA f l = fmap ((λ x -> fuse $ Node x l l l)) (f l)
 {-# COMPILE AGDA2HS lensA #-}
+
+-- Can we define a type with an implicit argument, and define a different haskell type??6
+-- propLensA : {a : Set} {{eqA : Eq a}} {f : Set -> Set} {{fFunctor : Functor f}} ->
+--   (qd : Quadrant a) -> lensA f qd ≡ lensA f qd
+-- propLensA = {!   !}
 
 -- Eq a => CLens (Quadrant a) (Quadrant a)
 lensB : {a : Set} {{eqA : Eq a}} {f : Set -> Set} {{fFunctor : Functor f}}
          -> ((Quadrant a) -> f (Quadrant a)) -> Quadrant a -> f (Quadrant a)
-lensB = lensABCD (λ a b c d x -> Node a x c d) (λ a b c d -> b)
+lensB f (Node a b c d) = fmap (λ x -> fuse ( Node a x c d)) (f b)
+lensB f l = fmap ((λ x -> fuse $  Node l x l l)) (f l)
 {-# COMPILE AGDA2HS lensB #-}
 
 -- Eq a => CLens (Quadrant a) (Quadrant a)
 lensC : {a : Set} {{eqA : Eq a}} {f : Set -> Set} {{fFunctor : Functor f}}
          -> ((Quadrant a) -> f (Quadrant a)) -> Quadrant a -> f (Quadrant a)
-lensC = lensABCD (λ a b c d x -> Node a b x d) (λ a b c d -> c)
+lensC f (Node a b c d) = fmap (λ x -> fuse ( Node a b x d)) (f c)
+lensC f l = fmap ((λ x -> fuse $  Node l l x l)) (f l)
 {-# COMPILE AGDA2HS lensC #-}
 
 -- Eq a => CLens (Quadrant a) (Quadrant a)
 lensD : {a : Set} {{eqA : Eq a}} {f : Set -> Set} {{fFunctor : Functor f}}
          -> ((Quadrant a) -> f (Quadrant a)) -> Quadrant a -> f (Quadrant a)
-lensD = lensABCD (λ a b c d x -> Node a b c x) (λ a b c d -> d)
+lensD f (Node a b c d) = fmap (λ x -> fuse ( Node a b c x)) (f d)
+lensD f l = fmap ((λ x -> fuse $ Node l l l x)) (f l)
 {-# COMPILE AGDA2HS lensD #-}
 
 lensWrappedTree : {a : Set} {f : Set -> Set} {{fFunctor : Functor f}}
@@ -306,40 +346,47 @@ lensWrappedTree f (Wrapper quad l w d) = fmap (λ q -> (Wrapper q l w d)) (f qua
 
 ---- Data access
 
-temporaryImpossible : {a : Set} {{eqA : Eq a}} -> Quadrant a -> a
-temporaryImpossible (Leaf v) = v
-temporaryImpossible (Node a b c d) = temporaryImpossible d
-{-# COMPILE AGDA2HS temporaryImpossible #-}
+bottom = ⊥
 
--- Eq a => (Nat, Nat) -> Nat -> CLens (QuadTree a) a
-{-# TERMINATING #-}
-go : {a : Set} {{eqA : Eq a}}
-  -> {f : Set -> Set} {{fFunctor : Functor f}}
-  -> (Nat × Nat) -> (d : Nat)
-  -> (a -> f a) -> (qd : Quadrant a) -> f (Quadrant a)
-go (x , y) d = matchnat d
-  ifzero ( λ {{p}} ->
-    λ f node -> case node of
-      λ { (Leaf v) -> Leaf <$> f v
-        ; (Node a b c d) -> Leaf <$> f (temporaryImpossible a) -- Impossible
-        }
-  )
-  ifsuc ( λ {{p}} ->
-    let
-      hn : Nat
-      hn = _-_ d 1 {{prop_not_zero_implies_lt_one d p}}
-      mid : Nat
-      mid = pow 2 hn
-    in
-      ifc y < mid then
-        ifc x < mid then         lensA ∘ (go (x , y) hn)
-        else (λ {{x_gt_mid}} ->  lensB ∘ (go (_-_ x mid {{x_gt_mid}} , y) hn)   )
-      else (λ {{y_gt_mid}} ->
-        ifc x < mid then         lensC ∘ (go (x , _-_ y mid {{y_gt_mid}}) hn)
-        else (λ {{x_gt_mid}} ->  lensD ∘ (go (_-_ x mid {{x_gt_mid}} , _-_ y mid {{y_gt_mid}}) hn)   )
-      ) 
-  )
-{-# COMPILE AGDA2HS go #-}
+readLeaf : {t : Set} {{eqA : Eq t}} -> (qd : Quadrant t) -> {MaxDepth qd 0} -> t
+readLeaf (Leaf v) {md} = v
+readLeaf (Node a b c d) {maxDepth .(Node a b c d) .0 ()}
+{-# COMPILE AGDA2HS readLeaf #-}
+
+transformMaxDepth : {t : Set} {{eqA : Eq t}} -> (qd : Quadrant t) -> (d : Nat) -> {MaxDepth qd d} -> {IsTrue (d == 0)} -> MaxDepth qd 0
+transformMaxDepth qd zero {maxDepth .qd .0 x} {d0} = maxDepth qd 0 x
+
+af : Bool -> {Bool} -> (Bool × Bool)
+af y = (y , y)
+
+{-# COMPILE AGDA2HS af #-}
+-- -- Eq a => (Nat, Nat) -> Nat -> CLens (QuadTree a) a
+-- {-# TERMINATING #-}
+-- go : {a : Set} {{eqA : Eq a}}
+--   -> {f : Set -> Set} {{fFunctor : Functor f}}
+--   -> (Nat × Nat) -> (d : Nat)
+--   -> (a -> f a) -> (qd : Quadrant a) -> {MaxDepth qd d} -> f (Quadrant a)
+-- go (x , y) d = matchnat d
+--   ifzero ( λ {{p}} ->
+--     -- Uses readLeaf and transformMaxDepth to proof that qd must be a Leaf, and not a Node
+--     λ f qd {md} -> Leaf <$> (f $ readLeaf qd { transformMaxDepth qd d {md} {p} })
+--   )
+--   ifsuc ( λ {{p}} ->
+--     let
+--       -- Subtract one from d (d sub), using the fact that d > 0 from ifsuc
+--       ds = _-_ d 1 {{propNotZeroImpliesLtOne d p}}
+--       mid = pow 2 ds
+--     in
+--       {!   !}
+--     --   ifc y < mid then
+--     --     ifc x < mid then         lensA ∘ (go (x , y) ds)
+--     --     else (λ {{x_gt_mid}} ->  lensB ∘ (go (_-_ x mid {{x_gt_mid}} , y) ds)   )
+--     --   else (λ {{y_gt_mid}} ->
+--     --     ifc x < mid then         lensC ∘ (go (x , _-_ y mid {{y_gt_mid}}) ds)
+--     --     else (λ {{x_gt_mid}} ->  lensD ∘ (go (_-_ x mid {{x_gt_mid}} , _-_ y mid {{y_gt_mid}}) ds)   )
+--     --   ) 
+--   )
+-- {-# COMPILE AGDA2HS go #-}
 
 -- Eq a => (Nat, Nat) -> CLens (QuadTree a) a
 -- atLocation : {a : Set} {{eqA : Eq a}}
@@ -348,36 +395,6 @@ go (x , y) d = matchnat d
 --   -> (a -> f a) -> (qt : QuadTree a) -> {{IsValid qt}} -> f (QuadTree a)
 -- atLocation index fn qt@(Wrapper qd l w d) ⦃ valid .(Wrapper qd l w d) x ⦄ = (lensWrappedTree ∘ (go index d)) fn {!  !}
 -- {-# COMPILE AGDA2HS atLocation #-}
-
----- Functors
-
-data Const (a : Set) (b : Set) : Set where
-  CConst : a -> Const a b
-
-getConst : {a : Set} {b : Set} -> Const a b -> a
-getConst (CConst a) = a
-
-instance
-  constFunctor : {a : Set} -> Functor (Const a)
-  constFunctor .fmap f (CConst v) = CConst v
-
-{-# COMPILE AGDA2HS Const #-}
-{-# COMPILE AGDA2HS getConst #-}
-{-# COMPILE AGDA2HS constFunctor #-}
-
-data Identity (a : Set) : Set where
-  CIdentity : a -> Identity a
-
-runIdentity : {a : Set} -> Identity a -> a
-runIdentity (CIdentity a) = a
-
-instance
-  identityFunctor : Functor Identity
-  identityFunctor .fmap f (CIdentity v) = CIdentity (f v)
-
-{-# COMPILE AGDA2HS Identity #-}
-{-# COMPILE AGDA2HS runIdentity #-}
-{-# COMPILE AGDA2HS identityFunctor #-}
 
 ---- Functions using functors
 
@@ -396,6 +413,3 @@ instance
 -- mapLocation index f qt = runIdentity (atLocation index (CIdentity ∘ f) qt)
 -- {-# COMPILE AGDA2HS mapLocation #-}
 
--- makeTree : {a : Set} {{eqA : Eq a}} -> (Nat × Nat) -> a -> QuadTree a
--- makeTree (w , h) a = Wrapper (Leaf a) w h (log2up (max w h) )
--- {-# COMPILE AGDA2HS makeTree #-}
