@@ -26,8 +26,10 @@ source-repository head
 library
   exposed-modules:
       Data.QuadTree
+      Data.QuadTree.Functors
       Data.QuadTree.InternalAgda
       Data.QuadTree.InternalHaskell
+      Data.QuadTree.Logic
   other-modules:
       Paths_research_project
   hs-source-dirs:
