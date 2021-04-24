@@ -247,13 +247,13 @@ getLocationAgda index dep qt = getConst $ atLocation index dep CConst qt
 setLocationAgda : {a : Set} {{eqT : Eq a}}
   -> (Nat × Nat) -> (dep : Nat) 
   -> a -> ValidQuadTree a {dep} -> ValidQuadTree a {dep}
-setLocationAgda index dep v qt = runIdentity (atLocation index dep (λ _ -> CIdentity v) qt)
+setLocationAgda index dep v qt = runIdentity $ atLocation index dep (λ _ -> CIdentity v) qt
 {-# COMPILE AGDA2HS setLocationAgda #-}
 
 mapLocationAgda : {a : Set} {{eqT : Eq a}}
   -> (Nat × Nat) -> (dep : Nat)
   -> (a -> a) -> ValidQuadTree a {dep} -> ValidQuadTree a {dep}
-mapLocationAgda index dep f qt = runIdentity (atLocation index dep (CIdentity ∘ f) qt)
+mapLocationAgda index dep f qt = runIdentity $ atLocation index dep (CIdentity ∘ f) qt
 {-# COMPILE AGDA2HS mapLocationAgda #-}
 
 -- getLocation : {a : Set} {{eqT : Eq a}}
