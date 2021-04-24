@@ -233,11 +233,28 @@ atLocation : {a : Set} {{eqT : Eq a}}
   -> (Nat × Nat) -> (dep : Nat)
   -> (a -> f a) 
   -> (qt : ValidQuadTree a {dep}) -> f (ValidQuadTree a {dep})
-atLocation (x , y) fn vqt = {!   !}
--- atLocation index fn qt@(Wrapper qd l w d) ⦃ valid .(Wrapper qd l w d) x ⦄ = (lensWrappedTree ∘ (go index d)) fn {!  !}
+atLocation index dep = lensWrappedTree ∘ (go index dep)
 {-# COMPILE AGDA2HS atLocation #-}
 
 ---- Functions using functors
+
+getLocationAgda : {a : Set} {{eqT : Eq a}}
+  -> (Nat × Nat) -> (dep : Nat) 
+  -> ValidQuadTree a {dep} -> a
+getLocationAgda index dep qt = getConst $ atLocation index dep CConst qt
+{-# COMPILE AGDA2HS getLocationAgda #-}
+
+setLocationAgda : {a : Set} {{eqT : Eq a}}
+  -> (Nat × Nat) -> (dep : Nat) 
+  -> a -> ValidQuadTree a {dep} -> ValidQuadTree a {dep}
+setLocationAgda index dep v qt = runIdentity (atLocation index dep (λ _ -> CIdentity v) qt)
+{-# COMPILE AGDA2HS setLocationAgda #-}
+
+mapLocationAgda : {a : Set} {{eqT : Eq a}}
+  -> (Nat × Nat) -> (dep : Nat)
+  -> (a -> a) -> ValidQuadTree a {dep} -> ValidQuadTree a {dep}
+mapLocationAgda index dep f qt = runIdentity (atLocation index dep (CIdentity ∘ f) qt)
+{-# COMPILE AGDA2HS mapLocationAgda #-}
 
 -- getLocation : {a : Set} {{eqT : Eq a}}
 --   -> (Nat × Nat) -> QuadTree a -> a
@@ -253,4 +270,3 @@ atLocation (x , y) fn vqt = {!   !}
 --   -> (Nat × Nat) -> (a -> a) -> QuadTree a -> QuadTree a
 -- mapLocation index f qt = runIdentity (atLocation index (CIdentity ∘ f) qt)
 -- {-# COMPILE AGDA2HS mapLocation #-}
-

@@ -181,3 +181,29 @@ go (x, y) dep
               (case vqd of
                    CValidQuadrant qd -> CValidQuadrant qd)))
 
+atLocation ::
+             Eq a =>
+               Functor f =>
+               (Natural, Natural) ->
+                 Natural -> (a -> f a) -> ValidQuadTree a -> f (ValidQuadTree a)
+atLocation index dep = lensWrappedTree . go index dep
+
+getLocationAgda ::
+                  Eq a => (Natural, Natural) -> Natural -> ValidQuadTree a -> a
+getLocationAgda index dep qt
+  = getConst $ atLocation index dep CConst qt
+
+setLocationAgda ::
+                  Eq a =>
+                  (Natural, Natural) ->
+                    Natural -> a -> ValidQuadTree a -> ValidQuadTree a
+setLocationAgda index dep v qt
+  = runIdentity (atLocation index dep (\ _ -> CIdentity v) qt)
+
+mapLocationAgda ::
+                  Eq a =>
+                  (Natural, Natural) ->
+                    Natural -> (a -> a) -> ValidQuadTree a -> ValidQuadTree a
+mapLocationAgda index dep f qt
+  = runIdentity (atLocation index dep (CIdentity . f) qt)
+
