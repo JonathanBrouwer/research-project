@@ -74,7 +74,7 @@ instance Num Nat where
     Z   + m = m
     S n + m = S (n + m)
 
-    _ - Z = Z
+    n - Z = n
     Z - _ = error "Negation negative"
     (S n) - (S m) = n - m
 

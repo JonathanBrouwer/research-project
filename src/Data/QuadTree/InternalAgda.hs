@@ -143,13 +143,13 @@ lensLeaf x₁ (CValidQuadrant (Node qd qd₁ qd₂ qd₃))
   = error "lensLeaf: impossible"
 
 go :: Eq t => (Nat, Nat) -> Nat -> CLens (ValidQuadrant t) t
-go (x₁, y) Z = lensLeaf
-go (x₁, y) (S deps)
-  = ifc_then_else_ (y < mid)
-      (ifc_then_else_ (x₁ < mid) (lensA . go (x₁, y) deps)
-         (lensB . go (x₁ - mid, y) deps))
-      (ifc_then_else_ (x₁ < mid) (lensC . go (x₁, y - mid) deps)
-         (lensD . go (x₁ - mid, y - mid) deps))
+go (x₁, y₁) Z = lensLeaf
+go (x₁, y₁) (S deps)
+  = ifc_then_else_ (y₁ < mid)
+      (ifc_then_else_ (x₁ < mid) (lensA . go (x₁, y₁) deps)
+         (lensB . go (x₁ - mid, y₁) deps))
+      (ifc_then_else_ (x₁ < mid) (lensC . go (x₁, y₁ - mid) deps)
+         (lensD . go (x₁ - mid, y₁ - mid) deps))
   where
     mid :: Nat
     mid = pow 2 deps

@@ -328,7 +328,8 @@ mapLocation : {t : Set} {{eqT : Eq t}} -> (Nat × Nat) -> (t -> t) -> QuadTree t
 mapLocation loc f qt = qtFromAgda $ mapLocationAgda loc (maxDepth qt) f $ qtToAgda qt
 {-# COMPILE AGDA2HS mapLocation #-}
 
-x = Wrapper (Node (Leaf true) (Leaf false) (Leaf true) (Leaf false)) (4 , 6)
--- y = setLocation (2 , 4) true x
-z1 = getLocation (3 , 3) x
--- z2 = getLocation (3 , 3) y
+x = Wrapper (Leaf false) (2 , 5)
+y = setLocation (1 , 2) true x
+
+z1 = getLocation (1 , 3) x
+z2 = getLocation (1 , 3) y
