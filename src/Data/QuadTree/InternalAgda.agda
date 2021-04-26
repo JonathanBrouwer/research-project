@@ -117,6 +117,30 @@ combine {t} {dep} (CValidQuadrant a {pa}) (CValidQuadrant b {pb}) (CValidQuadran
   = CValidQuadrant (Node a b c d) {useEq (propDepthRelationLte a b c d dep) (propIsTrueCombine4 pa pb pc pd)}
 {-# COMPILE AGDA2HS combine #-}
 
+aSub : {t : Set} {{eqT : Eq t}}
+  -> {dep : Nat}
+  -> (a b c d : Quadrant t) -> IsTrue ((depth (Node a b c d)) <= suc dep)
+  -> IsTrue (depth a <= dep)
+aSub {_} {dep} a b c d p = andFst $ andFst {(depth a <= dep && depth b <= dep)} $ useEq (sym (propDepthRelationLte a b c d dep)) p
+
+bSub : {t : Set} {{eqT : Eq t}}
+  -> {dep : Nat}
+  -> (a b c d : Quadrant t) -> IsTrue ((depth (Node a b c d)) <= suc dep)
+  -> IsTrue (depth b <= dep)
+bSub {_} {dep} a b c d p = andSnd $ andFst {(depth a <= dep && depth b <= dep)} $ useEq (sym (propDepthRelationLte a b c d dep)) p
+
+cSub : {t : Set} {{eqT : Eq t}}
+  -> {dep : Nat}
+  -> (a b c d : Quadrant t) -> IsTrue ((depth (Node a b c d)) <= suc dep)
+  -> IsTrue (depth c <= dep)
+cSub {_} {dep} a b c d p = andFst $ andSnd {(depth a <= dep && depth b <= dep)} $ useEq (sym (propDepthRelationLte a b c d dep)) p
+
+dSub : {t : Set} {{eqT : Eq t}}
+  -> {dep : Nat}
+  -> (a b c d : Quadrant t) -> IsTrue ((depth (Node a b c d)) <= suc dep)
+  -> IsTrue (depth d <= dep)
+dSub {_} {dep} a b c d p = andSnd $ andSnd {(depth a <= dep && depth b <= dep)} $ useEq (sym (propDepthRelationLte a b c d dep)) p
+
 lensA : 
   {t : Set} {{eqT : Eq t}}
   -> {dep : Nat}
@@ -125,8 +149,12 @@ lensA {_} {dep} f (CValidQuadrant (Leaf v) {p}) =
   let sub = CValidQuadrant (Leaf v) {zeroLteAny dep}
   in fmap (λ x -> fuse (combine x sub sub sub) ) (f sub)
 lensA {_} {dep} f (CValidQuadrant (Node a b c d) {p}) = 
-  let sub = CValidQuadrant a {andFst $ andFst {(depth a <= dep && depth b <= dep)} $ useEq (sym (propDepthRelationLte a b c d dep)) p}
-  in fmap (λ x -> fuse (combine x sub sub sub) ) (f sub)
+  let 
+    sA = CValidQuadrant a {aSub a b c d p}
+    sB = CValidQuadrant b {bSub a b c d p}
+    sC = CValidQuadrant c {cSub a b c d p}
+    sD = CValidQuadrant d {dSub a b c d p}
+  in fmap (λ x -> fuse (combine x sB sC sD) ) (f sA)
 {-# COMPILE AGDA2HS lensA #-}
 
 lensB : 
@@ -137,8 +165,12 @@ lensB {_} {dep} f (CValidQuadrant (Leaf v) {p}) =
   let sub = CValidQuadrant (Leaf v) {zeroLteAny dep}
   in fmap (λ x -> fuse (combine sub x sub sub) ) (f sub)
 lensB {_} {dep} f (CValidQuadrant (Node a b c d) {p}) = 
-  let sub = CValidQuadrant b { andSnd $ andFst {(depth a <= dep && depth b <= dep)} $ useEq (sym (propDepthRelationLte a b c d dep)) p }
-  in fmap (λ x -> fuse (combine sub x sub sub) ) (f sub)
+  let 
+    sA = CValidQuadrant a {aSub a b c d p}
+    sB = CValidQuadrant b {bSub a b c d p}
+    sC = CValidQuadrant c {cSub a b c d p}
+    sD = CValidQuadrant d {dSub a b c d p}
+  in fmap (λ x -> fuse (combine sA x sC sD) ) (f sB)
 {-# COMPILE AGDA2HS lensB #-}
 
 lensC : 
@@ -149,8 +181,12 @@ lensC {_} {dep} f (CValidQuadrant (Leaf v) {p}) =
   let sub = CValidQuadrant (Leaf v) {zeroLteAny dep}
   in fmap (λ x -> fuse (combine sub sub x sub) ) (f sub)
 lensC {_} {dep} f (CValidQuadrant (Node a b c d) {p}) = 
-  let sub = CValidQuadrant c {andFst $ andSnd {(depth a <= dep && depth b <= dep)} $ useEq (sym (propDepthRelationLte a b c d dep)) p}
-  in fmap (λ x -> fuse (combine sub sub x sub) ) (f sub)
+  let 
+    sA = CValidQuadrant a {aSub a b c d p}
+    sB = CValidQuadrant b {bSub a b c d p}
+    sC = CValidQuadrant c {cSub a b c d p}
+    sD = CValidQuadrant d {dSub a b c d p}
+  in fmap (λ x -> fuse (combine sA sB x sD) ) (f sC)
 {-# COMPILE AGDA2HS lensC #-}
 
 lensD : 
@@ -161,8 +197,12 @@ lensD {_} {dep} f (CValidQuadrant (Leaf v) {p}) =
   let sub = CValidQuadrant (Leaf v) {zeroLteAny dep}
   in fmap (λ x -> fuse (combine sub sub sub x) ) (f sub)
 lensD {_} {dep} f (CValidQuadrant (Node a b c d) {p}) = 
-  let sub = CValidQuadrant d {andSnd $ andSnd {(depth a <= dep && depth b <= dep)} $ useEq (sym (propDepthRelationLte a b c d dep)) p}
-  in fmap (λ x -> fuse (combine sub sub sub x) ) (f sub)
+  let 
+    sA = CValidQuadrant a {aSub a b c d p}
+    sB = CValidQuadrant b {bSub a b c d p}
+    sC = CValidQuadrant c {cSub a b c d p}
+    sD = CValidQuadrant d {dSub a b c d p}
+  in fmap (λ x -> fuse (combine sA sB sC x) ) (f sD)
 {-# COMPILE AGDA2HS lensD #-}
 
 lensLeaf : {t : Set} {{eqT : Eq t}}
@@ -286,6 +326,7 @@ mapLocation loc f qt = qtFromAgda $ mapLocationAgda loc (maxDepth qt) f $ qtToAg
 {-# COMPILE AGDA2HS mapLocation #-}
 
 
-
-x = Wrapper (Node (Leaf true) (Leaf true) (Leaf false) (Leaf false)) (1 , 2)
-y = setLocation (1 , 1) true x
+x : ValidQuadrant Bool {1}
+x = CValidQuadrant (Node (Leaf true) (Leaf true) (Leaf false) (Leaf false)) {IsTrue.itsTrue}
+-- y = setLocationAgda (0 , 0) 1 false x
+z = runIdentity $ (lensA (lensLeaf (λ _ -> CIdentity false))) x

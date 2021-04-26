@@ -78,8 +78,8 @@ lensA f (CValidQuadrant (Node a b c d))
   = fmap
       (\ x ->
          fuse
-           (combine x (CValidQuadrant a) (CValidQuadrant a)
-              (CValidQuadrant a)))
+           (combine x (CValidQuadrant b) (CValidQuadrant c)
+              (CValidQuadrant d)))
       (f (CValidQuadrant a))
 
 lensB :: Eq t => CLens (ValidQuadrant t) (ValidQuadrant t)
@@ -94,8 +94,8 @@ lensB f (CValidQuadrant (Node a b c d))
   = fmap
       (\ x ->
          fuse
-           (combine (CValidQuadrant b) x (CValidQuadrant b)
-              (CValidQuadrant b)))
+           (combine (CValidQuadrant a) x (CValidQuadrant c)
+              (CValidQuadrant d)))
       (f (CValidQuadrant b))
 
 lensC :: Eq t => CLens (ValidQuadrant t) (ValidQuadrant t)
@@ -110,8 +110,8 @@ lensC f (CValidQuadrant (Node a b c d))
   = fmap
       (\ x ->
          fuse
-           (combine (CValidQuadrant c) (CValidQuadrant c) x
-              (CValidQuadrant c)))
+           (combine (CValidQuadrant a) (CValidQuadrant b) x
+              (CValidQuadrant d)))
       (f (CValidQuadrant c))
 
 lensD :: Eq t => CLens (ValidQuadrant t) (ValidQuadrant t)
@@ -127,7 +127,7 @@ lensD f (CValidQuadrant (Node a b c d))
   = fmap
       (\ x ->
          fuse
-           (combine (CValidQuadrant d) (CValidQuadrant d) (CValidQuadrant d)
+           (combine (CValidQuadrant a) (CValidQuadrant b) (CValidQuadrant c)
               x))
       (f (CValidQuadrant d))
 
@@ -141,7 +141,7 @@ toZeroMaxDepth = id
 
 go ::
      Eq t => (Natural, Natural) -> Natural -> CLens (ValidQuadrant t) t
-go (x₁, y₁) dep
+go (x₁, y) dep
   = matchnat_ifzero_ifsuc_ dep
       (\ g qd ->
          fmap
@@ -152,14 +152,14 @@ go (x₁, y₁) dep
          fmap
            (\case
                 CValidQuadrant qd -> CValidQuadrant qd)
-           (ifc_then_else_ (y₁ < pow 2 (dep - 1))
+           (ifc_then_else_ (y < pow 2 (dep - 1))
               (ifc_then_else_ (x₁ < pow 2 (dep - 1))
-                 (lensA (go (x₁, y₁) (dep - 1) g))
-                 (lensB (go (x₁ - pow 2 (dep - 1), y₁) (dep - 1) g)))
+                 (lensA (go (x₁, y) (dep - 1) g))
+                 (lensB (go (x₁ - pow 2 (dep - 1), y) (dep - 1) g)))
               (ifc_then_else_ (x₁ < pow 2 (dep - 1))
-                 (lensC (go (x₁, y₁ - pow 2 (dep - 1)) (dep - 1) g))
+                 (lensC (go (x₁, y - pow 2 (dep - 1)) (dep - 1) g))
                  (lensD
-                    (go (x₁ - pow 2 (dep - 1), y₁ - pow 2 (dep - 1)) (dep - 1) g)))
+                    (go (x₁ - pow 2 (dep - 1), y - pow 2 (dep - 1)) (dep - 1) g)))
               (case vqd of
                    CValidQuadrant qd -> CValidQuadrant qd)))
 
