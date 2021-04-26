@@ -135,7 +135,7 @@ pow b e = ifc e == 0 then 1 else (λ {{p}} -> b * pow b (_-_ e 1 {{propZeroImpli
 {-# TERMINATING #-}
 log2up : Nat -> Nat
 -- UNSAFE: This terminates since x/2 always decreases if x > 1
-log2up x = if x <= 1 then 0 else 1 + log2up (div x 2)
+log2up x = if x <= 1 then 0 else 1 + log2up (div (x + 1) 2)
 {-# COMPILE AGDA2HS log2up #-}
 
 

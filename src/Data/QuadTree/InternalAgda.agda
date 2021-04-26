@@ -324,9 +324,3 @@ setLocation loc v qt = qtFromAgda $ setLocationAgda loc (maxDepth qt) v $ qtToAg
 mapLocation : {t : Set} {{eqT : Eq t}} -> (Nat × Nat) -> (t -> t) -> QuadTree t -> QuadTree t
 mapLocation loc f qt = qtFromAgda $ mapLocationAgda loc (maxDepth qt) f $ qtToAgda qt
 {-# COMPILE AGDA2HS mapLocation #-}
-
-
-x : ValidQuadrant Bool {1}
-x = CValidQuadrant (Node (Leaf true) (Leaf true) (Leaf false) (Leaf false)) {IsTrue.itsTrue}
--- y = setLocationAgda (0 , 0) 1 false x
-z = runIdentity $ (lensA (lensLeaf (λ _ -> CIdentity false))) x

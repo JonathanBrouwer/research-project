@@ -13,5 +13,5 @@ pow :: Natural -> Natural -> Natural
 pow b e = ifc_then_else_ (e == 0) 1 (b * pow b (e - 1))
 
 log2up :: Natural -> Natural
-log2up x = if x <= 1 then 0 else 1 + log2up (div x 2)
+log2up x = if x <= 1 then 0 else 1 + log2up (div (x + 1) 2)
 

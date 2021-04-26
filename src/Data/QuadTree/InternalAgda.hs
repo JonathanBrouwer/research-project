@@ -19,7 +19,7 @@ data Quadrant t = Leaf t
                     deriving (Show, Read, Eq)
 
 instance Functor Quadrant where
-    fmap fn (Leaf x₁) = Leaf (fn x₁)
+    fmap fn (Leaf x) = Leaf (fn x)
     fmap fn (Node a b c d)
       = Node (fmap fn a) (fmap fn b) (fmap fn c) (fmap fn d)
 
@@ -30,7 +30,7 @@ instance Functor QuadTree where
     fmap fn (Wrapper q (w, h)) = Wrapper (fmap fn q) (w, h)
 
 depth :: Quadrant t -> Natural
-depth (Leaf x₁) = 0
+depth (Leaf x) = 0
 depth (Node a b c d)
   = 1 + max (max (depth a) (depth b)) (max (depth c) (depth d))
 
@@ -134,14 +134,14 @@ lensD f (CValidQuadrant (Node a b c d))
 lensLeaf :: Eq t => CLens (ValidQuadrant t) t
 lensLeaf f (CValidQuadrant (Leaf v))
   = fmap (\ x -> CValidQuadrant (Leaf x)) (f v)
-lensLeaf x₁ (CValidQuadrant (Node qd qd₁ qd₂ qd₃))
+lensLeaf x (CValidQuadrant (Node qd qd₁ qd₂ qd₃))
   = error "lensLeaf: impossible"
 
 toZeroMaxDepth = id
 
 go ::
      Eq t => (Natural, Natural) -> Natural -> CLens (ValidQuadrant t) t
-go (x₁, y) dep
+go (x, y) dep
   = matchnat_ifzero_ifsuc_ dep
       (\ g qd ->
          fmap
@@ -153,13 +153,13 @@ go (x₁, y) dep
            (\case
                 CValidQuadrant qd -> CValidQuadrant qd)
            (ifc_then_else_ (y < pow 2 (dep - 1))
-              (ifc_then_else_ (x₁ < pow 2 (dep - 1))
-                 (lensA (go (x₁, y) (dep - 1) g))
-                 (lensB (go (x₁ - pow 2 (dep - 1), y) (dep - 1) g)))
-              (ifc_then_else_ (x₁ < pow 2 (dep - 1))
-                 (lensC (go (x₁, y - pow 2 (dep - 1)) (dep - 1) g))
+              (ifc_then_else_ (x < pow 2 (dep - 1))
+                 (lensA (go (x, y) (dep - 1) g))
+                 (lensB (go (x - pow 2 (dep - 1), y) (dep - 1) g)))
+              (ifc_then_else_ (x < pow 2 (dep - 1))
+                 (lensC (go (x, y - pow 2 (dep - 1)) (dep - 1) g))
                  (lensD
-                    (go (x₁ - pow 2 (dep - 1), y - pow 2 (dep - 1)) (dep - 1) g)))
+                    (go (x - pow 2 (dep - 1), y - pow 2 (dep - 1)) (dep - 1) g)))
               (case vqd of
                    CValidQuadrant qd -> CValidQuadrant qd)))
 
