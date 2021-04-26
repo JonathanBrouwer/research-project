@@ -189,8 +189,13 @@ mapLocationAgda ::
 mapLocationAgda index dep f qt
   = runIdentity $ atLocationAgda index dep (CIdentity . f) qt
 
+invalidQuadTree = error "Invalid quadtree given"
+
 qtToAgda :: Eq t => QuadTree t -> ValidQuadTree t
-qtToAgda qt = CValidQuadTree qt
+qtToAgda qt
+  = ifc_then_else_ ((depth $ treeToQuadrant qt) <= maxDepth qt)
+      (CValidQuadTree qt)
+      invalidQuadTree
 
 qtFromAgda :: Eq t => ValidQuadTree t -> QuadTree t
 qtFromAgda (CValidQuadTree qt) = qt

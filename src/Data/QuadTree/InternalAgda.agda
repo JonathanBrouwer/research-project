@@ -297,12 +297,14 @@ mapLocationAgda index dep f qt = runIdentity $ atLocationAgda index dep (CIdenti
 
 ---- Haskell safe functions
 
-postulate 
-  proofValidQt : {t : Set} {{eqT : Eq t}} -> (qt : QuadTree t) -> IsTrue ((depth $ treeToQuadrant qt) <= maxDepth qt)
+postulate invalidQuadTree : {t : Set} {{eqT : Eq t}} -> {dep : Nat} -> ValidQuadTree t {dep}
+{-# FOREIGN AGDA2HS invalidQuadTree = error "Invalid quadtree given" #-}
 
 -- TODO maybe switch all functions to Maybe types?
 qtToAgda : {t : Set} {{eqT : Eq t}} -> (qt : QuadTree t) -> ValidQuadTree t {maxDepth qt}
-qtToAgda qt = CValidQuadTree qt { proofValidQt qt }
+qtToAgda qt = ifc (depth $ treeToQuadrant qt) <= maxDepth qt
+  then (λ {{p}} -> CValidQuadTree qt {p} )
+  else invalidQuadTree
 {-# COMPILE AGDA2HS qtToAgda #-}
 
 qtFromAgda : {t : Set} {{eqT : Eq t}} -> {dep : Nat} -> ValidQuadTree t {dep} -> QuadTree t

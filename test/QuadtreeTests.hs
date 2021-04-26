@@ -210,7 +210,6 @@ return [] -- Template Haskell splice. See QuickCheck hackage docs.
 args :: Args
 args = stdArgs
   {
-    maxSize = 1000,
     maxSuccess = 1000,
     maxDiscardRatio = 100 -- Raise discard ratio a bit
   }
