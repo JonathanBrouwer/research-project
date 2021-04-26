@@ -19,7 +19,7 @@ data Quadrant t = Leaf t
                     deriving (Show, Read, Eq)
 
 instance Functor Quadrant where
-    fmap fn (Leaf x) = Leaf (fn x)
+    fmap fn (Leaf x₁) = Leaf (fn x₁)
     fmap fn (Node a b c d)
       = Node (fmap fn a) (fmap fn b) (fmap fn c) (fmap fn d)
 
@@ -30,9 +30,12 @@ instance Functor QuadTree where
     fmap fn (Wrapper q (w, h)) = Wrapper (fmap fn q) (w, h)
 
 depth :: Quadrant t -> Natural
-depth (Leaf x) = 0
+depth (Leaf x₁) = 0
 depth (Node a b c d)
   = 1 + max (max (depth a) (depth b)) (max (depth c) (depth d))
+
+maxDepth :: QuadTree t -> Natural
+maxDepth (Wrapper _ (w, h)) = log2up (max w h)
 
 treeToQuadrant :: QuadTree t -> Quadrant t
 treeToQuadrant (Wrapper qd _) = qd
@@ -131,14 +134,14 @@ lensD f (CValidQuadrant (Node a b c d))
 lensLeaf :: Eq t => CLens (ValidQuadrant t) t
 lensLeaf f (CValidQuadrant (Leaf v))
   = fmap (\ x -> CValidQuadrant (Leaf x)) (f v)
-lensLeaf x (CValidQuadrant (Node qd qd₁ qd₂ qd₃))
+lensLeaf x₁ (CValidQuadrant (Node qd qd₁ qd₂ qd₃))
   = error "lensLeaf: impossible"
 
 toZeroMaxDepth = id
 
 go ::
      Eq t => (Natural, Natural) -> Natural -> CLens (ValidQuadrant t) t
-go (x, y) dep
+go (x₁, y₁) dep
   = matchnat_ifzero_ifsuc_ dep
       (\ g qd ->
          fmap
@@ -149,14 +152,14 @@ go (x, y) dep
          fmap
            (\case
                 CValidQuadrant qd -> CValidQuadrant qd)
-           (ifc_then_else_ (y < pow 2 (dep - 1))
-              (ifc_then_else_ (x < pow 2 (dep - 1))
-                 (lensA (go (x, y) (dep - 1) g))
-                 (lensB (go (x - pow 2 (dep - 1), y) (dep - 1) g)))
-              (ifc_then_else_ (x < pow 2 (dep - 1))
-                 (lensC (go (x, y - pow 2 (dep - 1)) (dep - 1) g))
+           (ifc_then_else_ (y₁ < pow 2 (dep - 1))
+              (ifc_then_else_ (x₁ < pow 2 (dep - 1))
+                 (lensA (go (x₁, y₁) (dep - 1) g))
+                 (lensB (go (x₁ - pow 2 (dep - 1), y₁) (dep - 1) g)))
+              (ifc_then_else_ (x₁ < pow 2 (dep - 1))
+                 (lensC (go (x₁, y₁ - pow 2 (dep - 1)) (dep - 1) g))
                  (lensD
-                    (go (x - pow 2 (dep - 1), y - pow 2 (dep - 1)) (dep - 1) g)))
+                    (go (x₁ - pow 2 (dep - 1), y₁ - pow 2 (dep - 1)) (dep - 1) g)))
               (case vqd of
                    CValidQuadrant qd -> CValidQuadrant qd)))
 
@@ -185,4 +188,27 @@ mapLocationAgda ::
                     Natural -> (t -> t) -> ValidQuadTree t -> ValidQuadTree t
 mapLocationAgda index dep f qt
   = runIdentity $ atLocationAgda index dep (CIdentity . f) qt
+
+qtToAgda :: Eq t => QuadTree t -> ValidQuadTree t
+qtToAgda qt = CValidQuadTree qt
+
+qtFromAgda :: Eq t => ValidQuadTree t -> QuadTree t
+qtFromAgda (CValidQuadTree qt) = qt
+
+makeTree :: Eq t => (Natural, Natural) -> t -> QuadTree t
+makeTree size v = qtFromAgda $ makeTreeAgda size v
+
+getLocation :: Eq t => (Natural, Natural) -> QuadTree t -> t
+getLocation loc qt
+  = getLocationAgda loc (maxDepth qt) $ qtToAgda qt
+
+setLocation ::
+              Eq t => (Natural, Natural) -> t -> QuadTree t -> QuadTree t
+setLocation loc v qt
+  = qtFromAgda $ setLocationAgda loc (maxDepth qt) v $ qtToAgda qt
+
+mapLocation ::
+              Eq t => (Natural, Natural) -> (t -> t) -> QuadTree t -> QuadTree t
+mapLocation loc f qt
+  = qtFromAgda $ mapLocationAgda loc (maxDepth qt) f $ qtToAgda qt
 

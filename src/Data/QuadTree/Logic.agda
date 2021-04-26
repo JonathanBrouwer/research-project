@@ -158,3 +158,7 @@ natPlusMinNat (suc x) = refl
 
 transformLteRight : {a b c : Nat} -> b ≡ c -> IsTrue (a <= b) -> IsTrue (a <= c)
 transformLteRight {a} {b} {.b} refl ab = ab
+
+lteSelf : (v : Nat) -> IsTrue (v <= v)
+lteSelf zero = IsTrue.itsTrue
+lteSelf (suc v) = lteSelf v

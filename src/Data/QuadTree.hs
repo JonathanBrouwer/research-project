@@ -11,7 +11,7 @@ module Data.QuadTree (
   -- Quadrant + Constructors
   Quadrant (Node, Leaf),
   -- Index access
-  atLocation, getLocation, setLocation, mapLocation
+  getLocation, setLocation, mapLocation
   ) where
 
 import Data.QuadTree.InternalAgda

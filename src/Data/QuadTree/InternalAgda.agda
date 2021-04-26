@@ -51,6 +51,10 @@ depth (Leaf x) = 0
 depth (Node a b c d) = 1 + max (max (depth a) (depth b)) (max(depth c) (depth d))
 {-# COMPILE AGDA2HS depth #-}
 
+maxDepth : {t : Set} -> QuadTree t -> Nat
+maxDepth (Wrapper _ (w , h)) = log2up (max w h)
+{-# COMPILE AGDA2HS maxDepth #-}
+
 treeToQuadrant : {t : Set} -> QuadTree t -> Quadrant t
 treeToQuadrant (Wrapper qd _) = qd
 {-# COMPILE AGDA2HS treeToQuadrant #-}
@@ -221,9 +225,9 @@ go {t} (x , y) dep = matchnat dep
   ) 
 {-# COMPILE AGDA2HS go #-}
 
--- Agda safe functions
+---- Agda safe functions
 
-makeTreeAgda : {t : Set} {{eqT : Eq t}} -> (pair : Nat × Nat) -> t -> ValidQuadTree t {log2up $ max (fst pair) (snd pair)}
+makeTreeAgda : {t : Set} {{eqT : Eq t}} -> (size : Nat × Nat) -> t -> ValidQuadTree t {log2up $ max (fst size) (snd size)}
 makeTreeAgda (w , h) v = CValidQuadTree (Wrapper (Leaf v) (w , h)) {zeroLteAny (log2up $ max w h)}
 {-# COMPILE AGDA2HS makeTreeAgda #-}
 
@@ -234,7 +238,7 @@ atLocationAgda index dep = lensWrappedTree ∘ (go index dep)
 {-# COMPILE AGDA2HS atLocationAgda #-}
 
 getLocationAgda : {t : Set} {{eqT : Eq t}}
-  -> (Nat × Nat) -> (dep : Nat) 
+  -> (Nat × Nat) -> (dep : Nat)
   -> ValidQuadTree t {dep} -> t
 getLocationAgda index dep qt = getConst $ atLocationAgda index dep CConst qt
 {-# COMPILE AGDA2HS getLocationAgda #-}
@@ -250,3 +254,38 @@ mapLocationAgda : {t : Set} {{eqT : Eq t}}
   -> (t -> t) -> ValidQuadTree t {dep} -> ValidQuadTree t {dep}
 mapLocationAgda index dep f qt = runIdentity $ atLocationAgda index dep (CIdentity ∘ f) qt
 {-# COMPILE AGDA2HS mapLocationAgda #-}
+
+---- Haskell safe functions
+
+postulate 
+  proofValidQt : {t : Set} {{eqT : Eq t}} -> (qt : QuadTree t) -> IsTrue ((depth $ treeToQuadrant qt) <= maxDepth qt)
+
+-- TODO maybe switch all functions to Maybe types?
+qtToAgda : {t : Set} {{eqT : Eq t}} -> (qt : QuadTree t) -> ValidQuadTree t {maxDepth qt}
+qtToAgda qt = CValidQuadTree qt { proofValidQt qt }
+{-# COMPILE AGDA2HS qtToAgda #-}
+
+qtFromAgda : {t : Set} {{eqT : Eq t}} -> {dep : Nat} -> ValidQuadTree t {dep} -> QuadTree t
+qtFromAgda (CValidQuadTree qt) = qt
+{-# COMPILE AGDA2HS qtFromAgda #-}
+
+makeTree : {t : Set} {{eqT : Eq t}} -> (size : Nat × Nat) -> t -> QuadTree t
+makeTree size v = qtFromAgda $ makeTreeAgda size v
+{-# COMPILE AGDA2HS makeTree #-}
+
+getLocation : {t : Set} {{eqT : Eq t}} -> (Nat × Nat) -> QuadTree t -> t
+getLocation loc qt = getLocationAgda loc (maxDepth qt) $ qtToAgda qt
+{-# COMPILE AGDA2HS getLocation #-}
+
+setLocation : {t : Set} {{eqT : Eq t}} -> (Nat × Nat) -> t -> QuadTree t -> QuadTree t
+setLocation loc v qt = qtFromAgda $ setLocationAgda loc (maxDepth qt) v $ qtToAgda qt
+{-# COMPILE AGDA2HS setLocation #-}
+
+mapLocation : {t : Set} {{eqT : Eq t}} -> (Nat × Nat) -> (t -> t) -> QuadTree t -> QuadTree t
+mapLocation loc f qt = qtFromAgda $ mapLocationAgda loc (maxDepth qt) f $ qtToAgda qt
+{-# COMPILE AGDA2HS mapLocation #-}
+
+
+
+x = Wrapper (Node (Leaf true) (Leaf true) (Leaf false) (Leaf false)) (1 , 2)
+y = setLocation (1 , 1) true x
