@@ -35,18 +35,14 @@ instance
 ---- QuadTree
 
 data QuadTree (t : Set) : Set where
-  -- wrappedTree, treeLength, treeWidth
-  Wrapper : Quadrant t -> Nat -> Nat -> QuadTree t
+  -- wrappedTree, (width x height)
+  Wrapper : Quadrant t -> (Nat × Nat) -> QuadTree t
 {-# COMPILE AGDA2HS QuadTree deriving (Show, Read, Eq) #-}
 
 instance
   quadTreeFunctor : Functor QuadTree
-  quadTreeFunctor .fmap fn (Wrapper q l w) = Wrapper (fmap fn q) l w
+  quadTreeFunctor .fmap fn (Wrapper q (w , h)) = Wrapper (fmap fn q) (w , h)
 {-# COMPILE AGDA2HS quadTreeFunctor #-}
-
-makeTree : {t : Set} {{eqT : Eq t}} -> (Nat × Nat) -> t -> QuadTree t
-makeTree (w , h) v = Wrapper (Leaf v) w h
-{-# COMPILE AGDA2HS makeTree #-}
 
 ---- Check if valid
 
@@ -56,7 +52,7 @@ depth (Node a b c d) = 1 + max (max (depth a) (depth b)) (max(depth c) (depth d)
 {-# COMPILE AGDA2HS depth #-}
 
 treeToQuadrant : {t : Set} -> QuadTree t -> Quadrant t
-treeToQuadrant (Wrapper qd _ _) = qd
+treeToQuadrant (Wrapper qd _) = qd
 {-# COMPILE AGDA2HS treeToQuadrant #-}
 
 data ValidQuadrant (t : Set) {{eqT : Eq t}} {d : Nat} : Set where
@@ -104,9 +100,9 @@ propDepthRelationLte a b c d dep =
 lensWrappedTree : {t : Set} {{eqT : Eq t}}
   -> {dep : Nat}
   -> CLens (ValidQuadTree t {dep}) (ValidQuadrant t {dep})
-lensWrappedTree {dep = dep} fun (CValidQuadTree (Wrapper qd l w) {p}) = 
+lensWrappedTree {dep = dep} fun (CValidQuadTree (Wrapper qd (w , h)) {p}) = 
   fmap 
-    (λ where (CValidQuadrant qd {p}) → CValidQuadTree (Wrapper qd l w) {p})
+    (λ where (CValidQuadrant qd {p}) → CValidQuadTree (Wrapper qd (w , h)) {p})
     (fun (CValidQuadrant qd {p}))
 {-# COMPILE AGDA2HS lensWrappedTree #-}
 
@@ -225,30 +221,32 @@ go {t} (x , y) dep = matchnat dep
   ) 
 {-# COMPILE AGDA2HS go #-}
 
+-- Agda safe functions
 
--- Eq a => (Nat, Nat) -> CLens (QuadTree a) a
-atLocation : {t : Set} {{eqT : Eq t}}
+makeTreeAgda : {t : Set} {{eqT : Eq t}} -> (pair : Nat × Nat) -> t -> ValidQuadTree t {log2up $ max (fst pair) (snd pair)}
+makeTreeAgda (w , h) v = CValidQuadTree (Wrapper (Leaf v) (w , h)) {zeroLteAny (log2up $ max w h)}
+{-# COMPILE AGDA2HS makeTreeAgda #-}
+
+atLocationAgda : {t : Set} {{eqT : Eq t}}
   -> (Nat × Nat) -> (dep : Nat)
   -> CLens (ValidQuadTree t {dep}) t
-atLocation index dep = lensWrappedTree ∘ (go index dep)
-{-# COMPILE AGDA2HS atLocation #-}
-
--- ---- Functions using functors
+atLocationAgda index dep = lensWrappedTree ∘ (go index dep)
+{-# COMPILE AGDA2HS atLocationAgda #-}
 
 getLocationAgda : {t : Set} {{eqT : Eq t}}
   -> (Nat × Nat) -> (dep : Nat) 
   -> ValidQuadTree t {dep} -> t
-getLocationAgda index dep qt = getConst $ atLocation index dep CConst qt
+getLocationAgda index dep qt = getConst $ atLocationAgda index dep CConst qt
 {-# COMPILE AGDA2HS getLocationAgda #-}
 
 setLocationAgda : {t : Set} {{eqT : Eq t}}
   -> (Nat × Nat) -> (dep : Nat) 
   -> t -> ValidQuadTree t {dep} -> ValidQuadTree t {dep}
-setLocationAgda index dep v qt = runIdentity $ atLocation index dep (λ _ -> CIdentity v) qt
+setLocationAgda index dep v qt = runIdentity $ atLocationAgda index dep (λ _ -> CIdentity v) qt
 {-# COMPILE AGDA2HS setLocationAgda #-}
 
 mapLocationAgda : {t : Set} {{eqT : Eq t}}
   -> (Nat × Nat) -> (dep : Nat)
   -> (t -> t) -> ValidQuadTree t {dep} -> ValidQuadTree t {dep}
-mapLocationAgda index dep f qt = runIdentity $ atLocation index dep (CIdentity ∘ f) qt
+mapLocationAgda index dep f qt = runIdentity $ atLocationAgda index dep (CIdentity ∘ f) qt
 {-# COMPILE AGDA2HS mapLocationAgda #-}
