@@ -10,5 +10,5 @@ build:
 	yes | cp -i build/Data/QuadTree/*.hs src/Data/QuadTree/
 	@echo 
 	@echo == Checking project ==
-	ghc -fno-code build/Data/QuadTree/*.hs
+	stack ghc -- -fno-code src/Data/QuadTree/*.hs
 	@echo == Finished. ==

@@ -1,9 +1,13 @@
 module Data.QuadTree.Logic where
 
-open import Haskell.Prelude
+open import Haskell.Prelude renaming (zero to Z; suc to S)
 open import Relation.Nullary.Decidable
 open import Data.Nat.DivMod
 open import Data.Nat.Properties
+{-# FOREIGN AGDA2HS
+import Data.Nat
+#-}
+
 
 ---- Equational reasoning
 useEq : {x y : Bool} -> x ≡ y -> IsTrue x -> IsTrue y
@@ -42,41 +46,41 @@ infixr  2  _=⟨⟩_
 ---- General purpose proofs
 
 propZeroImpliesLtOne : (x : Nat) -> IsFalse (x == 0) -> IsFalse (x < 1)
-propZeroImpliesLtOne zero notzero = notzero
-propZeroImpliesLtOne (suc x) notzero = IsFalse.itsFalse
+propZeroImpliesLtOne Z notZ = notZ
+propZeroImpliesLtOne (S x) notZ = IsFalse.itsFalse
 
 propFnIf : {a b : Set} -> (c : Bool) (x : a) (y : a) (f : a -> b) -> (if c then f x else f y) ≡ f (if c then x else y)
 propFnIf false x y f = refl
 propFnIf true x y f = refl
 
-propMaxSuc : (x y : Nat) -> max (suc x) (suc y) ≡ suc (max x y)
-propMaxSuc zero zero = refl
-propMaxSuc zero (suc y) = refl
-propMaxSuc (suc x) zero = refl
-propMaxSuc (suc x) (suc y) =
+propMaxSuc : (x y : Nat) -> max (S x) (S y) ≡ S (max x y)
+propMaxSuc Z Z = refl
+propMaxSuc Z (S y) = refl
+propMaxSuc (S x) Z = refl
+propMaxSuc (S x) (S y) =
   begin
-    max (suc $ suc x) (suc $ suc y)
+    max (S $ S x) (S $ S y)
   =⟨⟩
-    (if x < y then (suc $ suc y) else (suc $ suc x))
-  =⟨ propFnIf (x < y) (suc y) (suc x) suc ⟩
-    (suc $ (if x < y then (suc y) else (suc x)))
+    (if x < y then (S $ S y) else (S $ S x))
+  =⟨ propFnIf (x < y) (S y) (S x) S ⟩
+    (S $ (if x < y then (S y) else (S x)))
   =⟨⟩
-    suc (max (suc x) (suc y))
+    S (max (S x) (S y))
   end
 
 propMaxRefl : (x y : Nat) -> max x y ≡ max y x
-propMaxRefl zero zero = refl
-propMaxRefl zero (suc y) = refl
-propMaxRefl (suc x) zero = refl
-propMaxRefl (suc x) (suc y) =
+propMaxRefl Z Z = refl
+propMaxRefl Z (S y) = refl
+propMaxRefl (S x) Z = refl
+propMaxRefl (S x) (S y) =
   begin
-    max (suc x) (suc y)
+    max (S x) (S y)
   =⟨ propMaxSuc x y ⟩
-    suc (max x y)
-  =⟨ cong suc (propMaxRefl x y) ⟩
-    suc (max y x)
+    S (max x y)
+  =⟨ cong S (propMaxRefl x y) ⟩
+    S (max y x)
   =⟨ sym $ propMaxSuc y x ⟩
-    max (suc y) (suc x)
+    max (S y) (S x)
   end
 
 propIsTrueCombine2 : {a b : Bool} -> IsTrue a -> IsTrue b -> IsTrue (a && b)
@@ -131,13 +135,6 @@ ifc false then x else y = y {{IsFalse.itsFalse}}
 ifc true then x else y = x {{IsTrue.itsTrue}}
 {-# COMPILE AGDA2HS ifc_then_else_ #-}
 
-infix -2 matchnat_ifzero_ifsuc_
-matchnat_ifzero_ifsuc_ : (x : Nat) -> ({{IsTrue (x == 0)}} -> a) -> ({{IsFalse (x == 0)}} -> a) -> a
-matchnat_ifzero_ifsuc_ x t f = ifc (x == 0)
-  then (λ {{p}} -> t)
-  else (λ {{p}} -> f)
-{-# COMPILE AGDA2HS matchnat_ifzero_ifsuc_ #-}
-
 ---- Useful functions
 
 div : Nat -> (divisor : Nat) -> {≢0 : False (divisor ≟ 0)} -> Nat
@@ -153,33 +150,35 @@ pow b e = ifc e == 0 then 1 else (λ {{p}} -> b * pow b (_-_ e 1 {{propZeroImpli
 {-# TERMINATING #-}
 log2up : Nat -> Nat
 -- UNSAFE: This terminates since x/2 always decreases if x > 1
-log2up x = if x <= 1 then 0 else 1 + log2up (div (x + 1) 2)
+log2up 0 = 0
+log2up 1 = 0
+log2up x = S (log2up (div (x + 1) 2))
 {-# COMPILE AGDA2HS log2up #-}
 
 
 zeroLteAny : (a : Nat) -> IsTrue (0 <= a)
-zeroLteAny zero = IsTrue.itsTrue
-zeroLteAny (suc a) = IsTrue.itsTrue
+zeroLteAny Z = IsTrue.itsTrue
+zeroLteAny (S a) = IsTrue.itsTrue
 
 lteTransitive : (a b c : Nat) -> IsTrue (a <= b) -> IsTrue (b <= c) -> IsTrue (a <= c)
-lteTransitive zero zero c ab bc = bc
-lteTransitive zero (suc b) (suc c) ab bc = IsTrue.itsTrue
-lteTransitive (suc a) (suc b) (suc c) ab bc = lteTransitive a b c ab bc
+lteTransitive Z Z c ab bc = bc
+lteTransitive Z (S b) (S c) ab bc = IsTrue.itsTrue
+lteTransitive (S a) (S b) (S c) ab bc = lteTransitive a b c ab bc
 
-incrLte : (a b : Nat) -> IsTrue (a <= b) -> IsTrue (a <= suc b)
-incrLte zero zero altb = IsTrue.itsTrue
-incrLte zero (suc b) altb = IsTrue.itsTrue
-incrLte (suc a) (suc b) altb = incrLte a b altb
+incrLte : (a b : Nat) -> IsTrue (a <= b) -> IsTrue (a <= S b)
+incrLte Z Z altb = IsTrue.itsTrue
+incrLte Z (S b) altb = IsTrue.itsTrue
+incrLte (S a) (S b) altb = incrLte a b altb
 
-natPlusMinNat : (x : Nat) -> {{p : IsFalse (x < 1)}} -> x ≡ (suc (x - 1))
-natPlusMinNat (suc x) = refl
+natPlusMinNat : (x : Nat) -> {{p : IsFalse (x < 1)}} -> x ≡ (S (x - 1))
+natPlusMinNat (S x) = refl
 
 transformLteRight : {a b c : Nat} -> b ≡ c -> IsTrue (a <= b) -> IsTrue (a <= c)
 transformLteRight {a} {b} {.b} refl ab = ab
 
 lteSelf : (v : Nat) -> IsTrue (v <= v)
-lteSelf zero = IsTrue.itsTrue
-lteSelf (suc v) = lteSelf v
+lteSelf Z = IsTrue.itsTrue
+lteSelf (S v) = lteSelf v
 
 isFalseNot : {b : Bool} -> IsFalse (not b) -> IsTrue b
 isFalseNot {true} if = IsTrue.itsTrue

@@ -1,6 +1,6 @@
 module Data.QuadTree.InternalAgda where
 
-open import Haskell.Prelude
+open import Haskell.Prelude renaming (zero to Z; suc to S)
 open import Data.QuadTree.Lens
 open import Data.QuadTree.Logic
 open import Data.QuadTree.PropDepthRelation
@@ -9,6 +9,7 @@ open import Data.QuadTree.PropDepthRelation
 {-# LANGUAGE Safe #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE Rank2Types #-}
+import Data.Nat
 import Data.QuadTree.Lens
 import Data.QuadTree.Logic
 #-}
@@ -18,7 +19,7 @@ import Data.QuadTree.Logic
 data Quadrant (t : Set) : Set where
   Leaf : t -> Quadrant t
   Node : Quadrant t -> Quadrant t -> Quadrant t -> Quadrant t -> Quadrant t
-{-# COMPILE AGDA2HS Quadrant deriving (Show, Read, Eq) #-}
+{-# COMPILE AGDA2HS Quadrant deriving (Show, Eq) #-}
 
 instance
   quadrantFunctor : Functor Quadrant
@@ -31,7 +32,7 @@ instance
 data QuadTree (t : Set) : Set where
   -- wrappedTree, (width x height)
   Wrapper : Quadrant t -> (Nat × Nat) -> QuadTree t
-{-# COMPILE AGDA2HS QuadTree deriving (Show, Read, Eq) #-}
+{-# COMPILE AGDA2HS QuadTree deriving (Show, Eq) #-}
 
 instance
   quadTreeFunctor : Functor QuadTree
@@ -85,14 +86,14 @@ propDepthRelationEq : {t : Set} -> (a b c d : Quadrant t) -> depth (Node a b c d
 propDepthRelationEq a b c d = refl
 
 propDepthRelationLte : {t : Set} -> (a b c d : Quadrant t) -> (dep : Nat) 
-  -> ((depth a <= dep && depth b <= dep) && (depth c <= dep && depth d <= dep)) ≡ (depth (Node a b c d) <= (suc dep))
+  -> ((depth a <= dep && depth b <= dep) && (depth c <= dep && depth d <= dep)) ≡ (depth (Node a b c d) <= (S dep))
 propDepthRelationLte a b c d dep =
   begin 
     ((depth a <= dep && depth b <= dep) && (depth c <= dep && depth d <= dep))
   =⟨ propMaxLte4 (depth a) (depth b) (depth c) (depth d) dep ⟩
     (max (max (depth a) (depth b)) (max (depth c) (depth d)) <= dep)
   =⟨⟩
-    (depth (Node a b c d) <= suc dep)
+    (depth (Node a b c d) <= S dep)
   end
 
 propCompressedRelation : {t : Set} {{eqT : Eq t}} -> {a b c d : Quadrant t}
@@ -108,7 +109,7 @@ propCompressedRelation {_} {Leaf _} {Leaf _} {Leaf _} {Node _ _ _ _} p = p
 
 combine : {t : Set} {{eqT : Eq t}} -> {dep : Nat}
   -> (a b c d : ValidQuadrant t {dep})
-  -> (ValidQuadrant t {suc dep})
+  -> (ValidQuadrant t {S dep})
 combine {t} {dep} (CValidQuadrant a@(Leaf va) {pa}) (CValidQuadrant b@(Leaf vb) {pb}) (CValidQuadrant c@(Leaf vc) {pc}) (CValidQuadrant d@(Leaf vd) {pd}) 
   = ifc (isCompressed (Node a b c d)) 
     then (λ {{pn}} -> CValidQuadrant (Node a b c d) {andCombine (zeroLteAny dep) pn} )
@@ -149,7 +150,7 @@ lensWrappedTree {dep = dep} fun (CValidQuadTree (Wrapper qd (w , h)) {p}) =
 {-# COMPILE AGDA2HS lensWrappedTree #-}
 
 aSub : {t : Set} {{eqT : Eq t}} -> {dep : Nat} -> (a b c d : Quadrant t) 
-  -> IsTrue (isValid (suc dep) (Node a b c d)) -> IsTrue (isValid (dep) a)
+  -> IsTrue (isValid (S dep) (Node a b c d)) -> IsTrue (isValid (dep) a)
 aSub {_} {dep} a b c d p = andCombine 
   -- Convert depth proof using propDepthRelationLte
   (andFst $ andFst {(depth a <= dep && depth b <= dep)} $ useEq (sym (propDepthRelationLte a b c d dep)) (andFst p))
@@ -157,7 +158,7 @@ aSub {_} {dep} a b c d p = andCombine
   (and1 {isCompressed a} {isCompressed b} {isCompressed c} {isCompressed d} (propCompressedRelation {_} {a} (andSnd p)))
 
 bSub : {t : Set} {{eqT : Eq t}} -> {dep : Nat} -> (a b c d : Quadrant t) 
-  -> IsTrue (isValid (suc dep) (Node a b c d)) -> IsTrue (isValid (dep) b)
+  -> IsTrue (isValid (S dep) (Node a b c d)) -> IsTrue (isValid (dep) b)
 bSub {_} {dep} a b c d p = andCombine 
   -- Convert depth proof using propDepthRelationLte
   (andSnd $ andFst {(depth a <= dep && depth b <= dep)} $ useEq (sym (propDepthRelationLte a b c d dep)) (andFst p))
@@ -165,7 +166,7 @@ bSub {_} {dep} a b c d p = andCombine
   (and2 {isCompressed a} {isCompressed b} {isCompressed c} {isCompressed d} (propCompressedRelation {_} {a} (andSnd p)))
 
 cSub : {t : Set} {{eqT : Eq t}} -> {dep : Nat} -> (a b c d : Quadrant t) 
-  -> IsTrue (isValid (suc dep) (Node a b c d)) -> IsTrue (isValid (dep) c)
+  -> IsTrue (isValid (S dep) (Node a b c d)) -> IsTrue (isValid (dep) c)
 cSub {_} {dep} a b c d p = andCombine 
   -- Convert depth proof using propDepthRelationLte
   (andFst $ andSnd {(depth a <= dep && depth b <= dep)} $ useEq (sym (propDepthRelationLte a b c d dep)) (andFst p))
@@ -173,7 +174,7 @@ cSub {_} {dep} a b c d p = andCombine
   (and3 {isCompressed a} {isCompressed b} {isCompressed c} {isCompressed d} (propCompressedRelation {_} {a} (andSnd p)))
 
 dSub : {t : Set} {{eqT : Eq t}} -> {dep : Nat} -> (a b c d : Quadrant t) 
-  -> IsTrue (isValid (suc dep) (Node a b c d)) -> IsTrue (isValid (dep) d)
+  -> IsTrue (isValid (S dep) (Node a b c d)) -> IsTrue (isValid (dep) d)
 dSub {_} {dep} a b c d p = andCombine 
   -- Convert depth proof using propDepthRelationLte
   (andSnd $ andSnd {(depth a <= dep && depth b <= dep)} $ useEq (sym (propDepthRelationLte a b c d dep)) (andFst p))
@@ -183,7 +184,7 @@ dSub {_} {dep} a b c d p = andCombine
 lensA : 
   {t : Set} {{eqT : Eq t}}
   -> {dep : Nat}
-  -> CLens (ValidQuadrant t {suc dep}) (ValidQuadrant t {dep})
+  -> CLens (ValidQuadrant t {S dep}) (ValidQuadrant t {dep})
 lensA {_} {dep} f (CValidQuadrant (Leaf v) {p}) = 
   let sub = CValidQuadrant (Leaf v) {andCombine (zeroLteAny dep) IsTrue.itsTrue}
   in fmap (λ x -> combine x sub sub sub ) (f sub)
@@ -199,7 +200,7 @@ lensA {_} {dep} f (CValidQuadrant (Node a b c d) {p}) =
 lensB : 
   {t : Set} {{eqT : Eq t}}
   -> {dep : Nat}
-  -> CLens (ValidQuadrant t {suc dep}) (ValidQuadrant t {dep})
+  -> CLens (ValidQuadrant t {S dep}) (ValidQuadrant t {dep})
 lensB {_} {dep} f (CValidQuadrant (Leaf v) {p}) = 
   let sub = CValidQuadrant (Leaf v) {andCombine (zeroLteAny dep) IsTrue.itsTrue}
   in fmap (λ x -> combine sub x sub sub ) (f sub)
@@ -215,7 +216,7 @@ lensB {_} {dep} f (CValidQuadrant (Node a b c d) {p}) =
 lensC : 
   {t : Set} {{eqT : Eq t}}
   -> {dep : Nat}
-  -> CLens (ValidQuadrant t {suc dep}) (ValidQuadrant t {dep})
+  -> CLens (ValidQuadrant t {S dep}) (ValidQuadrant t {dep})
 lensC {_} {dep} f (CValidQuadrant (Leaf v) {p}) = 
   let sub = CValidQuadrant (Leaf v) {andCombine (zeroLteAny dep) IsTrue.itsTrue}
   in fmap (λ x -> combine sub sub x sub ) (f sub)
@@ -231,7 +232,7 @@ lensC {_} {dep} f (CValidQuadrant (Node a b c d) {p}) =
 lensD : 
   {t : Set} {{eqT : Eq t}}
   -> {dep : Nat}
-  -> CLens (ValidQuadrant t {suc dep}) (ValidQuadrant t {dep})
+  -> CLens (ValidQuadrant t {S dep}) (ValidQuadrant t {dep})
 lensD {_} {dep} f (CValidQuadrant (Leaf v) {p}) = 
   let sub = CValidQuadrant (Leaf v) {andCombine (zeroLteAny dep) IsTrue.itsTrue}
   in fmap (λ x -> combine sub sub sub x ) (f sub)
@@ -251,116 +252,83 @@ lensLeaf f (CValidQuadrant (Leaf v)) = fmap (λ x -> CValidQuadrant (Leaf x) {Is
 
 ---- Data access
 
+go : {t : Set} {{eqT : Eq t}}
+  -> (Nat × Nat) -> (dep : Nat)
+  -> CLens (ValidQuadrant t {dep}) t
+go (x , y) Z = lensLeaf
+go (x , y) (S deps) = ifc (y < mid) 
+  then (ifc x < mid 
+    then (             lensA ∘ go (x                 , y                ) deps)
+    else (λ {{xgt}} -> lensB ∘ go (_-_ x mid {{xgt}} , y                ) deps))
+  else (λ {{ygt}} -> (ifc x < mid
+    then (             lensC ∘ go (x                 , _-_ y mid {{ygt}}) deps)
+    else (λ {{xgt}} -> lensD ∘ go (_-_ x mid {{xgt}} , _-_ y mid {{ygt}}) deps)))
+  where
+    mid = pow 2 deps
+{-# COMPILE AGDA2HS go #-}
 
--- toZeroMaxDepth : {t : Set} {{eqT : Eq t}} -> {dep : Nat} -> (qd : ValidQuadrant t {dep}) -> {IsTrue (dep == 0)} -> ValidQuadrant t {0}
--- toZeroMaxDepth {dep = zero} qd {p} = qd
--- -- Agda2hs does not compile this function correctly because of pattern matching on nats
--- {-# FOREIGN AGDA2HS toZeroMaxDepth = id #-}
+---- Agda safe functions
 
--- -- This is terminating, since dep always decreases when calling recursively
--- -- Agda would understand this if we could match on Nats...
--- {-# TERMINATING #-}
--- go : {t : Set} {{eqT : Eq t}}
---   -> (Nat × Nat) -> (dep : Nat)
---   -> CLens (ValidQuadrant t {dep}) t
--- go {t} (x , y) dep = matchnat dep
---   ifzero ( λ {{p1}} g qd →
---     fmap 
---       -- fmap result from f (CValidQuadrant qd 0) to f (CValidQuadrant qd dep), so we can return it.
---       (λ where (CValidQuadrant qd {p2}) -> CValidQuadrant qd {lteTransitive (depth qd) 0 dep p2 (zeroLteAny dep)})
---       -- Call lensLeaf, using the fact that depth = 0 to proof that this is a leaf
---       (lensLeaf g (toZeroMaxDepth {dep = dep} qd {p1}))
---   ) 
---   ifsuc ( λ {{p1}} g vqd -> 
---     let
---       -- ds is dep - 1
---       deps = _-_ dep 1 {{propZeroImpliesLtOne dep p1}}
---       -- Find the middle of [0, dep]
---       mid = pow 2 deps
+makeTreeAgda : {t : Set} {{eqT : Eq t}} -> (size : Nat × Nat) -> t -> ValidQuadTree t {log2up $ max (fst size) (snd size)}
+makeTreeAgda (w , h) v = CValidQuadTree (Wrapper (Leaf v) (w , h)) {andCombine (zeroLteAny (log2up $ max w h)) IsTrue.itsTrue}
+{-# COMPILE AGDA2HS makeTreeAgda #-}
 
---       -- Figure out which lens to use based on (x , y)
---       -- TODO: Proof correctness of this part
---       lensToUse = ifc y < mid then
---           ifc x < mid then         lensA {t} {deps} (go (x , y) deps g)
---           else (λ {{x_gt_mid}} ->  lensB {t} {deps} (go (_-_ x mid {{x_gt_mid}} , y) deps g))
---         else (λ {{y_gt_mid}} ->
---           ifc x < mid then         lensC {t} {deps} (go (x , _-_ y mid {{y_gt_mid}}) deps g)
---           else (λ {{x_gt_mid}} ->  lensD {t} {deps} (go (_-_ x mid {{x_gt_mid}} , _-_ y mid {{y_gt_mid}}) deps g)))
+atLocationAgda : {t : Set} {{eqT : Eq t}}
+  -> (Nat × Nat) -> (dep : Nat)
+  -> CLens (ValidQuadTree t {dep}) t
+atLocationAgda index dep = lensWrappedTree ∘ (go index dep)
+{-# COMPILE AGDA2HS atLocationAgda #-}
 
---       -- Convert (ValidQuadrant t dep) to (ValidQuadrant t (suc deps))
---       -- dep = suc deps, but I was not able to convince agda that this is true
---       vqdm : ValidQuadrant t {suc deps}
---       vqdm = case vqd of λ where
---         (CValidQuadrant qd {p2}) → CValidQuadrant qd {transformLteRight (natPlusMinNat dep {{(propZeroImpliesLtOne dep p1)}}) p2 }
+getLocationAgda : {t : Set} {{eqT : Eq t}}
+  -> (Nat × Nat) -> (dep : Nat)
+  -> ValidQuadTree t {dep} -> t
+getLocationAgda index dep = view (atLocationAgda index dep)
+{-# COMPILE AGDA2HS getLocationAgda #-}
 
---       -- Apply the lens to v1dm
---       intermediate = lensToUse vqdm
+setLocationAgda : {t : Set} {{eqT : Eq t}}
+  -> (Nat × Nat) -> (dep : Nat) 
+  -> t -> ValidQuadTree t {dep} -> ValidQuadTree t {dep}
+setLocationAgda index dep = set (atLocationAgda index dep)
+{-# COMPILE AGDA2HS setLocationAgda #-}
 
---       -- Convert back from (ValidQuadrant t (suc deps)) to (ValidQuadrant t dep)
---       bqdm = fmap (λ where 
---         (CValidQuadrant qd {p2}) -> CValidQuadrant qd {transformLteRight (sym $ natPlusMinNat dep {{(propZeroImpliesLtOne dep p1)}}) p2}) intermediate
---     in
---       bqdm
---   ) 
--- {-# COMPILE AGDA2HS go #-}
+mapLocationAgda : {t : Set} {{eqT : Eq t}}
+  -> (Nat × Nat) -> (dep : Nat)
+  -> (t -> t) -> ValidQuadTree t {dep} -> ValidQuadTree t {dep}
+mapLocationAgda index dep = over (atLocationAgda index dep)
+{-# COMPILE AGDA2HS mapLocationAgda #-}
 
--- ---- Agda safe functions
+---- Haskell safe functions
 
--- makeTreeAgda : {t : Set} {{eqT : Eq t}} -> (size : Nat × Nat) -> t -> ValidQuadTree t {log2up $ max (fst size) (snd size)}
--- makeTreeAgda (w , h) v = CValidQuadTree (Wrapper (Leaf v) (w , h)) {zeroLteAny (log2up $ max w h)}
--- {-# COMPILE AGDA2HS makeTreeAgda #-}
+postulate invalidQuadTree : {t : Set} {{eqT : Eq t}} -> {dep : Nat} -> ValidQuadTree t {dep}
+{-# FOREIGN AGDA2HS invalidQuadTree = error "Invalid quadtree given" #-}
 
--- atLocationAgda : {t : Set} {{eqT : Eq t}}
---   -> (Nat × Nat) -> (dep : Nat)
---   -> CLens (ValidQuadTree t {dep}) t
--- atLocationAgda index dep = lensWrappedTree ∘ (go index dep)
--- {-# COMPILE AGDA2HS atLocationAgda #-}
+qtToAgda : {t : Set} {{eqT : Eq t}} -> (qt : QuadTree t) -> ValidQuadTree t {maxDepth qt}
+qtToAgda qt = ifc ((depth $ treeToQuadrant qt) <= maxDepth qt) && (isCompressed $ treeToQuadrant qt)
+  then (λ {{p}} -> CValidQuadTree qt {p} )
+  else invalidQuadTree
+{-# COMPILE AGDA2HS qtToAgda #-}
 
--- getLocationAgda : {t : Set} {{eqT : Eq t}}
---   -> (Nat × Nat) -> (dep : Nat)
---   -> ValidQuadTree t {dep} -> t
--- getLocationAgda index dep = view (atLocationAgda index dep)
--- {-# COMPILE AGDA2HS getLocationAgda #-}
+qtFromAgda : {t : Set} {{eqT : Eq t}} -> {dep : Nat} -> ValidQuadTree t {dep} -> QuadTree t
+qtFromAgda (CValidQuadTree qt) = qt
+{-# COMPILE AGDA2HS qtFromAgda #-}
 
--- setLocationAgda : {t : Set} {{eqT : Eq t}}
---   -> (Nat × Nat) -> (dep : Nat) 
---   -> t -> ValidQuadTree t {dep} -> ValidQuadTree t {dep}
--- setLocationAgda index dep = set (atLocationAgda index dep)
--- {-# COMPILE AGDA2HS setLocationAgda #-}
+makeTree : {t : Set} {{eqT : Eq t}} -> (size : Nat × Nat) -> t -> QuadTree t
+makeTree size v = qtFromAgda $ makeTreeAgda size v
+{-# COMPILE AGDA2HS makeTree #-}
 
--- mapLocationAgda : {t : Set} {{eqT : Eq t}}
---   -> (Nat × Nat) -> (dep : Nat)
---   -> (t -> t) -> ValidQuadTree t {dep} -> ValidQuadTree t {dep}
--- mapLocationAgda index dep = over (atLocationAgda index dep)
--- {-# COMPILE AGDA2HS mapLocationAgda #-}
+getLocation : {t : Set} {{eqT : Eq t}} -> (Nat × Nat) -> QuadTree t -> t
+getLocation loc qt = getLocationAgda loc (maxDepth qt) $ qtToAgda qt
+{-# COMPILE AGDA2HS getLocation #-}
 
--- ---- Haskell safe functions
+setLocation : {t : Set} {{eqT : Eq t}} -> (Nat × Nat) -> t -> QuadTree t -> QuadTree t
+setLocation loc v qt = qtFromAgda $ setLocationAgda loc (maxDepth qt) v $ qtToAgda qt
+{-# COMPILE AGDA2HS setLocation #-}
 
--- postulate invalidQuadTree : {t : Set} {{eqT : Eq t}} -> {dep : Nat} -> ValidQuadTree t {dep}
--- {-# FOREIGN AGDA2HS invalidQuadTree = error "Invalid quadtree given" #-}
+mapLocation : {t : Set} {{eqT : Eq t}} -> (Nat × Nat) -> (t -> t) -> QuadTree t -> QuadTree t
+mapLocation loc f qt = qtFromAgda $ mapLocationAgda loc (maxDepth qt) f $ qtToAgda qt
+{-# COMPILE AGDA2HS mapLocation #-}
 
--- qtToAgda : {t : Set} {{eqT : Eq t}} -> (qt : QuadTree t) -> ValidQuadTree t {maxDepth qt}
--- qtToAgda qt = ifc (depth $ treeToQuadrant qt) <= maxDepth qt
---   then (λ {{p}} -> CValidQuadTree qt {p} )
---   else invalidQuadTree
--- {-# COMPILE AGDA2HS qtToAgda #-}
-
--- qtFromAgda : {t : Set} {{eqT : Eq t}} -> {dep : Nat} -> ValidQuadTree t {dep} -> QuadTree t
--- qtFromAgda (CValidQuadTree qt) = qt
--- {-# COMPILE AGDA2HS qtFromAgda #-}
-
--- makeTree : {t : Set} {{eqT : Eq t}} -> (size : Nat × Nat) -> t -> QuadTree t
--- makeTree size v = qtFromAgda $ makeTreeAgda size v
--- {-# COMPILE AGDA2HS makeTree #-}
-
--- getLocation : {t : Set} {{eqT : Eq t}} -> (Nat × Nat) -> QuadTree t -> t
--- getLocation loc qt = getLocationAgda loc (maxDepth qt) $ qtToAgda qt
--- {-# COMPILE AGDA2HS getLocation #-}
-
--- setLocation : {t : Set} {{eqT : Eq t}} -> (Nat × Nat) -> t -> QuadTree t -> QuadTree t
--- setLocation loc v qt = qtFromAgda $ setLocationAgda loc (maxDepth qt) v $ qtToAgda qt
--- {-# COMPILE AGDA2HS setLocation #-}
-
--- mapLocation : {t : Set} {{eqT : Eq t}} -> (Nat × Nat) -> (t -> t) -> QuadTree t -> QuadTree t
--- mapLocation loc f qt = qtFromAgda $ mapLocationAgda loc (maxDepth qt) f $ qtToAgda qt
--- {-# COMPILE AGDA2HS mapLocation #-}
+x = Wrapper (Node (Leaf true) (Leaf false) (Leaf true) (Leaf false)) (4 , 6)
+-- y = setLocation (2 , 4) true x
+z1 = getLocation (3 , 3) x
+-- z2 = getLocation (3 , 3) y

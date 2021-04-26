@@ -25,6 +25,7 @@ source-repository head
 
 library
   exposed-modules:
+      Data.Nat
       Data.QuadTree
       Data.QuadTree.InternalAgda
       Data.QuadTree.InternalHaskell
