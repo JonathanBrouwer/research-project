@@ -141,10 +141,9 @@ div : Nat -> (divisor : Nat) -> {≢0 : False (divisor ≟ 0)} -> Nat
 div a b {p} = _/_ a b {p}
 -- Does not need compile, since it is already defined in haskell
 
-{-# TERMINATING #-}
--- UNSAFE: This terminates e always decreases
 pow : Nat -> Nat -> Nat
-pow b e = ifc e == 0 then 1 else (λ {{p}} -> b * pow b (_-_ e 1 {{propZeroImpliesLtOne e p}}))
+pow b Z = 1
+pow b (S e) = b * pow b e
 {-# COMPILE AGDA2HS pow #-}
 
 {-# TERMINATING #-}
