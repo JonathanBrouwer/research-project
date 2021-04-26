@@ -1,12 +1,18 @@
+{-# LANGUAGE Safe #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE Rank2Types #-}
 
 module Data.QuadTree.InternalAgda where
 
 import Numeric.Natural (Natural)
 
 
+
+
 import Data.QuadTree.Functors
 import Data.QuadTree.Logic
+
+type CLens s a = forall f. Functor f => (a -> f a) -> s -> f s
 
 data Quadrant t = Leaf t
                 | Node (Quadrant t) (Quadrant t) (Quadrant t) (Quadrant t)
@@ -45,10 +51,7 @@ fuse (CValidQuadrant (Node (Leaf a) (Leaf b) (Leaf c) (Leaf d)))
 fuse old = old
 
 lensWrappedTree ::
-                  Eq t =>
-                    Functor f =>
-                    (ValidQuadrant t -> f (ValidQuadrant t)) ->
-                      ValidQuadTree t -> f (ValidQuadTree t)
+                  Eq t => CLens (ValidQuadTree t) (ValidQuadrant t)
 lensWrappedTree fun (CValidQuadTree (Wrapper qd l w))
   = fmap
       (\case
@@ -63,11 +66,7 @@ combine ::
 combine (CValidQuadrant a) (CValidQuadrant b) (CValidQuadrant c)
   (CValidQuadrant d) = CValidQuadrant (Node a b c d)
 
-lensA ::
-        Eq t =>
-          Functor f =>
-          (ValidQuadrant t -> f (ValidQuadrant t)) ->
-            ValidQuadrant t -> f (ValidQuadrant t)
+lensA :: Eq t => CLens (ValidQuadrant t) (ValidQuadrant t)
 lensA f (CValidQuadrant (Leaf v))
   = fmap
       (\ x ->
@@ -83,11 +82,7 @@ lensA f (CValidQuadrant (Node a b c d))
               (CValidQuadrant a)))
       (f (CValidQuadrant a))
 
-lensB ::
-        Eq t =>
-          Functor f =>
-          (ValidQuadrant t -> f (ValidQuadrant t)) ->
-            ValidQuadrant t -> f (ValidQuadrant t)
+lensB :: Eq t => CLens (ValidQuadrant t) (ValidQuadrant t)
 lensB f (CValidQuadrant (Leaf v))
   = fmap
       (\ x ->
@@ -103,11 +98,7 @@ lensB f (CValidQuadrant (Node a b c d))
               (CValidQuadrant b)))
       (f (CValidQuadrant b))
 
-lensC ::
-        Eq t =>
-          Functor f =>
-          (ValidQuadrant t -> f (ValidQuadrant t)) ->
-            ValidQuadrant t -> f (ValidQuadrant t)
+lensC :: Eq t => CLens (ValidQuadrant t) (ValidQuadrant t)
 lensC f (CValidQuadrant (Leaf v))
   = fmap
       (\ x ->
@@ -123,11 +114,7 @@ lensC f (CValidQuadrant (Node a b c d))
               (CValidQuadrant c)))
       (f (CValidQuadrant c))
 
-lensD ::
-        Eq t =>
-          Functor f =>
-          (ValidQuadrant t -> f (ValidQuadrant t)) ->
-            ValidQuadrant t -> f (ValidQuadrant t)
+lensD :: Eq t => CLens (ValidQuadrant t) (ValidQuadrant t)
 lensD f (CValidQuadrant (Leaf v))
   = fmap
       (\ x ->
@@ -144,9 +131,7 @@ lensD f (CValidQuadrant (Node a b c d))
               x))
       (f (CValidQuadrant d))
 
-lensLeaf ::
-           Eq t =>
-             Functor f => (t -> f t) -> ValidQuadrant t -> f (ValidQuadrant t)
+lensLeaf :: Eq t => CLens (ValidQuadrant t) t
 lensLeaf f (CValidQuadrant (Leaf v))
   = fmap (\ x -> CValidQuadrant (Leaf x)) (f v)
 lensLeaf x (CValidQuadrant (Node qd qd₁ qd₂ qd₃))
@@ -155,10 +140,7 @@ lensLeaf x (CValidQuadrant (Node qd qd₁ qd₂ qd₃))
 toZeroMaxDepth = id
 
 go ::
-     Eq t =>
-       Functor f =>
-       (Natural, Natural) ->
-         Natural -> (t -> f t) -> ValidQuadrant t -> f (ValidQuadrant t)
+     Eq t => (Natural, Natural) -> Natural -> CLens (ValidQuadrant t) t
 go (x, y) dep
   = matchnat_ifzero_ifsuc_ dep
       (\ g qd ->
@@ -182,10 +164,7 @@ go (x, y) dep
                    CValidQuadrant qd -> CValidQuadrant qd)))
 
 atLocation ::
-             Eq a =>
-               Functor f =>
-               (Natural, Natural) ->
-                 Natural -> (a -> f a) -> ValidQuadTree a -> f (ValidQuadTree a)
+             Eq a => (Natural, Natural) -> Natural -> CLens (ValidQuadTree a) a
 atLocation index dep = lensWrappedTree . go index dep
 
 getLocationAgda ::
@@ -198,12 +177,12 @@ setLocationAgda ::
                   (Natural, Natural) ->
                     Natural -> a -> ValidQuadTree a -> ValidQuadTree a
 setLocationAgda index dep v qt
-  = runIdentity (atLocation index dep (\ _ -> CIdentity v) qt)
+  = runIdentity $ atLocation index dep (\ _ -> CIdentity v) qt
 
 mapLocationAgda ::
                   Eq a =>
                   (Natural, Natural) ->
                     Natural -> (a -> a) -> ValidQuadTree a -> ValidQuadTree a
 mapLocationAgda index dep f qt
-  = runIdentity (atLocation index dep (CIdentity . f) qt)
+  = runIdentity $ atLocation index dep (CIdentity . f) qt
 
