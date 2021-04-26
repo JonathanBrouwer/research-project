@@ -85,6 +85,9 @@ propIsTrueCombine2 {true} {true} ta tb = IsTrue.itsTrue
 propIsTrueCombine4 : {a b c d : Bool} -> IsTrue a -> IsTrue b -> IsTrue c -> IsTrue d -> IsTrue ((a && b) && (c && d))
 propIsTrueCombine4 {true} {true} {true} {true} ta tb tc td = IsTrue.itsTrue
 
+propIsTrueCombine4Alt : {a b c d : Bool} -> IsTrue a -> IsTrue b -> IsTrue c -> IsTrue d -> IsTrue (a && b && c && d)
+propIsTrueCombine4Alt {true} {true} {true} {true} ta tb tc td = IsTrue.itsTrue
+
 andRefl : (a b : Bool) -> (a && b) ≡ (b && a)
 andRefl false false = refl
 andRefl false true = refl
@@ -96,6 +99,9 @@ andFst {true} {true} ab = IsTrue.itsTrue
 
 andSnd : {a b : Bool} -> IsTrue (a && b) -> IsTrue b
 andSnd {true} {true} ab = IsTrue.itsTrue
+
+andCombine : {a b : Bool} -> IsTrue a -> IsTrue b -> IsTrue (a && b)
+andCombine {true} {true} ta tb = IsTrue.itsTrue
 
 boolAndTrue : (a : Bool) -> (a && true) ≡ a
 boolAndTrue false = refl
@@ -162,3 +168,6 @@ transformLteRight {a} {b} {.b} refl ab = ab
 lteSelf : (v : Nat) -> IsTrue (v <= v)
 lteSelf zero = IsTrue.itsTrue
 lteSelf (suc v) = lteSelf v
+
+isFalseNot : {b : Bool} -> IsFalse (not b) -> IsTrue b
+isFalseNot {true} if = IsTrue.itsTrue
