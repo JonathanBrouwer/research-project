@@ -95,6 +95,15 @@ propDepthRelationLte a b c d dep =
     (depth (Node a b c d) <= suc dep)
   end
 
+propCompressedRelation : {t : Set} {{eqT : Eq t}} -> {a b c d : Quadrant t}
+  -> IsTrue (isCompressed (Node a b c d))
+  -> IsTrue (isCompressed a && isCompressed b && isCompressed c && isCompressed d)
+propCompressedRelation {_} {Leaf a} {Leaf b} {Leaf c} {Leaf d} p = IsTrue.itsTrue
+propCompressedRelation {_} {Node _ _ _ _} {b} {c} {d} p = p
+propCompressedRelation {_} {Leaf _} {Node _ _ _ _} {c} {d} p = p
+propCompressedRelation {_} {Leaf _} {Leaf _} {Node _ _ _ _} {d} p = p
+propCompressedRelation {_} {Leaf _} {Leaf _} {Leaf _} {Node _ _ _ _} p = p
+
 ---- Fuse
 
 combine : {t : Set} {{eqT : Eq t}} -> {dep : Nat}
@@ -128,120 +137,119 @@ combine {t} {dep} (CValidQuadrant a@(Leaf va) {pa}) (CValidQuadrant b@(Leaf vb) 
   }
 {-# COMPILE AGDA2HS combine #-}
 
---{andCombine (useEq (propDepthRelationLte a b c d dep) (propIsTrueCombine4 (andFst pa) (andFst pb) (andFst pc) (andFst pd))) (propIsTrueCombine4Alt (andSnd pa) (andSnd pb) (andSnd pc) (andSnd pd))}
-
 ---- Lenses
 
--- lensWrappedTree : {t : Set} {{eqT : Eq t}}
---   -> {dep : Nat}
---   -> CLens (ValidQuadTree t {dep}) (ValidQuadrant t {dep})
--- lensWrappedTree {dep = dep} fun (CValidQuadTree (Wrapper qd (w , h)) {p}) = 
---   fmap 
---     (λ where (CValidQuadrant qd {p}) → CValidQuadTree (Wrapper qd (w , h)) {p})
---     (fun (CValidQuadrant qd {p}))
--- {-# COMPILE AGDA2HS lensWrappedTree #-}
+lensWrappedTree : {t : Set} {{eqT : Eq t}}
+  -> {dep : Nat}
+  -> CLens (ValidQuadTree t {dep}) (ValidQuadrant t {dep})
+lensWrappedTree {dep = dep} fun (CValidQuadTree (Wrapper qd (w , h)) {p}) = 
+  fmap 
+    (λ where (CValidQuadrant qd {p}) → CValidQuadTree (Wrapper qd (w , h)) {p})
+    (fun (CValidQuadrant qd {p}))
+{-# COMPILE AGDA2HS lensWrappedTree #-}
 
--- combine : {t : Set} {{eqT : Eq t}} -> {dep : Nat}
---   -> (a b c d : ValidQuadrant t {dep})
---   -> (ValidQuadrant t {suc dep})
--- combine {t} {dep} (CValidQuadrant a {pa}) (CValidQuadrant b {pb}) (CValidQuadrant c {pc}) (CValidQuadrant d {pd}) 
---   = fuse $ CValidQuadrant (Node a b c d) {useEq (propDepthRelationLte a b c d dep) (propIsTrueCombine4 pa pb pc pd)}
--- {-# COMPILE AGDA2HS combine #-}
+aSub : {t : Set} {{eqT : Eq t}} -> {dep : Nat} -> (a b c d : Quadrant t) 
+  -> IsTrue (isValid (suc dep) (Node a b c d)) -> IsTrue (isValid (dep) a)
+aSub {_} {dep} a b c d p = andCombine 
+  -- Convert depth proof using propDepthRelationLte
+  (andFst $ andFst {(depth a <= dep && depth b <= dep)} $ useEq (sym (propDepthRelationLte a b c d dep)) (andFst p))
+  -- Convert compressed proof using propCompressedRelation
+  (and1 {isCompressed a} {isCompressed b} {isCompressed c} {isCompressed d} (propCompressedRelation {_} {a} (andSnd p)))
 
--- aSub : {t : Set} {{eqT : Eq t}}
---   -> {dep : Nat}
---   -> (a b c d : Quadrant t) -> IsTrue ((depth (Node a b c d)) <= suc dep)
---   -> IsTrue (depth a <= dep)
--- aSub {_} {dep} a b c d p = andFst $ andFst {(depth a <= dep && depth b <= dep)} $ useEq (sym (propDepthRelationLte a b c d dep)) p
+bSub : {t : Set} {{eqT : Eq t}} -> {dep : Nat} -> (a b c d : Quadrant t) 
+  -> IsTrue (isValid (suc dep) (Node a b c d)) -> IsTrue (isValid (dep) b)
+bSub {_} {dep} a b c d p = andCombine 
+  -- Convert depth proof using propDepthRelationLte
+  (andSnd $ andFst {(depth a <= dep && depth b <= dep)} $ useEq (sym (propDepthRelationLte a b c d dep)) (andFst p))
+  -- Convert compressed proof using propCompressedRelation
+  (and2 {isCompressed a} {isCompressed b} {isCompressed c} {isCompressed d} (propCompressedRelation {_} {a} (andSnd p)))
 
--- bSub : {t : Set} {{eqT : Eq t}}
---   -> {dep : Nat}
---   -> (a b c d : Quadrant t) -> IsTrue ((depth (Node a b c d)) <= suc dep)
---   -> IsTrue (depth b <= dep)
--- bSub {_} {dep} a b c d p = andSnd $ andFst {(depth a <= dep && depth b <= dep)} $ useEq (sym (propDepthRelationLte a b c d dep)) p
+cSub : {t : Set} {{eqT : Eq t}} -> {dep : Nat} -> (a b c d : Quadrant t) 
+  -> IsTrue (isValid (suc dep) (Node a b c d)) -> IsTrue (isValid (dep) c)
+cSub {_} {dep} a b c d p = andCombine 
+  -- Convert depth proof using propDepthRelationLte
+  (andFst $ andSnd {(depth a <= dep && depth b <= dep)} $ useEq (sym (propDepthRelationLte a b c d dep)) (andFst p))
+  -- Convert compressed proof using propCompressedRelation
+  (and3 {isCompressed a} {isCompressed b} {isCompressed c} {isCompressed d} (propCompressedRelation {_} {a} (andSnd p)))
 
--- cSub : {t : Set} {{eqT : Eq t}}
---   -> {dep : Nat}
---   -> (a b c d : Quadrant t) -> IsTrue ((depth (Node a b c d)) <= suc dep)
---   -> IsTrue (depth c <= dep)
--- cSub {_} {dep} a b c d p = andFst $ andSnd {(depth a <= dep && depth b <= dep)} $ useEq (sym (propDepthRelationLte a b c d dep)) p
+dSub : {t : Set} {{eqT : Eq t}} -> {dep : Nat} -> (a b c d : Quadrant t) 
+  -> IsTrue (isValid (suc dep) (Node a b c d)) -> IsTrue (isValid (dep) d)
+dSub {_} {dep} a b c d p = andCombine 
+  -- Convert depth proof using propDepthRelationLte
+  (andSnd $ andSnd {(depth a <= dep && depth b <= dep)} $ useEq (sym (propDepthRelationLte a b c d dep)) (andFst p))
+  -- Convert compressed proof using propCompressedRelation
+  (and4 {isCompressed a} {isCompressed b} {isCompressed c} {isCompressed d} (propCompressedRelation {_} {a} (andSnd p)))
 
--- dSub : {t : Set} {{eqT : Eq t}}
---   -> {dep : Nat}
---   -> (a b c d : Quadrant t) -> IsTrue ((depth (Node a b c d)) <= suc dep)
---   -> IsTrue (depth d <= dep)
--- dSub {_} {dep} a b c d p = andSnd $ andSnd {(depth a <= dep && depth b <= dep)} $ useEq (sym (propDepthRelationLte a b c d dep)) p
+lensA : 
+  {t : Set} {{eqT : Eq t}}
+  -> {dep : Nat}
+  -> CLens (ValidQuadrant t {suc dep}) (ValidQuadrant t {dep})
+lensA {_} {dep} f (CValidQuadrant (Leaf v) {p}) = 
+  let sub = CValidQuadrant (Leaf v) {andCombine (zeroLteAny dep) IsTrue.itsTrue}
+  in fmap (λ x -> combine x sub sub sub ) (f sub)
+lensA {_} {dep} f (CValidQuadrant (Node a b c d) {p}) = 
+  let 
+    sA = CValidQuadrant a {aSub a b c d p}
+    sB = CValidQuadrant b {bSub a b c d p}
+    sC = CValidQuadrant c {cSub a b c d p}
+    sD = CValidQuadrant d {dSub a b c d p}
+  in fmap (λ x -> combine x sB sC sD ) (f sA)
+{-# COMPILE AGDA2HS lensA #-}
 
--- lensA : 
---   {t : Set} {{eqT : Eq t}}
---   -> {dep : Nat}
---   -> CLens (ValidQuadrant t {suc dep}) (ValidQuadrant t {dep})
--- lensA {_} {dep} f (CValidQuadrant (Leaf v) {p}) = 
---   let sub = CValidQuadrant (Leaf v) {zeroLteAny dep}
---   in fmap (λ x -> fuse (combine x sub sub sub) ) (f sub)
--- lensA {_} {dep} f (CValidQuadrant (Node a b c d) {p}) = 
---   let 
---     sA = CValidQuadrant a {aSub a b c d p}
---     sB = CValidQuadrant b {bSub a b c d p}
---     sC = CValidQuadrant c {cSub a b c d p}
---     sD = CValidQuadrant d {dSub a b c d p}
---   in fmap (λ x -> combine x sB sC sD ) (f sA)
--- {-# COMPILE AGDA2HS lensA #-}
+lensB : 
+  {t : Set} {{eqT : Eq t}}
+  -> {dep : Nat}
+  -> CLens (ValidQuadrant t {suc dep}) (ValidQuadrant t {dep})
+lensB {_} {dep} f (CValidQuadrant (Leaf v) {p}) = 
+  let sub = CValidQuadrant (Leaf v) {andCombine (zeroLteAny dep) IsTrue.itsTrue}
+  in fmap (λ x -> combine sub x sub sub ) (f sub)
+lensB {_} {dep} f (CValidQuadrant (Node a b c d) {p}) = 
+  let 
+    sA = CValidQuadrant a {aSub a b c d p}
+    sB = CValidQuadrant b {bSub a b c d p}
+    sC = CValidQuadrant c {cSub a b c d p}
+    sD = CValidQuadrant d {dSub a b c d p}
+  in fmap (λ x -> combine sA x sC sD ) (f sB)
+{-# COMPILE AGDA2HS lensB #-}
 
--- lensB : 
---   {t : Set} {{eqT : Eq t}}
---   -> {dep : Nat}
---   -> CLens (ValidQuadrant t {suc dep}) (ValidQuadrant t {dep})
--- lensB {_} {dep} f (CValidQuadrant (Leaf v) {p}) = 
---   let sub = CValidQuadrant (Leaf v) {zeroLteAny dep}
---   in fmap (λ x -> combine sub x sub sub ) (f sub)
--- lensB {_} {dep} f (CValidQuadrant (Node a b c d) {p}) = 
---   let 
---     sA = CValidQuadrant a {aSub a b c d p}
---     sB = CValidQuadrant b {bSub a b c d p}
---     sC = CValidQuadrant c {cSub a b c d p}
---     sD = CValidQuadrant d {dSub a b c d p}
---   in fmap (λ x -> combine sA x sC sD ) (f sB)
--- {-# COMPILE AGDA2HS lensB #-}
+lensC : 
+  {t : Set} {{eqT : Eq t}}
+  -> {dep : Nat}
+  -> CLens (ValidQuadrant t {suc dep}) (ValidQuadrant t {dep})
+lensC {_} {dep} f (CValidQuadrant (Leaf v) {p}) = 
+  let sub = CValidQuadrant (Leaf v) {andCombine (zeroLteAny dep) IsTrue.itsTrue}
+  in fmap (λ x -> combine sub sub x sub ) (f sub)
+lensC {_} {dep} f (CValidQuadrant (Node a b c d) {p}) = 
+  let 
+    sA = CValidQuadrant a {aSub a b c d p}
+    sB = CValidQuadrant b {bSub a b c d p}
+    sC = CValidQuadrant c {cSub a b c d p}
+    sD = CValidQuadrant d {dSub a b c d p}
+  in fmap (λ x -> combine sA sB x sD ) (f sC)
+{-# COMPILE AGDA2HS lensC #-}
 
--- lensC : 
---   {t : Set} {{eqT : Eq t}}
---   -> {dep : Nat}
---   -> CLens (ValidQuadrant t {suc dep}) (ValidQuadrant t {dep})
--- lensC {_} {dep} f (CValidQuadrant (Leaf v) {p}) = 
---   let sub = CValidQuadrant (Leaf v) {zeroLteAny dep}
---   in fmap (λ x -> fuse (combine sub sub x sub) ) (f sub)
--- lensC {_} {dep} f (CValidQuadrant (Node a b c d) {p}) = 
---   let 
---     sA = CValidQuadrant a {aSub a b c d p}
---     sB = CValidQuadrant b {bSub a b c d p}
---     sC = CValidQuadrant c {cSub a b c d p}
---     sD = CValidQuadrant d {dSub a b c d p}
---   in fmap (λ x -> combine sA sB x sD ) (f sC)
--- {-# COMPILE AGDA2HS lensC #-}
+lensD : 
+  {t : Set} {{eqT : Eq t}}
+  -> {dep : Nat}
+  -> CLens (ValidQuadrant t {suc dep}) (ValidQuadrant t {dep})
+lensD {_} {dep} f (CValidQuadrant (Leaf v) {p}) = 
+  let sub = CValidQuadrant (Leaf v) {andCombine (zeroLteAny dep) IsTrue.itsTrue}
+  in fmap (λ x -> combine sub sub sub x ) (f sub)
+lensD {_} {dep} f (CValidQuadrant (Node a b c d) {p}) = 
+  let 
+    sA = CValidQuadrant a {aSub a b c d p}
+    sB = CValidQuadrant b {bSub a b c d p}
+    sC = CValidQuadrant c {cSub a b c d p}
+    sD = CValidQuadrant d {dSub a b c d p}
+  in fmap (λ x -> combine sA sB sC x ) (f sD)
+{-# COMPILE AGDA2HS lensD #-}
 
--- lensD : 
---   {t : Set} {{eqT : Eq t}}
---   -> {dep : Nat}
---   -> CLens (ValidQuadrant t {suc dep}) (ValidQuadrant t {dep})
--- lensD {_} {dep} f (CValidQuadrant (Leaf v) {p}) = 
---   let sub = CValidQuadrant (Leaf v) {zeroLteAny dep}
---   in fmap (λ x -> fuse (combine sub sub sub x) ) (f sub)
--- lensD {_} {dep} f (CValidQuadrant (Node a b c d) {p}) = 
---   let 
---     sA = CValidQuadrant a {aSub a b c d p}
---     sB = CValidQuadrant b {bSub a b c d p}
---     sC = CValidQuadrant c {cSub a b c d p}
---     sD = CValidQuadrant d {dSub a b c d p}
---   in fmap (λ x -> combine sA sB sC x ) (f sD)
--- {-# COMPILE AGDA2HS lensD #-}
+lensLeaf : {t : Set} {{eqT : Eq t}}
+  -> CLens (ValidQuadrant t {0}) t
+lensLeaf f (CValidQuadrant (Leaf v)) = fmap (λ x -> CValidQuadrant (Leaf x) {IsTrue.itsTrue}) (f v)
+{-# COMPILE AGDA2HS lensLeaf #-}
 
--- lensLeaf : {t : Set} {{eqT : Eq t}}
---   -> CLens (ValidQuadrant t {0}) t
--- lensLeaf f (CValidQuadrant (Leaf v)) = fmap (λ x -> CValidQuadrant (Leaf x) {IsTrue.itsTrue}) (f v)
--- {-# COMPILE AGDA2HS lensLeaf #-}
-
--- ---- Data access
+---- Data access
 
 
 -- toZeroMaxDepth : {t : Set} {{eqT : Eq t}} -> {dep : Nat} -> (qd : ValidQuadrant t {dep}) -> {IsTrue (dep == 0)} -> ValidQuadrant t {0}

@@ -100,6 +100,18 @@ andFst {true} {true} ab = IsTrue.itsTrue
 andSnd : {a b : Bool} -> IsTrue (a && b) -> IsTrue b
 andSnd {true} {true} ab = IsTrue.itsTrue
 
+and1 : {a b c d : Bool} -> IsTrue (a && b && c && d) -> IsTrue a
+and1 {true} {true} {true} {true} abcd = IsTrue.itsTrue
+
+and2 : {a b c d : Bool} -> IsTrue (a && b && c && d) -> IsTrue b
+and2 {true} {true} {true} {true} abcd = IsTrue.itsTrue
+
+and3 : {a b c d : Bool} -> IsTrue (a && b && c && d) -> IsTrue c
+and3 {true} {true} {true} {true} abcd = IsTrue.itsTrue
+
+and4 : {a b c d : Bool} -> IsTrue (a && b && c && d) -> IsTrue d
+and4 {true} {true} {true} {true} abcd = IsTrue.itsTrue
+
 andCombine : {a b : Bool} -> IsTrue a -> IsTrue b -> IsTrue (a && b)
 andCombine {true} {true} ta tb = IsTrue.itsTrue
 

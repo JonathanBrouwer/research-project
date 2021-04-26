@@ -79,3 +79,67 @@ combine (CValidQuadrant (Leaf va)) (CValidQuadrant (Leaf vb))
   = CValidQuadrant
       (Node (Leaf va) (Leaf vb) (Leaf vc) (Node v1 v2 v3 v4))
 
+lensWrappedTree ::
+                  Eq t => CLens (ValidQuadTree t) (ValidQuadrant t)
+lensWrappedTree fun (CValidQuadTree (Wrapper qd (w, h)))
+  = fmap
+      (\case
+           CValidQuadrant qd₁ -> CValidQuadTree (Wrapper qd₁ (w, h)))
+      (fun (CValidQuadrant qd))
+
+lensA :: Eq t => CLens (ValidQuadrant t) (ValidQuadrant t)
+lensA f (CValidQuadrant (Leaf v))
+  = fmap
+      (\ x ->
+         combine x (CValidQuadrant (Leaf v)) (CValidQuadrant (Leaf v))
+           (CValidQuadrant (Leaf v)))
+      (f (CValidQuadrant (Leaf v)))
+lensA f (CValidQuadrant (Node a b c d))
+  = fmap
+      (\ x ->
+         combine x (CValidQuadrant b) (CValidQuadrant c) (CValidQuadrant d))
+      (f (CValidQuadrant a))
+
+lensB :: Eq t => CLens (ValidQuadrant t) (ValidQuadrant t)
+lensB f (CValidQuadrant (Leaf v))
+  = fmap
+      (\ x ->
+         combine (CValidQuadrant (Leaf v)) x (CValidQuadrant (Leaf v))
+           (CValidQuadrant (Leaf v)))
+      (f (CValidQuadrant (Leaf v)))
+lensB f (CValidQuadrant (Node a b c d))
+  = fmap
+      (\ x ->
+         combine (CValidQuadrant a) x (CValidQuadrant c) (CValidQuadrant d))
+      (f (CValidQuadrant b))
+
+lensC :: Eq t => CLens (ValidQuadrant t) (ValidQuadrant t)
+lensC f (CValidQuadrant (Leaf v))
+  = fmap
+      (\ x ->
+         combine (CValidQuadrant (Leaf v)) (CValidQuadrant (Leaf v)) x
+           (CValidQuadrant (Leaf v)))
+      (f (CValidQuadrant (Leaf v)))
+lensC f (CValidQuadrant (Node a b c d))
+  = fmap
+      (\ x ->
+         combine (CValidQuadrant a) (CValidQuadrant b) x (CValidQuadrant d))
+      (f (CValidQuadrant c))
+
+lensD :: Eq t => CLens (ValidQuadrant t) (ValidQuadrant t)
+lensD f (CValidQuadrant (Leaf v))
+  = fmap
+      (combine (CValidQuadrant (Leaf v)) (CValidQuadrant (Leaf v))
+         (CValidQuadrant (Leaf v)))
+      (f (CValidQuadrant (Leaf v)))
+lensD f (CValidQuadrant (Node a b c d))
+  = fmap
+      (combine (CValidQuadrant a) (CValidQuadrant b) (CValidQuadrant c))
+      (f (CValidQuadrant d))
+
+lensLeaf :: Eq t => CLens (ValidQuadrant t) t
+lensLeaf f (CValidQuadrant (Leaf v))
+  = fmap (\ x -> CValidQuadrant (Leaf x)) (f v)
+lensLeaf x (CValidQuadrant (Node qd qd₁ qd₂ qd₃))
+  = error "lensLeaf: impossible"
+
