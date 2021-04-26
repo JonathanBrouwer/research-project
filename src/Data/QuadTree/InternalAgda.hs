@@ -9,10 +9,8 @@ import Numeric.Natural (Natural)
 
 
 
-import Data.QuadTree.Functors
+import Data.QuadTree.Lens
 import Data.QuadTree.Logic
-
-type CLens s a = forall f. Functor f => (a -> f a) -> s -> f s
 
 data Quadrant t = Leaf t
                 | Node (Quadrant t) (Quadrant t) (Quadrant t) (Quadrant t)
@@ -172,22 +170,19 @@ atLocationAgda index dep = lensWrappedTree . go index dep
 
 getLocationAgda ::
                   Eq t => (Natural, Natural) -> Natural -> ValidQuadTree t -> t
-getLocationAgda index dep qt
-  = getConst $ atLocationAgda index dep CConst qt
+getLocationAgda index dep = view (atLocationAgda index dep)
 
 setLocationAgda ::
                   Eq t =>
                   (Natural, Natural) ->
                     Natural -> t -> ValidQuadTree t -> ValidQuadTree t
-setLocationAgda index dep v qt
-  = runIdentity $ atLocationAgda index dep (\ _ -> CIdentity v) qt
+setLocationAgda index dep = set (atLocationAgda index dep)
 
 mapLocationAgda ::
                   Eq t =>
                   (Natural, Natural) ->
                     Natural -> (t -> t) -> ValidQuadTree t -> ValidQuadTree t
-mapLocationAgda index dep f qt
-  = runIdentity $ atLocationAgda index dep (CIdentity . f) qt
+mapLocationAgda index dep = over (atLocationAgda index dep)
 
 invalidQuadTree = error "Invalid quadtree given"
 

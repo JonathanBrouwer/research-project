@@ -1,7 +1,7 @@
 module Data.QuadTree.InternalAgda where
 
 open import Haskell.Prelude
-open import Data.QuadTree.Functors
+open import Data.QuadTree.Lens
 open import Data.QuadTree.Logic
 open import Data.QuadTree.PropDepthRelation
 
@@ -9,15 +9,9 @@ open import Data.QuadTree.PropDepthRelation
 {-# LANGUAGE Safe #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE Rank2Types #-}
-import Data.QuadTree.Functors
+import Data.QuadTree.Lens
 import Data.QuadTree.Logic
 #-}
-
----- Lens
-
-CLens : Set -> Set -> Set₁
-CLens s a = {f : Set -> Set} {{ff : Functor f}} -> (a -> f a) -> s -> f s
-{-# FOREIGN AGDA2HS type CLens s a = forall f. Functor f => (a -> f a) -> s -> f s #-}
 
 ---- Quadrants
 
@@ -280,19 +274,19 @@ atLocationAgda index dep = lensWrappedTree ∘ (go index dep)
 getLocationAgda : {t : Set} {{eqT : Eq t}}
   -> (Nat × Nat) -> (dep : Nat)
   -> ValidQuadTree t {dep} -> t
-getLocationAgda index dep qt = getConst $ atLocationAgda index dep CConst qt
+getLocationAgda index dep = view (atLocationAgda index dep)
 {-# COMPILE AGDA2HS getLocationAgda #-}
 
 setLocationAgda : {t : Set} {{eqT : Eq t}}
   -> (Nat × Nat) -> (dep : Nat) 
   -> t -> ValidQuadTree t {dep} -> ValidQuadTree t {dep}
-setLocationAgda index dep v qt = runIdentity $ atLocationAgda index dep (λ _ -> CIdentity v) qt
+setLocationAgda index dep = set (atLocationAgda index dep)
 {-# COMPILE AGDA2HS setLocationAgda #-}
 
 mapLocationAgda : {t : Set} {{eqT : Eq t}}
   -> (Nat × Nat) -> (dep : Nat)
   -> (t -> t) -> ValidQuadTree t {dep} -> ValidQuadTree t {dep}
-mapLocationAgda index dep f qt = runIdentity $ atLocationAgda index dep (CIdentity ∘ f) qt
+mapLocationAgda index dep = over (atLocationAgda index dep)
 {-# COMPILE AGDA2HS mapLocationAgda #-}
 
 ---- Haskell safe functions
@@ -300,7 +294,6 @@ mapLocationAgda index dep f qt = runIdentity $ atLocationAgda index dep (CIdenti
 postulate invalidQuadTree : {t : Set} {{eqT : Eq t}} -> {dep : Nat} -> ValidQuadTree t {dep}
 {-# FOREIGN AGDA2HS invalidQuadTree = error "Invalid quadtree given" #-}
 
--- TODO maybe switch all functions to Maybe types?
 qtToAgda : {t : Set} {{eqT : Eq t}} -> (qt : QuadTree t) -> ValidQuadTree t {maxDepth qt}
 qtToAgda qt = ifc (depth $ treeToQuadrant qt) <= maxDepth qt
   then (λ {{p}} -> CValidQuadTree qt {p} )
