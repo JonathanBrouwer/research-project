@@ -38,7 +38,14 @@ instance
   quadTreeFunctor .fmap fn (Wrapper q (w , h)) = Wrapper (fmap fn q) (w , h)
 {-# COMPILE AGDA2HS quadTreeFunctor #-}
 
----- Check if valid
+---- Compressed validation
+
+isCompressed : {t : Set} -> {{eqT : Eq t}} -> Quadrant t -> Bool
+isCompressed (Leaf _) = true
+isCompressed (Node (Leaf a) (Leaf b) (Leaf c) (Leaf d)) = not (a == b && b == c && c == d)
+isCompressed (Node a b c d) = isCompressed a && isCompressed b && isCompressed c && isCompressed d
+
+---- Depth validation
 
 depth : {t : Set} -> Quadrant t -> Nat
 depth (Leaf x) = 0
@@ -53,29 +60,22 @@ treeToQuadrant : {t : Set} -> QuadTree t -> Quadrant t
 treeToQuadrant (Wrapper qd _) = qd
 {-# COMPILE AGDA2HS treeToQuadrant #-}
 
-data ValidQuadrant (t : Set) {{eqT : Eq t}} {d : Nat} : Set where
-  CValidQuadrant : (qd : Quadrant t) -> {IsTrue (depth qd <= d)} -> ValidQuadrant t {d}
+---- Validation
+
+isValid : {t : Set} -> {{eqT : Eq t}} -> (dep : Nat) -> Quadrant t -> Bool
+isValid dep qd = depth qd <= dep
+
+data ValidQuadrant (t : Set) {{eqT : Eq t}} {dep : Nat} : Set where
+  CValidQuadrant : (qd : Quadrant t) -> {IsTrue (isValid dep qd)} -> ValidQuadrant t {dep}
 {-# FOREIGN AGDA2HS
 newtype ValidQuadrant t = CValidQuadrant (Quadrant t)
 #-}
 
-data ValidQuadTree (t : Set) {{eqT : Eq t}} {d : Nat} : Set where
-  CValidQuadTree : (qt : QuadTree t) -> {IsTrue (depth (treeToQuadrant qt) <= d)} -> ValidQuadTree t
+data ValidQuadTree (t : Set) {{eqT : Eq t}} {dep : Nat} : Set where
+  CValidQuadTree : (qt : QuadTree t) -> {IsTrue (isValid dep (treeToQuadrant qt))} -> ValidQuadTree t {dep}
 {-# FOREIGN AGDA2HS
 newtype ValidQuadTree t = CValidQuadTree (QuadTree t)
 #-}
-
----- Fuse function
-
-fuse : {t : Set} -> {{eqT : Eq t}}
-  -> {dep : Nat}
-  -> ValidQuadrant t {dep} -> ValidQuadrant t {dep}
-fuse {t} {dep} old@(CValidQuadrant (Node (Leaf a) (Leaf b) (Leaf c) (Leaf d)) {p}) = 
-  if a == b && b == c && c == d 
-    then CValidQuadrant (Leaf a) {zeroLteAny dep} 
-    else old
-fuse old = old
-{-# COMPILE AGDA2HS fuse #-}
 
 ---- Proofs about Quadrants
 
@@ -94,6 +94,16 @@ propDepthRelationLte a b c d dep =
   end
 
 ---- Lenses
+
+fuse : {t : Set} -> {{eqT : Eq t}}
+  -> {dep : Nat}
+  -> ValidQuadrant t {dep} -> ValidQuadrant t {dep}
+fuse {t} {dep} old@(CValidQuadrant (Node (Leaf a) (Leaf b) (Leaf c) (Leaf d)) {p}) = 
+  if a == b && b == c && c == d 
+    then CValidQuadrant (Leaf a) {zeroLteAny dep} 
+    else old
+fuse old = old
+{-# COMPILE AGDA2HS fuse #-}
 
 lensWrappedTree : {t : Set} {{eqT : Eq t}}
   -> {dep : Nat}
