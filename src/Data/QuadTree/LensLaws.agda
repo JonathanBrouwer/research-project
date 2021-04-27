@@ -57,11 +57,12 @@ prop_set_compose_dir vl1@(CValidLens l1 vs1 sv1 ss1) vl2@(CValidLens l2 vs2 sv2 
         set l1 ((set l2 t) (view l1 v)) v
     end
 
-prop_Merge_ViewSet : {a b c : Set} 
+--- Proving the composition of Valid Lenses
+prop_Composition_ViewSet : {a b c : Set} 
     -> (l1 : ValidLens a b)
     -> (l2 : ValidLens b c)
     -> ViewSet ((toLens l1) ∘ (toLens l2))
-prop_Merge_ViewSet {a} {b} {c} vl1@(CValidLens l1 vs1 sv1 ss1) vl2@(CValidLens l2 vs2 sv2 ss2) v s = 
+prop_Composition_ViewSet {a} {b} {c} vl1@(CValidLens l1 vs1 sv1 ss1) vl2@(CValidLens l2 vs2 sv2 ss2) v s = 
     begin 
         view (l1 ∘ l2) (set (l1 ∘ l2) v s) 
     =⟨ prop_view_compose vl1 vl2 (set (l1 ∘ l2) v s) ⟩
@@ -74,11 +75,11 @@ prop_Merge_ViewSet {a} {b} {c} vl1@(CValidLens l1 vs1 sv1 ss1) vl2@(CValidLens l
         v 
     end
 
-prop_Merge_SetView : {a b c : Set} 
+prop_Composition_SetView : {a b c : Set} 
     -> (l1 : ValidLens a b)
     -> (l2 : ValidLens b c)
     -> SetView ((toLens l1) ∘ (toLens l2))
-prop_Merge_SetView {a} {b} {c} vl1@(CValidLens l1 vs1 sv1 ss1) vl2@(CValidLens l2 vs2 sv2 ss2) s = 
+prop_Composition_SetView {a} {b} {c} vl1@(CValidLens l1 vs1 sv1 ss1) vl2@(CValidLens l2 vs2 sv2 ss2) s = 
     begin 
         set (l1 ∘ l2) (view (l1 ∘ l2) s) s
     =⟨ cong (λ x -> set (l1 ∘ l2) x s) (prop_view_compose vl1 vl2 s) ⟩
@@ -91,11 +92,11 @@ prop_Merge_SetView {a} {b} {c} vl1@(CValidLens l1 vs1 sv1 ss1) vl2@(CValidLens l
         s 
     end
 
-prop_Merge_SetSet : {a b c : Set} 
+prop_Composition_SetSet : {a b c : Set} 
     -> (l1 : ValidLens a b)
     -> (l2 : ValidLens b c)
     -> SetSet ((toLens l1) ∘ (toLens l2))
-prop_Merge_SetSet {a} {b} {c} vl1@(CValidLens l1 vs1 sv1 ss1) vl2@(CValidLens l2 vs2 sv2 ss2) v1 v2 s =
+prop_Composition_SetSet {a} {b} {c} vl1@(CValidLens l1 vs1 sv1 ss1) vl2@(CValidLens l2 vs2 sv2 ss2) v1 v2 s =
     begin 
         set (l1 ∘ l2) v2 (set (l1 ∘ l2) v1 s)
     =⟨ cong (set (l1 ∘ l2) v2) (prop_set_compose_dir vl1 vl2 s v1) ⟩
@@ -133,6 +134,10 @@ prop_Merge_SetSet {a} {b} {c} vl1@(CValidLens l1 vs1 sv1 ss1) vl2@(CValidLens l2
     =⟨ sym (prop_set_compose_dir vl1 vl2 s v2) ⟩
         set (l1 ∘ l2) v2 s
     end
+
+composeLens : {a b c : Set} -> (ValidLens a b) -> (ValidLens b c) -> (ValidLens a c)
+composeLens vl1@(CValidLens l1 vs1 sv1 ss1) vl2@(CValidLens l2 vs2 sv2 ss2) 
+    = CValidLens (l1 ∘ l2) (prop_Composition_ViewSet vl1 vl2) (prop_Composition_SetView vl1 vl2) (prop_Composition_SetSet vl1 vl2)
 
 ---- Lens laws for lensWrappedTree
 
