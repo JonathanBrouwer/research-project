@@ -75,7 +75,7 @@ newtype ValidQuadrant t = CValidQuadrant (Quadrant t)
 #-}
 
 data ValidQuadTree (t : Set) {{eqT : Eq t}} {dep : Nat} : Set where
-  CValidQuadTree : (qt : QuadTree t) -> {IsTrue (isValid dep (treeToQuadrant qt))} -> ValidQuadTree t {dep}
+  CValidQuadTree : (qt : QuadTree t) -> {IsTrue (isValid dep (treeToQuadrant qt))} -> {IsTrue (dep == maxDepth qt)} -> ValidQuadTree t {dep}
 {-# FOREIGN AGDA2HS
 newtype ValidQuadTree t = CValidQuadTree (QuadTree t)
 #-}
@@ -143,9 +143,9 @@ combine {t} {dep} (CValidQuadrant a@(Leaf va) {pa}) (CValidQuadrant b@(Leaf vb) 
 lensWrappedTree : {t : Set} {{eqT : Eq t}}
   -> {dep : Nat}
   -> CLens (ValidQuadTree t {dep}) (ValidQuadrant t {dep})
-lensWrappedTree {dep = dep} fun (CValidQuadTree (Wrapper qd (w , h)) {p}) = 
+lensWrappedTree {dep = dep} fun (CValidQuadTree (Wrapper qd (w , h)) {p} {q}) = 
   fmap 
-    (λ where (CValidQuadrant qd {p}) → CValidQuadTree (Wrapper qd (w , h)) {p})
+    (λ where (CValidQuadrant qd {p}) → CValidQuadTree (Wrapper qd (w , h)) {p} {q})
     (fun (CValidQuadrant qd {p}))
 {-# COMPILE AGDA2HS lensWrappedTree #-}
 
@@ -269,8 +269,8 @@ go (x , y) (S deps) = ifc (y < mid)
 
 ---- Agda safe functions
 
-makeTreeAgda : {t : Set} {{eqT : Eq t}} -> (size : Nat × Nat) -> t -> ValidQuadTree t {log2up $ max (fst size) (snd size)}
-makeTreeAgda (w , h) v = CValidQuadTree (Wrapper (Leaf v) (w , h)) {andCombine (zeroLteAny (log2up $ max w h)) IsTrue.itsTrue}
+makeTreeAgda : {t : Set} {{eqT : Eq t}} -> (size : Nat × Nat) -> (v : t) -> ValidQuadTree t {maxDepth $ Wrapper (Leaf v) size}
+makeTreeAgda (w , h) v = CValidQuadTree (Wrapper (Leaf v) (w , h)) {andCombine (zeroLteAny (log2up $ max w h)) IsTrue.itsTrue} {eqSelf (maxDepth $ Wrapper (Leaf v) (w , h))}
 {-# COMPILE AGDA2HS makeTreeAgda #-}
 
 atLocationAgda : {t : Set} {{eqT : Eq t}}
@@ -304,7 +304,7 @@ postulate invalidQuadTree : {t : Set} {{eqT : Eq t}} -> {dep : Nat} -> ValidQuad
 
 qtToAgda : {t : Set} {{eqT : Eq t}} -> (qt : QuadTree t) -> ValidQuadTree t {maxDepth qt}
 qtToAgda qt = ifc ((depth $ treeToQuadrant qt) <= maxDepth qt) && (isCompressed $ treeToQuadrant qt)
-  then (λ {{p}} -> CValidQuadTree qt {p} )
+  then (λ {{p}} -> CValidQuadTree qt {p} {eqSelf (maxDepth qt)} )
   else invalidQuadTree
 {-# COMPILE AGDA2HS qtToAgda #-}
 

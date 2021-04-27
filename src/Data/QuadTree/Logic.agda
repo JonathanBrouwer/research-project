@@ -181,3 +181,7 @@ lteSelf (S v) = lteSelf v
 
 isFalseNot : {b : Bool} -> IsFalse (not b) -> IsTrue b
 isFalseNot {true} if = IsTrue.itsTrue
+
+eqSelf : (v : Nat) -> IsTrue(v == v)
+eqSelf Z = IsTrue.itsTrue
+eqSelf (S v) = eqSelf v
