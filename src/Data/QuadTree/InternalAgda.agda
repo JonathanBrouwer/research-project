@@ -149,6 +149,11 @@ lensWrappedTree {dep = dep} fun (CValidQuadTree (Wrapper qd (w , h)) {p} {q}) =
     (fun (CValidQuadrant qd {p}))
 {-# COMPILE AGDA2HS lensWrappedTree #-}
 
+lensLeaf : {t : Set} {{eqT : Eq t}}
+  -> CLens (ValidQuadrant t {0}) t
+lensLeaf f (CValidQuadrant (Leaf v)) = fmap (λ x -> CValidQuadrant (Leaf x) {IsTrue.itsTrue}) (f v)
+{-# COMPILE AGDA2HS lensLeaf #-}
+
 aSub : {t : Set} {{eqT : Eq t}} -> {dep : Nat} -> (a b c d : Quadrant t) 
   -> IsTrue (isValid (S dep) (Node a b c d)) -> IsTrue (isValid (dep) a)
 aSub {_} {dep} a b c d p = andCombine 
@@ -244,11 +249,6 @@ lensD {_} {dep} f (CValidQuadrant (Node a b c d) {p}) =
     sD = CValidQuadrant d {dSub a b c d p}
   in fmap (λ x -> combine sA sB sC x ) (f sD)
 {-# COMPILE AGDA2HS lensD #-}
-
-lensLeaf : {t : Set} {{eqT : Eq t}}
-  -> CLens (ValidQuadrant t {0}) t
-lensLeaf f (CValidQuadrant (Leaf v)) = fmap (λ x -> CValidQuadrant (Leaf x) {IsTrue.itsTrue}) (f v)
-{-# COMPILE AGDA2HS lensLeaf #-}
 
 ---- Data access
 
