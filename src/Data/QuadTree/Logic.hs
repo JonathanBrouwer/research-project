@@ -15,3 +15,5 @@ log2up Z = 0
 log2up (S Z) = 0
 log2up x = S (log2up (div (x + 1) 2))
 
+impossible = error "Impossible"
+

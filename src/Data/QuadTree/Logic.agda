@@ -203,3 +203,11 @@ isFalseNot {true} if = IsTrue.itsTrue
 eqSelf : (v : Nat) -> IsTrue(v == v)
 eqSelf Z = IsTrue.itsTrue
 eqSelf (S v) = eqSelf v
+
+botToAny : {t : Set} -> ⊥ -> t
+botToAny ()
+
+impossible : {t : Set} -> t
+impossible = botToAny bot where
+  postulate bot : ⊥
+{-# FOREIGN AGDA2HS impossible = error "Impossible" #-}
