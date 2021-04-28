@@ -255,7 +255,7 @@ lensD {_} {dep} f (CValidQuadrant (Node a b c d) {p}) =
 go : {t : Set} {{eqT : Eq t}}
   -> (Nat × Nat) -> (dep : Nat)
   -> CLens (ValidQuadrant t {dep}) t
-go (x , y) Z = lensLeaf
+go _ Z = lensLeaf
 go (x , y) (S deps) = ifc (y < mid) 
   then (ifc x < mid 
     then (             lensA ∘ go (x                 , y                ) deps)

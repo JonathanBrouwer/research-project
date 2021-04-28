@@ -4,6 +4,7 @@ open import Haskell.Prelude renaming (zero to Z; suc to S)
 open import Relation.Nullary.Decidable
 open import Data.Nat.DivMod
 open import Data.Nat.Properties
+open import Agda.Primitive
 {-# FOREIGN AGDA2HS
 import Data.Nat
 #-}
@@ -22,7 +23,7 @@ trans : {A : Set} {x y z : A} → x ≡ y → y ≡ z → x ≡ z
 trans refl refl = refl
 
 -- congruence of equality
-cong : {A B : Set} {x y : A} → (f : A → B) → x ≡ y → f x ≡ f y
+cong : {u : Level} {A B : Set u} {x y : A} → (f : A → B) → x ≡ y → f x ≡ f y
 cong f refl = refl
 
 begin_ : {A : Set} → {x y : A} → x ≡ y → x ≡ y
