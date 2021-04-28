@@ -135,6 +135,23 @@ ifc false then x else y = y {{IsFalse.itsFalse}}
 ifc true then x else y = x {{IsTrue.itsTrue}}
 {-# COMPILE AGDA2HS ifc_then_else_ #-}
 
+ifcTrue : {t : Set} -> (c : Bool) {a b : t} -> IsTrue c -> (ifc c then a else b) ≡ a
+ifcTrue true ct = refl
+
+ifcFalse : {t : Set} -> (c : Bool) (a b : t) -> IsFalse c -> (ifc c then a else b) ≡ b
+ifcFalse false a b cf = refl
+
+propFnIfc : {a b : Set} -> (c : Bool) {x : {{IsTrue c}} -> a} {y : {{IsFalse c}} -> a} (f : a -> b) 
+  -> (ifc c then f x else f y) 
+    ≡ f (ifc c then x else y)
+propFnIfc false f = refl
+propFnIfc true f = refl
+
+propIfcBranchesSame : {t : Set} -> {c : Bool} (v : t)
+  -> (ifc c then v else v) ≡ v
+propIfcBranchesSame {c = false} v = refl
+propIfcBranchesSame {c = true} v = refl
+
 ---- Useful functions
 
 div : Nat -> (divisor : Nat) -> {≢0 : False (divisor ≟ 0)} -> Nat

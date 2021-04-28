@@ -141,34 +141,148 @@ composeLens vl1@(CValidLens l1 vs1 sv1 ss1) vl2@(CValidLens l2 vs2 sv2 ss2)
 
 ---- Lens laws for lensWrappedTree
 
-prop_WrappedTree_ViewSet : 
+ValidLens_WrappedTree_ViewSet : 
     {t : Set} {{eqT : Eq t}} (dep : Nat) 
     -> ViewSet (lensWrappedTree {t} {dep})
-prop_WrappedTree_ViewSet {t} dep (CValidQuadrant qdn {pn}) (CValidQuadTree (Wrapper qdo (w , h)) {p} {q}) = refl
+ValidLens_WrappedTree_ViewSet {t} dep (CValidQuadrant qdn {pn}) (CValidQuadTree (Wrapper qdo (w , h)) {p} {q}) = refl
 
-prop_WrappedTree_SetView : 
+ValidLens_WrappedTree_SetView : 
     {t : Set} {{eqT : Eq t}} (dep : Nat) 
     -> SetView (lensWrappedTree {t} {dep})
-prop_WrappedTree_SetView {t} dep (CValidQuadTree (Wrapper qdo (w , h)) {p} {q}) = refl
+ValidLens_WrappedTree_SetView {t} dep (CValidQuadTree (Wrapper qdo (w , h)) {p} {q}) = refl
 
-prop_WrappedTree_SetSet : 
+ValidLens_WrappedTree_SetSet : 
     {t : Set} {{eqT : Eq t}} (dep : Nat) 
     -> SetSet (lensWrappedTree {t} {dep})
-prop_WrappedTree_SetSet {t} dep (CValidQuadrant qd1 {p1}) (CValidQuadrant qd2 {p2}) (CValidQuadTree (Wrapper qdo (w , h)) {p} {q}) = refl
+ValidLens_WrappedTree_SetSet {t} dep (CValidQuadrant qd1 {p1}) (CValidQuadrant qd2 {p2}) (CValidQuadTree (Wrapper qdo (w , h)) {p} {q}) = refl
+
+ValidLens_WrappedTree :
+    {t : Set} {{eqT : Eq t}} (dep : Nat) 
+    -> ValidLens (ValidQuadTree t {dep}) (ValidQuadrant t {dep})
+ValidLens_WrappedTree dep = CValidLens lensWrappedTree (ValidLens_WrappedTree_ViewSet dep) (ValidLens_WrappedTree_SetView dep) (ValidLens_WrappedTree_SetSet dep)
 
 --- Lens laws for lensLeaf
 
-prop_Leaf_ViewSet : 
+ValidLens_Leaf_ViewSet : 
     {t : Set} {{eqT : Eq t}}
     -> ViewSet (lensLeaf {t})
-prop_Leaf_ViewSet {t} v (CValidQuadrant (Leaf lv) {pn}) = refl
+ValidLens_Leaf_ViewSet {t} v (CValidQuadrant (Leaf lv) {pn}) = refl
 
-prop_Leaf_SetView : 
+ValidLens_Leaf_SetView : 
     {t : Set} {{eqT : Eq t}}
     -> SetView (lensLeaf {t})
-prop_Leaf_SetView {t} (CValidQuadrant (Leaf lv) {IsTrue.itsTrue}) = refl
+ValidLens_Leaf_SetView {t} (CValidQuadrant (Leaf lv) {IsTrue.itsTrue}) = refl
 
-prop_Leaf_SetSet : 
+ValidLens_Leaf_SetSet : 
     {t : Set} {{eqT : Eq t}}
     -> SetSet (lensLeaf {t})
-prop_Leaf_SetSet {t} v1 v2 (CValidQuadrant (Leaf lv) {pn}) = refl
+ValidLens_Leaf_SetSet {t} v1 v2 (CValidQuadrant (Leaf lv) {pn}) = refl
+
+ValidLens_Leaf :
+    {t : Set} {{eqT : Eq t}}
+    -> ValidLens (ValidQuadrant t {0}) t
+ValidLens_Leaf = CValidLens lensLeaf ValidLens_Leaf_ViewSet ValidLens_Leaf_SetView ValidLens_Leaf_SetSet
+
+
+--- Lens laws for lensA
+
+-- prop_LensA_ViewSet : 
+--     {t : Set} {{eqT : Eq t}} (dep : Nat) 
+--     -> ViewSet (lensA {t} {dep})
+-- prop_LensA_ViewSet {t} {{eqT}} dep vqi@(CValidQuadrant (Leaf vi)) vqo@(CValidQuadrant (Leaf vo)) =
+--     begin
+--         view lensA (set lensA vqi vqo)
+--     =⟨⟩
+--         ta
+--             (ifc not (vi == vo && vo == vo && vo == vo)
+--                 then (λ {{pp}} -> CValidQuadrant (Node (Leaf vi) (Leaf vo) (Leaf vo) (Leaf vo)) {andCombine (zeroLteAny dep) pp})
+--                 else (CValidQuadrant (Leaf vi) {IsTrue.itsTrue}))
+--     =⟨ sym (propFnIfc (not (vi == vo && vo == vo && vo == vo)) ta) ⟩
+--         (ifc not (vi == vo && vo == vo && vo == vo)
+--             then (λ {{pp}} -> ta (CValidQuadrant (Node (Leaf vi) (Leaf vo) (Leaf vo) (Leaf vo)) {andCombine (zeroLteAny dep) pp} ))
+--             else (ta (CValidQuadrant (Leaf vi) {IsTrue.itsTrue})))
+--     =⟨⟩
+--         (ifc not (vi == vo && vo == vo && vo == vo)
+--             then (CValidQuadrant (Leaf vi) {andCombine (zeroLteAny dep) IsTrue.itsTrue})
+--             else (CValidQuadrant (Leaf vi) {andCombine (zeroLteAny dep) IsTrue.itsTrue}))
+--     =⟨ propIfcBranchesSame {c = not (vi == vo && vo == vo && vo == vo)} (CValidQuadrant (Leaf vi)) ⟩
+--         (CValidQuadrant (Leaf vi))
+--     =⟨ {!   !} ⟩
+--         (CValidQuadrant (Leaf vi))
+--     end where
+--         ta : ValidQuadrant t {S dep} -> ValidQuadrant t {dep}
+--         ta y = getConst (lensA CConst (y))
+-- prop_LensA_ViewSet {t} dep vqi@(CValidQuadrant (Node ai bi ci di)) vqo@(CValidQuadrant (Leaf vo)) = {!   !}
+-- prop_LensA_ViewSet {t} dep (CValidQuadrant (Leaf vi)) (CValidQuadrant (Node oa ob oc od)) = {!   !}
+-- prop_LensA_ViewSet {t} dep (CValidQuadrant (Node ai bi ci di)) (CValidQuadrant (Node oa ob oc od)) = {!   !}
+
+postulate 
+    ValidLens_LensA_ViewSet : 
+        {t : Set} {{eqT : Eq t}} (dep : Nat) 
+        -> ViewSet (lensA {t} {dep})
+    ValidLens_LensA_SetView : 
+        {t : Set} {{eqT : Eq t}} (dep : Nat) 
+        -> SetView (lensA {t} {dep})
+    ValidLens_LensA_SetSet : 
+        {t : Set} {{eqT : Eq t}} (dep : Nat) 
+        -> SetSet (lensA {t} {dep})
+
+ValidLens_LensA : {t : Set} {{eqT : Eq t}}
+    -> {dep : Nat}
+    -> ValidLens (ValidQuadrant t {S dep}) (ValidQuadrant t {dep})
+ValidLens_LensA {dep = dep} = CValidLens lensA (ValidLens_LensA_ViewSet dep) (ValidLens_LensA_SetView dep) (ValidLens_LensA_SetSet dep)
+
+
+--- Lens laws for lensB
+
+postulate 
+    ValidLens_LensB_ViewSet : 
+        {t : Set} {{eqT : Eq t}} (dep : Nat) 
+        -> ViewSet (lensB {t} {dep})
+    ValidLens_LensB_SetView : 
+        {t : Set} {{eqT : Eq t}} (dep : Nat) 
+        -> SetView (lensB {t} {dep})
+    ValidLens_LensB_SetSet : 
+        {t : Set} {{eqT : Eq t}} (dep : Nat) 
+        -> SetSet (lensB {t} {dep})
+
+ValidLens_LensB : {t : Set} {{eqT : Eq t}}
+    -> {dep : Nat}
+    -> ValidLens (ValidQuadrant t {S dep}) (ValidQuadrant t {dep})
+ValidLens_LensB {dep = dep} = CValidLens lensB (ValidLens_LensB_ViewSet dep) (ValidLens_LensB_SetView dep) (ValidLens_LensB_SetSet dep)
+
+--- Lens laws for lensC
+
+postulate 
+    ValidLens_LensC_ViewSet : 
+        {t : Set} {{eqT : Eq t}} (dep : Nat) 
+        -> ViewSet (lensC {t} {dep})
+    ValidLens_LensC_SetView : 
+        {t : Set} {{eqT : Eq t}} (dep : Nat) 
+        -> SetView (lensC {t} {dep})
+    ValidLens_LensC_SetSet : 
+        {t : Set} {{eqT : Eq t}} (dep : Nat) 
+        -> SetSet (lensC {t} {dep})
+
+ValidLens_LensC : {t : Set} {{eqT : Eq t}}
+    -> {dep : Nat}
+    -> ValidLens (ValidQuadrant t {S dep}) (ValidQuadrant t {dep})
+ValidLens_LensC {dep = dep} = CValidLens lensC (ValidLens_LensC_ViewSet dep) (ValidLens_LensC_SetView dep) (ValidLens_LensC_SetSet dep)
+
+--- Lens laws for lensD
+
+postulate 
+    ValidLens_LensD_ViewSet : 
+        {t : Set} {{eqT : Eq t}} (dep : Nat) 
+        -> ViewSet (lensD {t} {dep})
+    ValidLens_LensD_SetView : 
+        {t : Set} {{eqT : Eq t}} (dep : Nat) 
+        -> SetView (lensD {t} {dep})
+    ValidLens_LensD_SetSet : 
+        {t : Set} {{eqT : Eq t}} (dep : Nat) 
+        -> SetSet (lensD {t} {dep})
+
+ValidLens_LensD : {t : Set} {{eqT : Eq t}}
+    -> {dep : Nat}
+    -> ValidLens (ValidQuadrant t {S dep}) (ValidQuadrant t {dep})
+ValidLens_LensD {dep = dep} = CValidLens lensD (ValidLens_LensD_ViewSet dep) (ValidLens_LensD_SetView dep) (ValidLens_LensD_SetSet dep)

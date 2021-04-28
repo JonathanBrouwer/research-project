@@ -111,7 +111,7 @@ combine : {t : Set} {{eqT : Eq t}} -> {dep : Nat}
   -> (a b c d : ValidQuadrant t {dep})
   -> (ValidQuadrant t {S dep})
 combine {t} {dep} (CValidQuadrant a@(Leaf va) {pa}) (CValidQuadrant b@(Leaf vb) {pb}) (CValidQuadrant c@(Leaf vc) {pc}) (CValidQuadrant d@(Leaf vd) {pd}) 
-  = ifc (isCompressed (Node a b c d)) 
+  = ifc (not (va == vb && vb == vc && vc == vd))
     then (λ {{pn}} -> CValidQuadrant (Node a b c d) {andCombine (zeroLteAny dep) pn} )
     else (λ {{pn}} -> CValidQuadrant a {IsTrue.itsTrue})
 
