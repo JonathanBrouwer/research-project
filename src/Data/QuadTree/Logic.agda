@@ -143,8 +143,7 @@ ifcFalse : {t : Set} -> (c : Bool) (a b : t) -> IsFalse c -> (ifc c then a else 
 ifcFalse false a b cf = refl
 
 propFnIfc : {a b : Set} -> (c : Bool) {x : {{IsTrue c}} -> a} {y : {{IsFalse c}} -> a} (f : a -> b) 
-  -> (ifc c then f x else f y) 
-    ≡ f (ifc c then x else y)
+  -> (ifc c then f x else f y) ≡ f (ifc c then x else y)
 propFnIfc false f = refl
 propFnIfc true f = refl
 

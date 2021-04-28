@@ -343,23 +343,67 @@ ValidLens-LensA-SetSet (Leaf va) (Leaf vb) (Node xa (Leaf xvb) (Leaf xvc) (Leaf 
         else (runIdentity (lensA (λ _ → CIdentity (Leaf vb)) (Node (Leaf va) (Leaf xvb) (Leaf xvc) (Leaf xvd)))))
     =⟨⟩
         (if va == xvb && xvb == xvc && xvc == xvd
-        then if vb == va && va == va && va == va then Leaf vb else Node (Leaf vb) (Leaf va) (Leaf va) (Leaf va) 
+        then (if vb == va && va == va && va == va then Leaf vb else Node (Leaf vb) (Leaf va) (Leaf va) (Leaf va)          )
         else (if vb == xvb && xvb == xvc && xvc == xvd then Leaf vb else Node (Leaf vb) (Leaf xvb) (Leaf xvc) (Leaf xvd)) )
-    =⟨ {!   !} ⟩
-        (if va == xvb && xvb == xvc && xvc == xvd
-        then Leaf vb 
-        else (if vb == xvb && xvb == xvc && xvc == xvd then Leaf vb else Node (Leaf vb) (Leaf xvb) (Leaf xvc) (Leaf xvd)) )
-    =⟨ ? ⟩
+    =⟨ ifTrueMap {c = va == xvb && xvb == xvc && xvc == xvd} 
+        (λ p -> cong ((λ q -> if vb == q && q == q && q == q then Leaf vb else Node (Leaf vb) (Leaf q) (Leaf q) (Leaf q) )) 
+        (eqToEquiv va xvb (andFst {va == xvb} p))) ⟩
+            (if va == xvb && xvb == xvc && xvc == xvd
+            then (if vb == xvb && xvb == xvb && xvb == xvb then Leaf vb else Node (Leaf vb) (Leaf xvb) (Leaf xvb) (Leaf xvb)  ) 
+            else (if vb == xvb && xvb == xvc && xvc == xvd then Leaf vb else Node (Leaf vb) (Leaf xvb) (Leaf xvc) (Leaf xvd)) )
+    =⟨ ifTrueMap {c = va == xvb && xvb == xvc && xvc == xvd} 
+        (λ p -> cong ((λ q -> if vb == xvb && xvb == q && q == q then Leaf vb else Node (Leaf vb) (Leaf xvb) (Leaf q) (Leaf q) )) 
+        (eqToEquiv xvb xvc (andFst $ andSnd {va == xvb} p))) ⟩
+            (if va == xvb && xvb == xvc && xvc == xvd
+            then (if vb == xvb && xvb == xvc && xvc == xvc then Leaf vb else Node (Leaf vb) (Leaf xvb) (Leaf xvc) (Leaf xvc)  ) 
+            else (if vb == xvb && xvb == xvc && xvc == xvd then Leaf vb else Node (Leaf vb) (Leaf xvb) (Leaf xvc) (Leaf xvd)) )
+    =⟨ ifTrueMap {c = va == xvb && xvb == xvc && xvc == xvd} 
+        (λ p -> cong ((λ q -> if vb == xvb && xvb == xvc && xvc == q then Leaf vb else Node (Leaf vb) (Leaf xvb) (Leaf xvc) (Leaf q) )) 
+        (eqToEquiv xvc xvd (andSnd $ andSnd {va == xvb} p))) ⟩
+            (if va == xvb && xvb == xvc && xvc == xvd
+            then (if vb == xvb && xvb == xvc && xvc == xvd then Leaf vb else Node (Leaf vb) (Leaf xvb) (Leaf xvc) (Leaf xvd)  ) 
+            else (if vb == xvb && xvb == xvc && xvc == xvd then Leaf vb else Node (Leaf vb) (Leaf xvb) (Leaf xvc) (Leaf xvd)) )
+    =⟨ propIfBranchesSame {c = va == xvb && xvb == xvc && xvc == xvd} (if vb == xvb && xvb == xvc && xvc == xvd then Leaf vb else Node (Leaf vb) (Leaf xvb) (Leaf xvc) (Leaf xvd)  ) ⟩
         (if vb == xvb && xvb == xvc && xvc == xvd then Leaf vb else Node (Leaf vb) (Leaf xvb) (Leaf xvc) (Leaf xvd))
     =⟨⟩
         set lensA (Leaf vb) (Node xa (Leaf xvb) (Leaf xvc) (Leaf xvd))
     end
-ValidLens-LensA-SetSet (Leaf va) (Node b1 b2 b3 b4) (Node xa xb xc xd) =
+ValidLens-LensA-SetSet (Leaf va) (Node b1 b2 b3 b4) (Node xa (Leaf xvb) (Leaf xvc) (Leaf xvd)) =
     begin
-        set lensA (Node b1 b2 b3 b4) (set lensA (Leaf va) (Node xa xb xc xd))
-    =⟨ {!   !} ⟩
-        {!   !}
+        set lensA (Node b1 b2 b3 b4) (set lensA (Leaf va) (Node xa (Leaf xvb) (Leaf xvc) (Leaf xvd)))
+    =⟨⟩
+        runIdentity (lensA (λ _ → CIdentity (Node b1 b2 b3 b4))
+            (if va == xvb && xvb == xvc && xvc == xvd
+            then Leaf va 
+            else Node (Leaf va) (Leaf xvb) (Leaf xvc) (Leaf xvd)))
+    =⟨ sym $ propFnIf {c = va == xvb && xvb == xvc && xvc == xvd} (λ g -> runIdentity (lensA (λ _ → CIdentity (Node b1 b2 b3 b4)) g ) )   ⟩
+        (if va == xvb && xvb == xvc && xvc == xvd
+        then runIdentity (lensA (λ _ → CIdentity (Node b1 b2 b3 b4)) (Leaf va))
+        else runIdentity (lensA (λ _ → CIdentity (Node b1 b2 b3 b4)) (Node (Leaf va) (Leaf xvb) (Leaf xvc) (Leaf xvd))))
+    =⟨⟩
+        (if va == xvb && xvb == xvc && xvc == xvd
+        then Node (Node b1 b2 b3 b4) (Leaf va) (Leaf va) (Leaf va)
+        else Node (Node b1 b2 b3 b4) (Leaf xvb) (Leaf xvc) (Leaf xvd))
+    =⟨ ifTrueMap {c = va == xvb && xvb == xvc && xvc == xvd} (λ p -> cong (λ q -> Node (Node b1 b2 b3 b4) (Leaf q) (Leaf q) (Leaf q)) (eqToEquiv va xvb (andFst {va == xvb} p)))   ⟩
+        (if va == xvb && xvb == xvc && xvc == xvd
+        then Node (Node b1 b2 b3 b4) (Leaf xvb) (Leaf xvb) (Leaf xvb)
+        else Node (Node b1 b2 b3 b4) (Leaf xvb) (Leaf xvc) (Leaf xvd))
+    =⟨ ifTrueMap {c = va == xvb && xvb == xvc && xvc == xvd} (λ p -> cong (λ q -> Node (Node b1 b2 b3 b4) (Leaf xvb) (Leaf q) (Leaf q)) (eqToEquiv xvb xvc (andFst $ andSnd {va == xvb} p)))   ⟩
+        (if va == xvb && xvb == xvc && xvc == xvd
+        then Node (Node b1 b2 b3 b4) (Leaf xvb) (Leaf xvc) (Leaf xvc)
+        else Node (Node b1 b2 b3 b4) (Leaf xvb) (Leaf xvc) (Leaf xvd))
+    =⟨ ifTrueMap {c = va == xvb && xvb == xvc && xvc == xvd} (λ p -> cong (λ q -> Node (Node b1 b2 b3 b4) (Leaf xvb) (Leaf xvc) (Leaf q)) (eqToEquiv xvc xvd (andSnd $ andSnd {va == xvb} p)))   ⟩
+        (if va == xvb && xvb == xvc && xvc == xvd
+        then Node (Node b1 b2 b3 b4) (Leaf xvb) (Leaf xvc) (Leaf xvd)
+        else Node (Node b1 b2 b3 b4) (Leaf xvb) (Leaf xvc) (Leaf xvd))
+    =⟨ propIfBranchesSame {c = va == xvb && xvb == xvc && xvc == xvd} (Node (Node b1 b2 b3 b4) (Leaf xvb) (Leaf xvc) (Leaf xvd)) ⟩
+        Node (Node b1 b2 b3 b4) (Leaf xvb) (Leaf xvc) (Leaf xvd)
+    =⟨⟩
+        set lensA (Node b1 b2 b3 b4) (Node xa (Leaf xvb) (Leaf xvc) (Leaf xvd))
     end
+ValidLens-LensA-SetSet (Leaf va) (Node b1 b2 b3 b4) (Node xa (Leaf x) (Leaf x₁) (Node xd xd₁ xd₂ xd₃)) = refl
+ValidLens-LensA-SetSet (Leaf va) (Node b1 b2 b3 b4) (Node xa (Leaf x) (Node xc xc₁ xc₂ xc₃) xd) = refl
+ValidLens-LensA-SetSet (Leaf va) (Node b1 b2 b3 b4) (Node xa (Node xb xb₁ xb₂ xb₃) xc xd) = refl
 ValidLens-LensA-SetSet (Node a1 a2 a3 a4) (Leaf b) (Leaf x) = refl
 ValidLens-LensA-SetSet (Node a1 a2 a3 a4) (Leaf b) (Node x1 x2 x3 x4) = refl
 ValidLens-LensA-SetSet (Node a1 a2 a3 a4) (Node b1 b2 b3 b4) (Leaf x) = refl
