@@ -35,7 +35,7 @@ ifComparisonMap x y d = ifc x < y
       (x <= d) && (y <= d)
     =⟨ sym $ lteTransitiveWeird x y d xlty ⟩
       y <= d
-    =⟨ sym $ ifTrue (y <= d) (x <= d) (x < y) xlty ⟩
+    =⟨ sym $ ifTrue (x < y) xlty ⟩
       (if x < y then (y <= d) else (x <= d))
     end
   )
@@ -44,7 +44,7 @@ ifComparisonMap x y d = ifc x < y
       (x <= d) && (y <= d)
     =⟨ sym $ lteTransitiveWeirdInv x y d xnlty ⟩
       x <= d
-    =⟨ sym $ ifFalse (y <= d) (x <= d) (x < y) xnlty ⟩
+    =⟨ sym $ ifFalse (x < y) xnlty ⟩
       (if x < y then (y <= d) else (x <= d))
     end
   )
@@ -55,7 +55,7 @@ propMaxLte x y d =
     (x <= d) && (y <= d)
   =⟨ ifComparisonMap x y d ⟩
     (if x < y then (y <= d) else (x <= d))
-  =⟨ propFnIf (x < y) y x (λ v -> v <= d) ⟩
+  =⟨ propFnIf (λ v -> v <= d) ⟩
     (if x < y then y else x) <= d
   =⟨⟩
     max x y <= d

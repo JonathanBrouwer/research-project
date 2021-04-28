@@ -49,9 +49,11 @@ combine : {t : Set} {{eqT : Eq t}}
   -> (a b c d : Quadrant t)
   -> Quadrant t
 combine a@(Leaf va) b@(Leaf vb) c@(Leaf vc) d@(Leaf vd)
-  = ifc (not (va == vb && vb == vc && vc == vd))
-    then Node a b c d
-    else a
+  = if (va == vb && vb == vc && vc == vd)
+    then a
+    else Node a b c d
+
+-- Next 4 cases are the same, but agda is annoying
 combine a b c d = (Node a b c d)
 {-# COMPILE AGDA2HS combine #-}
 

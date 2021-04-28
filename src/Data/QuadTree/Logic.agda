@@ -50,9 +50,9 @@ propZeroImpliesLtOne : (x : Nat) -> IsFalse (x == 0) -> IsFalse (x < 1)
 propZeroImpliesLtOne Z notZ = notZ
 propZeroImpliesLtOne (S x) notZ = IsFalse.itsFalse
 
-propFnIf : {a b : Set} -> (c : Bool) (x : a) (y : a) (f : a -> b) -> (if c then f x else f y) ≡ f (if c then x else y)
-propFnIf false x y f = refl
-propFnIf true x y f = refl
+propFnIf : {a b : Set} -> {c : Bool} {x y : a} (f : a -> b) -> (if c then f x else f y) ≡ f (if c then x else y)
+propFnIf {c = false} f = refl
+propFnIf {c = true} f = refl
 
 propMaxSuc : (x y : Nat) -> max (S x) (S y) ≡ S (max x y)
 propMaxSuc Z Z = refl
@@ -63,7 +63,7 @@ propMaxSuc (S x) (S y) =
     max (S $ S x) (S $ S y)
   =⟨⟩
     (if x < y then (S $ S y) else (S $ S x))
-  =⟨ propFnIf (x < y) (S y) (S x) S ⟩
+  =⟨ propFnIf S ⟩
     (S $ (if x < y then (S y) else (S x)))
   =⟨⟩
     S (max (S x) (S y))
@@ -124,11 +124,11 @@ boolAndTrue : (a : Bool) -> (a && true) ≡ a
 boolAndTrue false = refl
 boolAndTrue true = refl
 
-ifTrue : (a b c : Bool) -> IsTrue c -> (if c then a else b) ≡ a
-ifTrue a b true tc = refl
+ifTrue : {t : Set} {a b : t} (c : Bool) -> IsTrue c -> (if c then a else b) ≡ a
+ifTrue true tc = refl
 
-ifFalse : (a b c : Bool) -> IsFalse c -> (if c then a else b) ≡ b
-ifFalse a b false fc = refl
+ifFalse : {t : Set} {a b : t} (c : Bool) -> IsFalse c -> (if c then a else b) ≡ b
+ifFalse false fc = refl
 
 infix -2 ifc_then_else_
 ifc_then_else_ : {a : Set} → (c : Bool) → ({{IsTrue c}} → a) → ({{IsFalse c}} → a) → a
@@ -152,6 +152,32 @@ propIfcBranchesSame : {t : Set} -> {c : Bool} (v : t)
   -> (ifc c then v else v) ≡ v
 propIfcBranchesSame {c = false} v = refl
 propIfcBranchesSame {c = true} v = refl
+
+propIfBranchesSame : {t : Set} -> {c : Bool} (v : t)
+  -> (if c then v else v) ≡ v
+propIfBranchesSame {c = false} v = refl
+propIfBranchesSame {c = true} v = refl
+
+ifToIfc : {t : Set} {c : Bool} {a b : t} -> (if c then a else b) ≡ (ifc c then a else b)
+ifToIfc {c = false} = refl
+ifToIfc {c = true} = refl
+
+ifTrueMap : {t : Set} -> {c : Bool} {a a2 b : t} -> (IsTrue c -> a ≡ a2) -> (if c then a else b) ≡ (if c then a2 else b)
+ifTrueMap {c = false} aa2 = refl
+ifTrueMap {c = true} {a} {a2} aa2 = 
+  begin
+    a
+  =⟨ aa2 IsTrue.itsTrue ⟩
+    a2
+  end
+  
+ifTrueNested : {t : Set} -> {c1 c2 : Bool} {a b c : t} -> (c1 ≡ c2) -> (if c1 then (if c2 then a else b) else c) ≡ (if c1 then a else c)
+ifTrueNested {t} {false} {false} {a} {b} {c} c1eqc2 = refl
+ifTrueNested {t} {true} {true} {a} {b} {c} c1eqc2 = refl
+
+ifFalseNested : {t : Set} -> {c1 c2 : Bool} {a b c : t} -> (c1 ≡ c2) -> (if c1 then a else (if c2 then b else c)) ≡ (if c1 then a else c)
+ifFalseNested {t} {false} {false} {a} {b} {c} c1eqc2 = refl
+ifFalseNested {t} {true} {true} {a} {b} {c} c1eqc2 = refl
 
 ---- Useful functions
 
@@ -200,9 +226,13 @@ lteSelf (S v) = lteSelf v
 isFalseNot : {b : Bool} -> IsFalse (not b) -> IsTrue b
 isFalseNot {true} if = IsTrue.itsTrue
 
-eqSelf : (v : Nat) -> IsTrue(v == v)
-eqSelf Z = IsTrue.itsTrue
-eqSelf (S v) = eqSelf v
+isTrueNot : {b : Bool} -> IsTrue (b) -> IsFalse (not b)
+isTrueNot {true} if = IsFalse.itsFalse
+
+-- Law of reflexivity for equality
+postulate
+  eqReflexivity : {t : Set} {{eqT : Eq t}} (v : t) -> IsTrue (v == v)
+  eqToEquiv : {t : Set} {{eqT : Eq t}} (a b : t) -> IsTrue (a == b) -> a ≡ b
 
 botToAny : {t : Set} -> ⊥ -> t
 botToAny ()
