@@ -8,6 +8,8 @@ open import Haskell.Prelude
 
 ---- Functors
 
+-- The const functor, for which fmap does not change its value
+
 data Const (a : Set) (b : Set) : Set where
   CConst : a -> Const a b
 
@@ -21,6 +23,8 @@ instance
 {-# COMPILE AGDA2HS Const #-}
 {-# COMPILE AGDA2HS getConst #-}
 {-# COMPILE AGDA2HS constFunctor #-}
+
+-- The identity functor, which just wraps the object
 
 data Identity (a : Set) : Set where
   CIdentity : a -> Identity a
@@ -37,6 +41,7 @@ instance
 {-# COMPILE AGDA2HS identityFunctor #-}
 
 ---- Lens
+-- van Laarhoven style implementation
 
 CLens : Set -> Set -> Set₁
 CLens s a = {f : Set -> Set} {{ff : Functor f}} -> (a -> f a) -> s -> f s
