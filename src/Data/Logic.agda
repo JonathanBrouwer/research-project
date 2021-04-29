@@ -1,4 +1,4 @@
-module Data.QuadTree.Logic where
+module Data.Logic where
 
 open import Haskell.Prelude renaming (zero to Z; suc to S)
 open import Relation.Nullary.Decidable

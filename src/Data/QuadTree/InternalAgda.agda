@@ -1,8 +1,8 @@
 module Data.QuadTree.InternalAgda where
 
 open import Haskell.Prelude renaming (zero to Z; suc to S)
-open import Data.QuadTree.Lens
-open import Data.QuadTree.Logic
+open import Data.Lens.Lens
+open import Data.Logic
 open import Data.QuadTree.PropDepthRelation
 
 {-# FOREIGN AGDA2HS

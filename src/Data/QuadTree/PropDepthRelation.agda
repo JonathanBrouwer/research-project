@@ -1,7 +1,7 @@
 module Data.QuadTree.PropDepthRelation where
 
 open import Haskell.Prelude
-open import Data.QuadTree.Logic
+open import Data.Logic
 
 ---- Properties of depth
 

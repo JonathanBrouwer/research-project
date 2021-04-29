@@ -1,4 +1,4 @@
-module Data.QuadTree.Lens where
+module Data.Lens.Lens where
 
 open import Haskell.Prelude
 

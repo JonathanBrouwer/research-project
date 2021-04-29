@@ -1,12 +1,11 @@
-module Data.QuadTree.LensProofs.LensComposition where
+module Data.Lens.Proofs.LensComposition where
 
 open import Haskell.Prelude renaming (zero to Z; suc to S)
-open import Data.QuadTree.Lens
-open import Data.QuadTree.Logic
-open import Data.QuadTree.InternalAgda
+open import Data.Lens.Lens
+open import Data.Logic
 open import Agda.Primitive
-open import Data.QuadTree.LensProofs.LensLaws
-open import Data.QuadTree.LensProofs.LensPostulates
+open import Data.Lens.Proofs.LensLaws
+open import Data.Lens.Proofs.LensPostulates
 
 -- We proof that if we have 2 valid lenses l1 and l2, that l1 ∘ l2 is also valid
 -- We do this law by law

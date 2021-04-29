@@ -1,11 +1,10 @@
-module Data.QuadTree.LensProofs.LensPostulates where
+module Data.Lens.Proofs.LensPostulates where
 
 open import Haskell.Prelude renaming (zero to Z; suc to S)
-open import Data.QuadTree.Lens
-open import Data.QuadTree.Logic
-open import Data.QuadTree.InternalAgda
+open import Data.Lens.Lens
+open import Data.Logic
 open import Agda.Primitive
-open import Data.QuadTree.LensProofs.LensLaws
+open import Data.Lens.Proofs.LensLaws
 
 ---- Lens postulates
 -- These are provable using the isomorphism to the getter+setter style

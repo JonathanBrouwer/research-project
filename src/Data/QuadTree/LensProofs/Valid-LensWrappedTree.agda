@@ -1,13 +1,13 @@
 module Data.QuadTree.LensProofs.Valid-LensWrappedTree where
 
 open import Haskell.Prelude renaming (zero to Z; suc to S)
-open import Data.QuadTree.Lens
-open import Data.QuadTree.Logic
+open import Data.Lens.Lens
+open import Data.Logic
 open import Data.QuadTree.InternalAgda
 open import Agda.Primitive
-open import Data.QuadTree.LensProofs.LensLaws
-open import Data.QuadTree.LensProofs.LensPostulates
-open import Data.QuadTree.LensProofs.LensComposition
+open import Data.Lens.Proofs.LensLaws
+open import Data.Lens.Proofs.LensPostulates
+open import Data.Lens.Proofs.LensComposition
 
 ---- Lens laws for lensWrappedTree
 

@@ -25,12 +25,11 @@ source-repository head
 
 library
   exposed-modules:
+      Data.Lens.Lens
+      Data.Logic
       Data.Nat
       Data.QuadTree
-      Data.QuadTree.InternalAgda
-      Data.QuadTree.InternalHaskell
-      Data.QuadTree.Lens
-      Data.QuadTree.Logic
+      Data.QuadTree.AgdaImplementation.InternalAgda
   other-modules:
       Paths_research_project
   hs-source-dirs:

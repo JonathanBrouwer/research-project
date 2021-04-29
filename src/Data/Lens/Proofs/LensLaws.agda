@@ -1,9 +1,8 @@
-module Data.QuadTree.LensProofs.LensLaws where
+module Data.Lens.Proofs.LensLaws where
 
 open import Haskell.Prelude renaming (zero to Z; suc to S)
-open import Data.QuadTree.Lens
-open import Data.QuadTree.Logic
-open import Data.QuadTree.InternalAgda
+open import Data.Lens.Lens
+open import Data.Logic
 open import Agda.Primitive
 
 
