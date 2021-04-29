@@ -9,53 +9,56 @@ open import Data.Lens.Proofs.LensLaws
 open import Data.Lens.Proofs.LensPostulates
 open import Data.Lens.Proofs.LensComposition
 
+-- The lens laws have been proven for LensA, and the proof is quite long.
+-- The implementation of lens b/c/d is basically identical, so I won't bother to proof them for now
+
 --- Lens laws for lensB
 
 postulate 
     ValidLens-LensB-ViewSet : 
-        {t : Set} {{eqT : Eq t}}
-        -> ViewSet (lensB {t})
+        {t : Set} {{eqT : Eq t}} {dep : Nat}
+        -> ViewSet (lensB {t} {dep})
     ValidLens-LensB-SetView : 
-        {t : Set} {{eqT : Eq t}} 
-        -> SetView (lensB {t})
+        {t : Set} {{eqT : Eq t}} {dep : Nat}
+        -> SetView (lensB {t} {dep})
     ValidLens-LensB-SetSet : 
-        {t : Set} {{eqT : Eq t}}
-        -> SetSet (lensB {t})
+        {t : Set} {{eqT : Eq t}} {dep : Nat}
+        -> SetSet (lensB {t} {dep})
 
-ValidLens-LensB : {t : Set} {{eqT : Eq t}}
-    -> ValidLens (Quadrant t) (Quadrant t)
-ValidLens-LensB = CValidLens lensB (ValidLens-LensB-ViewSet) (ValidLens-LensB-SetView) (ValidLens-LensB-SetSet)
+ValidLens-LensB : {t : Set} {{eqT : Eq t}} {dep : Nat}
+    -> ValidLens (VQuadrant t {S dep}) (VQuadrant t {dep})
+ValidLens-LensB {t} {dep} = CValidLens lensB (ValidLens-LensB-ViewSet) (ValidLens-LensB-SetView) (ValidLens-LensB-SetSet)
 
 --- Lens laws for lensC
 
 postulate 
     ValidLens-LensC-ViewSet : 
-        {t : Set} {{eqT : Eq t}}
-        -> ViewSet (lensC {t})
+        {t : Set} {{eqT : Eq t}} {dep : Nat}
+        -> ViewSet (lensC {t} {dep})
     ValidLens-LensC-SetView : 
-        {t : Set} {{eqT : Eq t}} 
-        -> SetView (lensC {t})
+        {t : Set} {{eqT : Eq t}} {dep : Nat}
+        -> SetView (lensC {t} {dep})
     ValidLens-LensC-SetSet : 
-        {t : Set} {{eqT : Eq t}} 
-        -> SetSet (lensC {t})
+        {t : Set} {{eqT : Eq t}} {dep : Nat}
+        -> SetSet (lensC {t} {dep})
 
-ValidLens-LensC : {t : Set} {{eqT : Eq t}}
-    -> ValidLens (Quadrant t) (Quadrant t)
-ValidLens-LensC = CValidLens lensC (ValidLens-LensC-ViewSet) (ValidLens-LensC-SetView) (ValidLens-LensC-SetSet)
+ValidLens-LensC : {t : Set} {{eqT : Eq t}} {dep : Nat}
+    -> ValidLens (VQuadrant t {S dep}) (VQuadrant t {dep})
+ValidLens-LensC {t} {dep} = CValidLens lensC (ValidLens-LensC-ViewSet) (ValidLens-LensC-SetView) (ValidLens-LensC-SetSet)
 
 --- Lens laws for lensD
 
 postulate 
     ValidLens-LensD-ViewSet : 
-        {t : Set} {{eqT : Eq t}} 
-        -> ViewSet (lensD {t})
+        {t : Set} {{eqT : Eq t}} {dep : Nat}
+        -> ViewSet (lensD {t} {dep})
     ValidLens-LensD-SetView : 
-        {t : Set} {{eqT : Eq t}} 
-        -> SetView (lensD {t})
+        {t : Set} {{eqT : Eq t}} {dep : Nat}
+        -> SetView (lensD {t} {dep})
     ValidLens-LensD-SetSet : 
-        {t : Set} {{eqT : Eq t}} 
-        -> SetSet (lensD {t})
+        {t : Set} {{eqT : Eq t}} {dep : Nat}
+        -> SetSet (lensD {t} {dep})
 
-ValidLens-LensD : {t : Set} {{eqT : Eq t}}
-    -> ValidLens (Quadrant t) (Quadrant t)
-ValidLens-LensD = CValidLens lensD (ValidLens-LensD-ViewSet) (ValidLens-LensD-SetView) (ValidLens-LensD-SetSet)
+ValidLens-LensD : {t : Set} {{eqT : Eq t}} {dep : Nat}
+    -> ValidLens (VQuadrant t {S dep}) (VQuadrant t {dep})
+ValidLens-LensD {t} {dep} = CValidLens lensD (ValidLens-LensD-ViewSet) (ValidLens-LensD-SetView) (ValidLens-LensD-SetSet)
