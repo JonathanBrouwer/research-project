@@ -1,3 +1,4 @@
+-- {-# OPTIONS --show-implicit --show-irrelevant #-}
 module Data.QuadTree.LensProofs.Valid-LensA where
 
 open import Haskell.Prelude renaming (zero to Z; suc to S)
@@ -78,10 +79,104 @@ ValidLens-LensA-SetView (CVQuadrant (Node (Leaf x) (Leaf x₁) (Node qd₂ qd₄
 ValidLens-LensA-SetView (CVQuadrant (Node (Leaf x) (Node qd₁ qd₄ qd₅ qd₆) qd₂ qd₃)) = refl
 ValidLens-LensA-SetView (CVQuadrant (Node (Node qd qd₄ qd₅ qd₆) qd₁ qd₂ qd₃)) = refl    
 
--- ValidLens-LensA-SetSet : 
---     {t : Set} {{eqT : Eq t}}
---     -> SetSet (lensA {t})
--- ValidLens-LensA-SetSet (Leaf va) (Leaf vb) (Leaf x) =
+ValidLens-LensA-SetSet-Lemma : {t : Set} {{eqT : Eq t}} {dep : Nat}
+    -> (x a b c d : VQuadrant t {dep}) 
+    -> set lensA x (combine a b c d) ≡ (combine x b c d)
+ValidLens-LensA-SetSet-Lemma {t} {dep} (CVQuadrant x@(Leaf xv)) (CVQuadrant a@(Leaf va)) (CVQuadrant b@(Leaf vb)) (CVQuadrant c@(Leaf vc)) (CVQuadrant d@(Leaf vd)) =
+    begin
+        (runIdentity (lensA (λ _ → CIdentity (CVQuadrant (Leaf xv)))
+            (ifc va == vb && vb == vc && vc == vd
+            then CVQuadrant (Leaf va)
+            else CVQuadrant (Node (Leaf va) (Leaf vb) (Leaf vc) (Leaf vd)))))
+    =⟨ sym $ propFnIfc (va == vb && vb == vc && vc == vd) (λ g -> (runIdentity (lensA (λ _ → CIdentity (CVQuadrant (Leaf xv) {andCombine (zeroLteAny dep) IsTrue.itsTrue})) g ) ) ) ⟩
+        (ifc va == vb && vb == vc && vc == vd
+            then ifc xv == va && va == va && va == va
+                then CVQuadrant (Leaf xv) 
+                else CVQuadrant (Node (Leaf xv) (Leaf va) (Leaf va) (Leaf va))
+            else ifc xv == vb && vb == vc && vc == vd
+                then CVQuadrant (Leaf xv) 
+                else CVQuadrant (Node (Leaf xv) (Leaf vb) (Leaf vc) (Leaf vd)))
+    =⟨ ifcTrueMap {c = va == vb && vb == vc && vc == vd} 
+            (λ p -> cong 
+                (λ q -> ifc xv == q && q == q && q == q 
+                    then CVQuadrant (Leaf xv) {andCombine (zeroLteAny (S dep)) IsTrue.itsTrue} 
+                    else (λ {{p}} -> CVQuadrant (Node (Leaf xv) (Leaf q) (Leaf q) (Leaf q)) {andCombine (zeroLteAny (dep)) (falseToNotTrue p)}) ) 
+                (eqToEquiv va vb (andFst {va == vb} p))  ) ⟩
+                
+        (ifc va == vb && vb == vc && vc == vd
+            then ifc xv == vb && vb == vb && vb == vb
+                then CVQuadrant (Leaf xv) {andCombine (zeroLteAny (S dep)) IsTrue.itsTrue}
+                else (λ {{p}} -> CVQuadrant (Node (Leaf xv) (Leaf vb) (Leaf vb) (Leaf vb)) {andCombine (zeroLteAny (dep)) (falseToNotTrue p)})
+            else ifc xv == vb && vb == vc && vc == vd
+                then CVQuadrant (Leaf xv) 
+                else CVQuadrant (Node (Leaf xv) (Leaf vb) (Leaf vc) (Leaf vd)))
+    =⟨ ifcTrueMap {c = va == vb && vb == vc && vc == vd} 
+            (λ p -> cong 
+                (λ q -> ifc xv == vb && vb == q && q == q 
+                    then CVQuadrant (Leaf xv) {andCombine (zeroLteAny (S dep)) IsTrue.itsTrue} 
+                    else (λ {{p}} -> CVQuadrant (Node (Leaf xv) (Leaf vb) (Leaf q) (Leaf q)) {andCombine (zeroLteAny (dep)) (falseToNotTrue p)}) ) 
+                (eqToEquiv vb vc (andFst $ andSnd {va == vb} p))  ) ⟩
+
+        (ifc va == vb && vb == vc && vc == vd
+            then ifc xv == vb && vb == vc && vc == vc
+                then CVQuadrant (Leaf xv) {andCombine (zeroLteAny (S dep)) IsTrue.itsTrue}
+                else (λ {{p}} -> CVQuadrant (Node (Leaf xv) (Leaf vb) (Leaf vc) (Leaf vc)) {andCombine (zeroLteAny (dep)) (falseToNotTrue p)})
+            else ifc xv == vb && vb == vc && vc == vd
+                then CVQuadrant (Leaf xv) 
+                else CVQuadrant (Node (Leaf xv) (Leaf vb) (Leaf vc) (Leaf vd)))
+    =⟨ ifcTrueMap {c = va == vb && vb == vc && vc == vd} 
+            (λ p -> cong 
+                (λ q -> ifc xv == vb && vb == vc && vc == q 
+                    then CVQuadrant (Leaf xv) {andCombine (zeroLteAny (S dep)) IsTrue.itsTrue} 
+                    else (λ {{p}} -> CVQuadrant (Node (Leaf xv) (Leaf vb) (Leaf vc) (Leaf q)) {andCombine (zeroLteAny (dep)) (falseToNotTrue p)}) ) 
+                (eqToEquiv vc vd (andSnd $ andSnd {va == vb} p))  ) ⟩
+
+        (ifc va == vb && vb == vc && vc == vd
+            then ifc xv == vb && vb == vc && vc == vd
+                then CVQuadrant (Leaf xv) {andCombine (zeroLteAny (S dep)) IsTrue.itsTrue}
+                else (λ {{p}} -> CVQuadrant (Node (Leaf xv) (Leaf vb) (Leaf vc) (Leaf vd)) {andCombine (zeroLteAny (dep)) (falseToNotTrue p)})
+            else ifc xv == vb && vb == vc && vc == vd
+                then CVQuadrant (Leaf xv) 
+                else CVQuadrant (Node (Leaf xv) (Leaf vb) (Leaf vc) (Leaf vd)))
+    =⟨ propIfcBranchesSame {c = va == vb && vb == vc && vc == vd} 
+        (ifc xv == vb && vb == vc && vc == vd then CVQuadrant (Leaf xv) else CVQuadrant (Node (Leaf xv) (Leaf vb) (Leaf vc) (Leaf vd))) ⟩
+
+        (ifc xv == vb && vb == vc && vc == vd
+            then CVQuadrant (Leaf xv) 
+            else CVQuadrant (Node (Leaf xv) (Leaf vb) (Leaf vc) (Leaf vd)))
+    end
+ValidLens-LensA-SetSet-Lemma (CVQuadrant x@(Node x1 x2 x3 x4)) (CVQuadrant a@(Leaf va)) (CVQuadrant b@(Leaf vb)) (CVQuadrant c@(Leaf vc)) (CVQuadrant d@(Leaf vd)) =
+    begin
+        runIdentity (lensA (λ _ → CIdentity (CVQuadrant (Node x1 x2 x3 x4)))
+            (ifc va == vb && vb == vc && vc == vd
+            then CVQuadrant (Leaf va) 
+            else CVQuadrant (Node (Leaf va) (Leaf vb) (Leaf vc) (Leaf vd))))
+    =⟨ {!   !} ⟩
+        CVQuadrant (Node (Node x1 x2 x3 x4) (Leaf vb) (Leaf vc) (Leaf vd))
+    end
+ValidLens-LensA-SetSet-Lemma (CVQuadrant _) (CVQuadrant (Leaf _)) (CVQuadrant (Leaf _)) (CVQuadrant (Leaf _)) (CVQuadrant (Node _ _ _ _)) = refl
+ValidLens-LensA-SetSet-Lemma (CVQuadrant _) (CVQuadrant (Leaf _)) (CVQuadrant (Leaf _)) (CVQuadrant (Node _ _ _ _)) (CVQuadrant _) = refl
+ValidLens-LensA-SetSet-Lemma (CVQuadrant _) (CVQuadrant (Leaf _)) (CVQuadrant (Node _ _ _ _)) (CVQuadrant _) (CVQuadrant _) = refl
+ValidLens-LensA-SetSet-Lemma (CVQuadrant _) (CVQuadrant (Node _ _ _ _)) (CVQuadrant _) (CVQuadrant _) (CVQuadrant _) = refl
+
+ValidLens-LensA-SetSet : 
+    {t : Set} {{eqT : Eq t}} {dep : Nat}
+    -> SetSet (lensA {t} {dep})
+ValidLens-LensA-SetSet a@(CVQuadrant qda) b@(CVQuadrant qdb) x@(CVQuadrant qdx@(Leaf xv)) =
+    begin
+        set lensA (CVQuadrant qdb) (combine (CVQuadrant qda) (CVQuadrant (Leaf xv)) (CVQuadrant (Leaf xv)) (CVQuadrant (Leaf xv)))
+    =⟨ ValidLens-LensA-SetSet-Lemma (CVQuadrant qdb) (CVQuadrant qda) (CVQuadrant (Leaf xv)) (CVQuadrant (Leaf xv)) (CVQuadrant (Leaf xv)) ⟩
+        combine (CVQuadrant qdb) (CVQuadrant (Leaf xv)) (CVQuadrant (Leaf xv)) (CVQuadrant (Leaf xv))
+    end
+ValidLens-LensA-SetSet (CVQuadrant qda) (CVQuadrant qdb) (CVQuadrant qdx@(Node xa xb xc xd)) =
+    begin
+        set lensA (CVQuadrant qdb) (combine (CVQuadrant qda) (CVQuadrant xb) (CVQuadrant xc) (CVQuadrant xd))
+    =⟨ ValidLens-LensA-SetSet-Lemma (CVQuadrant qdb) (CVQuadrant qda) (CVQuadrant xb) (CVQuadrant xc) (CVQuadrant xd) ⟩
+        combine (CVQuadrant qdb) (CVQuadrant xb) (CVQuadrant xc) (CVQuadrant xd)
+    end
+
+
+-- ValidLens-LensA-SetSet (CValidQuadrant (Leaf va)) (CValidQuadrant (Leaf vb)) (CValidQuadrant (Leaf x)) =
 --     begin
 --         set lensA (Leaf vb) (set lensA (Leaf va) (Leaf x))
 --     =⟨⟩
@@ -139,10 +234,10 @@ ValidLens-LensA-SetView (CVQuadrant (Node (Node qd qd₄ qd₅ qd₆) qd₁ qd�
 --     =⟨ propIfBranchesSame (Node (Node b1 b2 b3 b4) (Leaf x) (Leaf x) (Leaf x)) ⟩
 --         set lensA (Node b1 b2 b3 b4) (Leaf x)
 --     end
--- ValidLens-LensA-SetSet (Leaf va) (Leaf vb) (Node xa (Leaf x) (Leaf x₁) (Node xd xd₁ xd₂ xd₃)) = refl
--- ValidLens-LensA-SetSet (Leaf va) (Leaf vb) (Node xa (Leaf x) (Node xc xc₁ xc₂ xc₃) xd) = refl
--- ValidLens-LensA-SetSet (Leaf va) (Leaf vb) (Node xa (Node xb xb₁ xb₂ xb₃) xc xd) = refl
--- ValidLens-LensA-SetSet (Leaf va) (Leaf vb) (Node xa (Leaf xvb) (Leaf xvc) (Leaf xvd)) =
+-- ValidLens-LensA-SetSet (CValidQuadrant (Leaf va)) (CValidQuadrant (Leaf vb)) (CValidQuadrant (Node xa (Leaf x) (Leaf x₁) (Node xd xd₁ xd₂ xd₃))) = refl
+-- ValidLens-LensA-SetSet (CValidQuadrant (Leaf va)) (CValidQuadrant (Leaf vb)) (CValidQuadrant (Node xa (Leaf x) (Node xc xc₁ xc₂ xc₃) xd)) = refl
+-- ValidLens-LensA-SetSet (CValidQuadrant (Leaf va)) (CValidQuadrant (Leaf vb)) (CValidQuadrant (Node xa (Node xb xb₁ xb₂ xb₃) xc xd)) = refl
+-- ValidLens-LensA-SetSet (CValidQuadrant (Leaf va)) (CValidQuadrant (Leaf vb)) (CValidQuadrant (Node xa (Leaf xvb) (Leaf xvc) (Leaf xvd))) =
 --     begin
 --         set lensA (Leaf vb) (set lensA (Leaf va) (Node xa (Leaf xvb) (Leaf xvc) (Leaf xvd)))
 --     =⟨⟩
@@ -222,6 +317,6 @@ ValidLens-LensA-SetView (CVQuadrant (Node (Node qd qd₄ qd₅ qd₆) qd₁ qd�
 -- ValidLens-LensA-SetSet (Node a1 a2 a3 a4) (Node b1 b2 b3 b4) (Leaf x) = refl
 -- ValidLens-LensA-SetSet (Node a1 a2 a3 a4) (Node b1 b2 b3 b4) (Node x1 x2 x3 x4) = refl
 
--- ValidLens-LensA : {t : Set} {{eqT : Eq t}}
---     -> ValidLens (Quadrant t) (Quadrant t)
--- ValidLens-LensA = CValidLens lensA (ValidLens-LensA-ViewSet) (ValidLens-LensA-SetView) (ValidLens-LensA-SetSet)
+ValidLens-LensA : {t : Set} {{eqT : Eq t}} {dep : Nat}
+    -> ValidLens (VQuadrant t {S dep}) (VQuadrant t {dep})
+ValidLens-LensA = CValidLens lensA (ValidLens-LensA-ViewSet) (ValidLens-LensA-SetView) (ValidLens-LensA-SetSet)

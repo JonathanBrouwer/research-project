@@ -124,7 +124,7 @@ combine {t} {dep} (CVQuadrant a@(Leaf va) {pa}) (CVQuadrant b@(Leaf vb) {pb}) (C
   = ifc (va == vb && vb == vc && vc == vd)
     then CVQuadrant a {IsTrue.itsTrue}
     else (λ {{pn}} -> CVQuadrant (Node a b c d) {andCombine (zeroLteAny dep) (falseToNotTrue $ pn)})
-  
+
 -- The next 4 cases are all identical, but I could not figure out another way to convince agda
 combine {t} {dep} (CVQuadrant a@(Node v1 v2 v3 v4) {pa}) (CVQuadrant b {pb}) (CVQuadrant c {pc}) (CVQuadrant d {pd}) 
   = CVQuadrant (Node a b c d) {andCombine 

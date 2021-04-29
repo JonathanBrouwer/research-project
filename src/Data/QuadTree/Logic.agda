@@ -1,4 +1,3 @@
-{-# OPTIONS --show-implicit --show-irrelevant #-}
 module Data.QuadTree.Logic where
 
 open import Haskell.Prelude renaming (zero to Z; suc to S)
@@ -165,6 +164,15 @@ ifToIfc {c = true} = refl
 ifTrueMap : {t : Set} -> {c : Bool} {a a2 b : t} -> (IsTrue c -> a ≡ a2) -> (if c then a else b) ≡ (if c then a2 else b)
 ifTrueMap {c = false} aa2 = refl
 ifTrueMap {c = true} {a} {a2} aa2 = 
+  begin
+    a
+  =⟨ aa2 IsTrue.itsTrue ⟩
+    a2
+  end
+
+ifcTrueMap : {t : Set} -> {c : Bool} {a a2 b : t} -> (IsTrue c -> a ≡ a2) -> (ifc c then a else b) ≡ (ifc c then a2 else b)
+ifcTrueMap {c = false} aa2 = refl
+ifcTrueMap {c = true} {a} {a2} aa2 = 
   begin
     a
   =⟨ aa2 IsTrue.itsTrue ⟩
