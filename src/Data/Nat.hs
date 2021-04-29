@@ -104,6 +104,9 @@ modhelper k m (S n) (S j) = modhelper (S k) m n j
 instance Integral Nat where
     toInteger = cata 0 succ
 
+    quotRem _ Z = throw DivideByZero
+    quotRem m (S n) = (divhelper 0 n m n, modhelper 0 n m n)
+
     divMod _ Z = throw DivideByZero
     divMod m (S n) = (divhelper 0 n m n, modhelper 0 n m n)
 

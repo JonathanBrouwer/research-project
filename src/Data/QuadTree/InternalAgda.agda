@@ -39,7 +39,7 @@ instance
   quadTreeFunctor .fmap fn (Wrapper (w , h) q) = Wrapper (w , h) (fmap fn q) 
 {-# COMPILE AGDA2HS quadTreeFunctor #-}
 
----- Valid Quadrant
+---- Valid types
 
 depth : {t : Set} -> Quadrant t -> Nat
 depth (Leaf x) = 0
@@ -49,6 +49,10 @@ depth (Node a b c d) = 1 + max4 (depth a) (depth b) (depth c) (depth d)
 maxDepth : {t : Set} -> QuadTree t -> Nat
 maxDepth (Wrapper (w , h) _) = log2up (max w h)
 {-# COMPILE AGDA2HS maxDepth #-}
+
+treeToQuadrant : {t : Set} -> QuadTree t -> Quadrant t
+treeToQuadrant (Wrapper _ qd) = qd
+{-# COMPILE AGDA2HS treeToQuadrant #-}
 
 isCompressed : {t : Set} -> {{eqT : Eq t}} -> Quadrant t -> Bool
 isCompressed (Leaf _) = true
@@ -66,22 +70,27 @@ data VQuadrant (t : Set) {{eqT : Eq t}} {dep : Nat} : Set where
 newtype VQuadrant t = CVQuadrant (Quadrant t)
 #-}
 
+data VQuadTree (t : Set) {{eqT : Eq t}} {dep : Nat} : Set where
+  CVQuadTree : (qt : QuadTree t) -> {.(IsTrue (isValid dep (treeToQuadrant qt)))} -> {.(IsTrue (dep == maxDepth qt))} -> VQuadTree t {dep}
+{-# FOREIGN AGDA2HS
+newtype VQuadTree t = CVQuadTree (QuadTree t)
+#-}
+
 ---- Lenses
 
 lensWrappedTree : {t : Set} {{eqT : Eq t}}
-  -> CLens (QuadTree t) (Quadrant t)
-lensWrappedTree fun (Wrapper (w , h) qd) = 
+  -> {dep : Nat}
+  -> CLens (VQuadTree t {dep}) (VQuadrant t {dep})
+lensWrappedTree {dep = dep} fun (CVQuadTree (Wrapper (w , h) qd) {p} {q}) = 
   fmap 
-    (λ qd → (Wrapper (w , h) qd))
-    (fun qd)
+    (λ where (CVQuadrant qd {p}) → CVQuadTree (Wrapper (w , h) qd) {p} {q})
+    (fun (CVQuadrant qd {p}))
 {-# COMPILE AGDA2HS lensWrappedTree #-}
 
 lensLeaf : {t : Set} {{eqT : Eq t}}
-  -> CLens (Quadrant t) t
-lensLeaf f (Leaf v) = fmap Leaf (f v)
-lensLeaf f (Node a b c d) = impossible --TODO: Impossible
+  -> CLens (VQuadrant t {0}) t
+lensLeaf f (CVQuadrant (Leaf v)) = fmap (λ x -> CVQuadrant (Leaf x) {IsTrue.itsTrue}) (f v)
 {-# COMPILE AGDA2HS lensLeaf #-}
-
 
 propDepthRelationEq : {t : Set} -> (a b c d : Quadrant t) -> depth (Node a b c d) ≡ S (max4 (depth a) (depth b) (depth c) (depth d))
 propDepthRelationEq a b c d = refl
@@ -187,76 +196,128 @@ lensA {_} {dep} f (CVQuadrant (Node a b c d) {p}) =
   in fmap (λ x -> combine x sB sC sD ) (f sA)
 {-# COMPILE AGDA2HS lensA #-}
 
--- lensB : 
---   {t : Set} {{eqT : Eq t}}
---   -> CLens (Quadrant t) (Quadrant t)
--- lensB f l@(Leaf v) = 
---   fmap (λ x -> combine l x l l ) (f l)
--- lensB f (Node a b c d) = 
---   fmap (λ x -> combine a x c d ) (f b)
--- {-# COMPILE AGDA2HS lensB #-}
+lensB : 
+  {t : Set} {{eqT : Eq t}}
+  -> {dep : Nat}
+  -> CLens (VQuadrant t {S dep}) (VQuadrant t {dep})
+lensB {_} {dep} f (CVQuadrant (Leaf v) {p}) = 
+  let sub = CVQuadrant (Leaf v) {andCombine (zeroLteAny dep) IsTrue.itsTrue}
+  in fmap (λ x -> combine sub x sub sub ) (f sub)
+lensB {_} {dep} f (CVQuadrant (Node a b c d) {p}) = 
+  let 
+    sA = CVQuadrant a {aSub a b c d p}
+    sB = CVQuadrant b {bSub a b c d p}
+    sC = CVQuadrant c {cSub a b c d p}
+    sD = CVQuadrant d {dSub a b c d p}
+  in fmap (λ x -> combine sA x sC sD ) (f sB)
+{-# COMPILE AGDA2HS lensB #-}
 
--- lensC : 
---   {t : Set} {{eqT : Eq t}}
---   -> CLens (Quadrant t) (Quadrant t)
--- lensC f l@(Leaf v) = 
---   fmap (λ x -> combine l l x l ) (f l)
--- lensC f (Node a b c d) = 
---   fmap (λ x -> combine a b x d ) (f c)
--- {-# COMPILE AGDA2HS lensC #-}
+lensC : 
+  {t : Set} {{eqT : Eq t}}
+  -> {dep : Nat}
+  -> CLens (VQuadrant t {S dep}) (VQuadrant t {dep})
+lensC {_} {dep} f (CVQuadrant (Leaf v) {p}) = 
+  let sub = CVQuadrant (Leaf v) {andCombine (zeroLteAny dep) IsTrue.itsTrue}
+  in fmap (λ x -> combine sub sub x sub ) (f sub)
+lensC {_} {dep} f (CVQuadrant (Node a b c d) {p}) = 
+  let 
+    sA = CVQuadrant a {aSub a b c d p}
+    sB = CVQuadrant b {bSub a b c d p}
+    sC = CVQuadrant c {cSub a b c d p}
+    sD = CVQuadrant d {dSub a b c d p}
+  in fmap (λ x -> combine sA sB x sD ) (f sC)
+{-# COMPILE AGDA2HS lensC #-}
 
--- lensD : 
---   {t : Set} {{eqT : Eq t}}
---   -> CLens (Quadrant t) (Quadrant t)
--- lensD f l@(Leaf v) = 
---   fmap (λ x -> combine l l l x ) (f l)
--- lensD f (Node a b c d) = 
---   fmap (λ x -> combine a b c x ) (f d)
--- {-# COMPILE AGDA2HS lensD #-}
+lensD : 
+  {t : Set} {{eqT : Eq t}}
+  -> {dep : Nat}
+  -> CLens (VQuadrant t {S dep}) (VQuadrant t {dep})
+lensD {_} {dep} f (CVQuadrant (Leaf v) {p}) = 
+  let sub = CVQuadrant (Leaf v) {andCombine (zeroLteAny dep) IsTrue.itsTrue}
+  in fmap (λ x -> combine sub sub sub x ) (f sub)
+lensD {_} {dep} f (CVQuadrant (Node a b c d) {p}) = 
+  let 
+    sA = CVQuadrant a {aSub a b c d p}
+    sB = CVQuadrant b {bSub a b c d p}
+    sC = CVQuadrant c {cSub a b c d p}
+    sD = CVQuadrant d {dSub a b c d p}
+  in fmap (λ x -> combine sA sB sC x ) (f sD)
+{-# COMPILE AGDA2HS lensD #-}
 
--- ---- Data access
+---- Data access
 
--- go : {t : Set} {{eqT : Eq t}}
---   -> (Nat × Nat) -> (dep : Nat)
---   -> CLens (Quadrant t) t
--- go _ Z = lensLeaf
--- go (x , y) (S deps) = ifc (y < mid) 
---   then (ifc x < mid 
---     then (             lensA ∘ go (x                 , y                ) deps)
---     else (λ {{xgt}} -> lensB ∘ go (_-_ x mid {{xgt}} , y                ) deps))
---   else (λ {{ygt}} -> (ifc x < mid
---     then (             lensC ∘ go (x                 , _-_ y mid {{ygt}}) deps)
---     else (λ {{xgt}} -> lensD ∘ go (_-_ x mid {{xgt}} , _-_ y mid {{ygt}}) deps)))
---   where
---     mid = pow 2 deps
--- {-# COMPILE AGDA2HS go #-}
+go : {t : Set} {{eqT : Eq t}}
+  -> (Nat × Nat) -> (dep : Nat)
+  -> CLens (VQuadrant t {dep}) t
+go _ Z = lensLeaf
+go (x , y) (S deps) = ifc (y < mid) 
+  then (ifc x < mid 
+    then (             lensA ∘ go (x                 , y                ) deps)
+    else (λ {{xgt}} -> lensB ∘ go (_-_ x mid {{xgt}} , y                ) deps))
+  else (λ {{ygt}} -> (ifc x < mid
+    then (             lensC ∘ go (x                 , _-_ y mid {{ygt}}) deps)
+    else (λ {{xgt}} -> lensD ∘ go (_-_ x mid {{xgt}} , _-_ y mid {{ygt}}) deps)))
+  where
+    mid = pow 2 deps
+{-# COMPILE AGDA2HS go #-}
 
--- ---- Agda safe functions
+---- Agda safe functions
 
--- makeTree : {t : Set} {{eqT : Eq t}} -> (size : Nat × Nat) -> (v : t) -> QuadTree t
--- makeTree (w , h) v = Wrapper (w , h) (Leaf v) 
--- {-# COMPILE AGDA2HS makeTree #-}
+makeTreeAgda : {t : Set} {{eqT : Eq t}} -> (size : Nat × Nat) -> (v : t) -> VQuadTree t {maxDepth $ Wrapper size (Leaf v)}
+makeTreeAgda (w , h) v = CVQuadTree (Wrapper (w , h) (Leaf v)) {andCombine (zeroLteAny (log2up $ max w h)) IsTrue.itsTrue} {eqReflexivity (maxDepth $ Wrapper (w , h) (Leaf v))}
+{-# COMPILE AGDA2HS makeTreeAgda #-}
 
--- atLocation : {t : Set} {{eqT : Eq t}}
---   -> (Nat × Nat)
---   -> CLens (QuadTree t) t
--- atLocation index f qt = (lensWrappedTree ∘ (go index (maxDepth qt))) f qt
--- {-# COMPILE AGDA2HS atLocation #-}
+atLocationAgda : {t : Set} {{eqT : Eq t}}
+  -> (Nat × Nat) -> (dep : Nat)
+  -> CLens (VQuadTree t {dep}) t
+atLocationAgda index dep = lensWrappedTree ∘ (go index dep)
+{-# COMPILE AGDA2HS atLocationAgda #-}
 
--- getLocation : {t : Set} {{eqT : Eq t}}
---   -> (Nat × Nat)
---   -> QuadTree t -> t
--- getLocation index = view (atLocation index)
--- {-# COMPILE AGDA2HS getLocation #-}
+getLocationAgda : {t : Set} {{eqT : Eq t}}
+  -> (Nat × Nat) -> (dep : Nat)
+  -> VQuadTree t {dep} -> t
+getLocationAgda index dep = view (atLocationAgda index dep)
+{-# COMPILE AGDA2HS getLocationAgda #-}
 
--- setLocation : {t : Set} {{eqT : Eq t}}
---   -> (Nat × Nat)
---   -> t -> QuadTree t -> QuadTree t
--- setLocation index = set (atLocation index)
--- {-# COMPILE AGDA2HS setLocation #-}
+setLocationAgda : {t : Set} {{eqT : Eq t}}
+  -> (Nat × Nat) -> (dep : Nat) 
+  -> t -> VQuadTree t {dep} -> VQuadTree t {dep}
+setLocationAgda index dep = set (atLocationAgda index dep)
+{-# COMPILE AGDA2HS setLocationAgda #-}
 
--- mapLocation : {t : Set} {{eqT : Eq t}}
---   -> (Nat × Nat)
---   -> (t -> t) -> QuadTree t -> QuadTree t
--- mapLocation index = over (atLocation index)
--- {-# COMPILE AGDA2HS mapLocation #-}
+mapLocationAgda : {t : Set} {{eqT : Eq t}}
+  -> (Nat × Nat) -> (dep : Nat)
+  -> (t -> t) -> VQuadTree t {dep} -> VQuadTree t {dep}
+mapLocationAgda index dep = over (atLocationAgda index dep)
+{-# COMPILE AGDA2HS mapLocationAgda #-}
+
+---- Haskell safe functions
+
+postulate invQuadTree : {t : Set} {{eqT : Eq t}} -> {dep : Nat} -> VQuadTree t {dep}
+{-# FOREIGN AGDA2HS invQuadTree = error "Invalid quadtree given" #-}
+
+qtToAgda : {t : Set} {{eqT : Eq t}} -> (qt : QuadTree t) -> VQuadTree t {maxDepth qt}
+qtToAgda qt = ifc ((depth $ treeToQuadrant qt) <= maxDepth qt) && (isCompressed $ treeToQuadrant qt)
+  then (λ {{p}} -> CVQuadTree qt {p} {eqReflexivity (maxDepth qt)} )
+  else invQuadTree
+{-# COMPILE AGDA2HS qtToAgda #-}
+
+qtFromAgda : {t : Set} {{eqT : Eq t}} -> {dep : Nat} -> VQuadTree t {dep} -> QuadTree t
+qtFromAgda (CVQuadTree qt) = qt
+{-# COMPILE AGDA2HS qtFromAgda #-}
+
+makeTree : {t : Set} {{eqT : Eq t}} -> (size : Nat × Nat) -> t -> QuadTree t
+makeTree size v = qtFromAgda $ makeTreeAgda size v
+{-# COMPILE AGDA2HS makeTree #-}
+
+getLocation : {t : Set} {{eqT : Eq t}} -> (Nat × Nat) -> QuadTree t -> t
+getLocation loc qt = getLocationAgda loc (maxDepth qt) $ qtToAgda qt
+{-# COMPILE AGDA2HS getLocation #-}
+
+setLocation : {t : Set} {{eqT : Eq t}} -> (Nat × Nat) -> t -> QuadTree t -> QuadTree t
+setLocation loc v qt = qtFromAgda $ setLocationAgda loc (maxDepth qt) v $ qtToAgda qt
+{-# COMPILE AGDA2HS setLocation #-}
+
+mapLocation : {t : Set} {{eqT : Eq t}} -> (Nat × Nat) -> (t -> t) -> QuadTree t -> QuadTree t
+mapLocation loc f qt = qtFromAgda $ mapLocationAgda loc (maxDepth qt) f $ qtToAgda qt
+{-# COMPILE AGDA2HS mapLocation #-}
