@@ -1,6 +1,6 @@
 {-# LANGUAGE Rank2Types #-}
 
-module Data.QuadTree.Lens where
+module Data.Lens.Lens where
 
 data Const a b = CConst a
 

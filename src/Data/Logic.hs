@@ -1,4 +1,4 @@
-module Data.QuadTree.Logic where
+module Data.Logic where
 
 import Data.Nat
 

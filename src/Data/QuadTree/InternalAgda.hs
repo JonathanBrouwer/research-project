@@ -8,8 +8,8 @@ module Data.QuadTree.InternalAgda where
 
 
 import Data.Nat
-import Data.QuadTree.Lens
-import Data.QuadTree.Logic
+import Data.Lens.Lens
+import Data.Logic
 
 data Quadrant t = Leaf t
                 | Node (Quadrant t) (Quadrant t) (Quadrant t) (Quadrant t)

@@ -29,7 +29,7 @@ library
       Data.Logic
       Data.Nat
       Data.QuadTree
-      Data.QuadTree.AgdaImplementation.InternalAgda
+      Data.QuadTree.InternalAgda
   other-modules:
       Paths_research_project
   hs-source-dirs:

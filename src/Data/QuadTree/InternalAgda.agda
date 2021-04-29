@@ -10,8 +10,8 @@ open import Data.QuadTree.PropDepthRelation
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE Rank2Types #-}
 import Data.Nat
-import Data.QuadTree.Lens
-import Data.QuadTree.Logic
+import Data.Lens.Lens
+import Data.Logic
 #-}
 
 ---- Quadrants
