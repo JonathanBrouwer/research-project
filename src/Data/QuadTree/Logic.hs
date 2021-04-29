@@ -17,3 +17,6 @@ log2up x = S (log2up (div (x + 1) 2))
 
 impossible = error "Impossible"
 
+max4 :: Nat -> Nat -> Nat -> Nat -> Nat
+max4 a b c d = max (max a b) (max c d)
+

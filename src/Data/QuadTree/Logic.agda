@@ -1,3 +1,4 @@
+{-# OPTIONS --show-implicit --show-irrelevant #-}
 module Data.QuadTree.Logic where
 
 open import Haskell.Prelude renaming (zero to Z; suc to S)
@@ -136,11 +137,11 @@ ifc false then x else y = y {{IsFalse.itsFalse}}
 ifc true then x else y = x {{IsTrue.itsTrue}}
 {-# COMPILE AGDA2HS ifc_then_else_ #-}
 
-ifcTrue : {t : Set} -> (c : Bool) {a b : t} -> IsTrue c -> (ifc c then a else b) ≡ a
-ifcTrue true ct = refl
+ifcTrue : {t : Set} -> (c : Bool) {a : {{.(IsTrue c)}} -> t} {b : {{.(IsFalse c)}} -> t} -> .(ct : IsTrue c) -> (ifc c then (λ {{p}} -> a) else (λ {{p}} -> b)) ≡ (a {{ct}})
+ifcTrue true {a} {b} ct = refl
 
-ifcFalse : {t : Set} -> (c : Bool) (a b : t) -> IsFalse c -> (ifc c then a else b) ≡ b
-ifcFalse false a b cf = refl
+ifcFalse : {t : Set} -> (c : Bool) {a : {{.(IsTrue c)}} -> t} {b : {{.(IsFalse c)}} -> t} -> .(ct : IsFalse c) -> (ifc c then (λ {{p}} -> a) else (λ {{p}} -> b)) ≡ (b {{ct}})
+ifcFalse false {a} {b} ct = refl
 
 propFnIfc : {a b : Set} -> (c : Bool) {x : {{IsTrue c}} -> a} {y : {{IsFalse c}} -> a} (f : a -> b) 
   -> (ifc c then f x else f y) ≡ f (ifc c then x else y)
@@ -222,11 +223,17 @@ lteSelf : (v : Nat) -> IsTrue (v <= v)
 lteSelf Z = IsTrue.itsTrue
 lteSelf (S v) = lteSelf v
 
-isFalseNot : {b : Bool} -> IsFalse (not b) -> IsTrue b
-isFalseNot {true} if = IsTrue.itsTrue
+falseToNotTrue : {b : Bool} -> IsFalse (b) -> IsTrue (not b)
+falseToNotTrue {false} if = IsTrue.itsTrue
 
-isTrueNot : {b : Bool} -> IsTrue (b) -> IsFalse (not b)
-isTrueNot {true} if = IsFalse.itsFalse
+notFalseToTrue : {b : Bool} -> IsFalse (not b) -> IsTrue b
+notFalseToTrue {true} if = IsTrue.itsTrue
+
+trueToNotFalse : {b : Bool} -> IsTrue (b) -> IsFalse (not b)
+trueToNotFalse {true} if = IsFalse.itsFalse
+
+notTrueToFalse : {b : Bool} -> IsTrue (not b) -> IsFalse (b)
+notTrueToFalse {false} if = IsFalse.itsFalse
 
 -- Law of reflexivity for equality
 postulate
@@ -240,3 +247,7 @@ impossible : {t : Set} -> t
 impossible = botToAny bot where
   postulate bot : ⊥
 {-# FOREIGN AGDA2HS impossible = error "Impossible" #-}
+
+max4 : (a b c d : Nat) -> Nat
+max4 a b c d = max (max a b) (max c d)
+{-# COMPILE AGDA2HS max4 #-}

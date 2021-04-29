@@ -14,17 +14,17 @@ open import Data.QuadTree.LensProofs.LensComposition
 ValidLens-WrappedTree-ViewSet : 
     {t : Set} {{eqT : Eq t}}
     -> ViewSet (lensWrappedTree {t})
-ValidLens-WrappedTree-ViewSet qdn (Wrapper qdo (w , h)) = refl
+ValidLens-WrappedTree-ViewSet qdn (Wrapper (w , h) qdo ) = refl
 
 ValidLens-WrappedTree-SetView : 
     {t : Set} {{eqT : Eq t}}
     -> SetView (lensWrappedTree {t})
-ValidLens-WrappedTree-SetView (Wrapper qdo (w , h)) = refl
+ValidLens-WrappedTree-SetView (Wrapper (w , h) qdo ) = refl
 
 ValidLens-WrappedTree-SetSet : 
     {t : Set} {{eqT : Eq t}}
     -> SetSet (lensWrappedTree {t})
-ValidLens-WrappedTree-SetSet qd1 qd2 (Wrapper qdo (w , h)) = refl
+ValidLens-WrappedTree-SetSet qd1 qd2 (Wrapper (w , h) qdo ) = refl
 
 ValidLens-WrappedTree :
     {t : Set} {{eqT : Eq t}}
