@@ -5,7 +5,7 @@ open import Data.QuadTree.Lens
 open import Data.QuadTree.Logic
 open import Data.QuadTree.InternalAgda
 open import Agda.Primitive
-open import Data.QuadTree.LensProofs.Lens
+open import Data.QuadTree.LensProofs.LensLaws
 open import Data.QuadTree.LensProofs.LensPostulates
 
 -- We proof that if we have 2 valid lenses l1 and l2, that l1 ∘ l2 is also valid

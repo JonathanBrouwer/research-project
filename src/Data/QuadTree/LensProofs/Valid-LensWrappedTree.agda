@@ -5,7 +5,7 @@ open import Data.QuadTree.Lens
 open import Data.QuadTree.Logic
 open import Data.QuadTree.InternalAgda
 open import Agda.Primitive
-open import Data.QuadTree.LensProofs.Lens
+open import Data.QuadTree.LensProofs.LensLaws
 open import Data.QuadTree.LensProofs.LensPostulates
 open import Data.QuadTree.LensProofs.LensComposition
 

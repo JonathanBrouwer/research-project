@@ -5,7 +5,7 @@ open import Data.QuadTree.Lens
 open import Data.QuadTree.Logic
 open import Data.QuadTree.InternalAgda
 open import Agda.Primitive
-open import Data.QuadTree.LensProofs.Lens
+open import Data.QuadTree.LensProofs.LensLaws
 
 ---- Lens postulates
 -- These are provable using the isomorphism to the getter+setter style

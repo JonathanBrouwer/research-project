@@ -1,4 +1,4 @@
-module Data.QuadTree.LensProofs.Lens where
+module Data.QuadTree.LensProofs.LensLaws where
 
 open import Haskell.Prelude renaming (zero to Z; suc to S)
 open import Data.QuadTree.Lens
