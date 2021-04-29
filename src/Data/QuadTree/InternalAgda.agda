@@ -250,13 +250,13 @@ go : {t : Set} {{eqT : Eq t}}
   -> (Nat × Nat) -> (dep : Nat)
   -> CLens (VQuadrant t {dep}) t
 go _ Z = lensLeaf
-go (x , y) (S deps) = ifc (y < mid) 
+go (x , y) (S deps) f v = ifc (y < mid) 
   then (ifc x < mid 
-    then (             lensA ∘ go (x                 , y                ) deps)
-    else (λ {{xgt}} -> lensB ∘ go (_-_ x mid {{xgt}} , y                ) deps))
+    then (             (lensA ∘ go (x                 , y                ) deps) f v)
+    else (λ {{xgt}} -> (lensB ∘ go (_-_ x mid {{xgt}} , y                ) deps) f v))
   else (λ {{ygt}} -> (ifc x < mid
-    then (             lensC ∘ go (x                 , _-_ y mid {{ygt}}) deps)
-    else (λ {{xgt}} -> lensD ∘ go (_-_ x mid {{xgt}} , _-_ y mid {{ygt}}) deps)))
+    then (             (lensC ∘ go (x                 , _-_ y mid {{ygt}}) deps) f v)
+    else (λ {{xgt}} -> (lensD ∘ go (_-_ x mid {{xgt}} , _-_ y mid {{ygt}}) deps) f v)))
   where
     mid = pow 2 deps
 {-# COMPILE AGDA2HS go #-}

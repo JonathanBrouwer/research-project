@@ -14,7 +14,7 @@ prop-Composition-ViewSet : {a b c : Set}
     -> (l1 : ValidLens a b)
     -> (l2 : ValidLens b c)
     -> ViewSet ((toLens l1) ∘ (toLens l2))
-prop-Composition-ViewSet {a} {b} {c} vl1@(CValidLens l1 vs1 sv1 ss1) vl2@(CValidLens l2 vs2 sv2 ss2) v s = 
+prop-Composition-ViewSet vl1@(CValidLens l1 vs1 sv1 ss1) vl2@(CValidLens l2 vs2 sv2 ss2) v s = 
     begin 
         view (l1 ∘ l2) (set (l1 ∘ l2) v s) 
     =⟨ prop-view-compose vl1 vl2 (set (l1 ∘ l2) v s) ⟩
@@ -31,7 +31,7 @@ prop-Composition-SetView : {a b c : Set}
     -> (l1 : ValidLens a b)
     -> (l2 : ValidLens b c)
     -> SetView ((toLens l1) ∘ (toLens l2))
-prop-Composition-SetView {a} {b} {c} vl1@(CValidLens l1 vs1 sv1 ss1) vl2@(CValidLens l2 vs2 sv2 ss2) s = 
+prop-Composition-SetView vl1@(CValidLens l1 vs1 sv1 ss1) vl2@(CValidLens l2 vs2 sv2 ss2) s = 
     begin 
         set (l1 ∘ l2) (view (l1 ∘ l2) s) s
     =⟨ cong (λ x -> set (l1 ∘ l2) x s) (prop-view-compose vl1 vl2 s) ⟩
@@ -48,7 +48,7 @@ prop-Composition-SetSet : {a b c : Set}
     -> (l1 : ValidLens a b)
     -> (l2 : ValidLens b c)
     -> SetSet ((toLens l1) ∘ (toLens l2))
-prop-Composition-SetSet {a} {b} {c} vl1@(CValidLens l1 vs1 sv1 ss1) vl2@(CValidLens l2 vs2 sv2 ss2) v1 v2 s =
+prop-Composition-SetSet vl1@(CValidLens l1 vs1 sv1 ss1) vl2@(CValidLens l2 vs2 sv2 ss2) v1 v2 s =
     begin 
         set (l1 ∘ l2) v2 (set (l1 ∘ l2) v1 s)
     =⟨ cong (set (l1 ∘ l2) v2) (prop-set-compose-dir vl1 vl2 s v1) ⟩

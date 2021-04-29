@@ -147,6 +147,14 @@ propFnIfc : {a b : Set} -> (c : Bool) {x : {{IsTrue c}} -> a} {y : {{IsFalse c}}
 propFnIfc false f = refl
 propFnIfc true f = refl
 
+propFnDistributeIfc2 : {a b : Set} -> (c1 c2 : Bool) {w x y z : a} (f : a -> b) 
+  -> f (ifc c1 then (ifc c2 then w else x) else (ifc c2 then y else z))
+  ≡ (ifc c1 then (ifc c2 then f w else f x) else (ifc c2 then f y else f z))
+propFnDistributeIfc2 false false f = refl
+propFnDistributeIfc2 false true f = refl
+propFnDistributeIfc2 true false f = refl
+propFnDistributeIfc2 true true f = refl
+
 propIfcBranchesSame : {t : Set} -> {c : Bool} (v : t)
   -> (ifc c then v else v) ≡ v
 propIfcBranchesSame {c = false} v = refl
