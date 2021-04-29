@@ -12,21 +12,21 @@ open import Data.QuadTree.LensProofs.LensComposition
 ---- Lens laws for lensWrappedTree
 
 ValidLens-WrappedTree-ViewSet : 
-    {t : Set} {{eqT : Eq t}}
-    -> ViewSet (lensWrappedTree {t})
-ValidLens-WrappedTree-ViewSet qdn (Wrapper (w , h) qdo ) = refl
+    {t : Set} {{eqT : Eq t}} {dep : Nat}
+    -> ViewSet (lensWrappedTree {t} {dep})
+ValidLens-WrappedTree-ViewSet (CVQuadrant qdi) (CVQuadTree (Wrapper (w , h) qdo)) = refl
 
 ValidLens-WrappedTree-SetView : 
-    {t : Set} {{eqT : Eq t}}
-    -> SetView (lensWrappedTree {t})
-ValidLens-WrappedTree-SetView (Wrapper (w , h) qdo ) = refl
+    {t : Set} {{eqT : Eq t}} {dep : Nat}
+    -> SetView (lensWrappedTree {t} {dep})
+ValidLens-WrappedTree-SetView (CVQuadTree (Wrapper (w , h) qdo)) = refl
 
 ValidLens-WrappedTree-SetSet : 
-    {t : Set} {{eqT : Eq t}}
-    -> SetSet (lensWrappedTree {t})
-ValidLens-WrappedTree-SetSet qd1 qd2 (Wrapper (w , h) qdo ) = refl
+    {t : Set} {{eqT : Eq t}} {dep : Nat}
+    -> SetSet (lensWrappedTree {t} {dep})
+ValidLens-WrappedTree-SetSet (CVQuadrant qd1) (CVQuadrant qd2) (CVQuadTree (Wrapper (w , h) qdo)) = refl
 
 ValidLens-WrappedTree :
-    {t : Set} {{eqT : Eq t}}
-    -> ValidLens (QuadTree t) (Quadrant t)
+    {t : Set} {{eqT : Eq t}} {dep : Nat}
+    -> ValidLens (VQuadTree t {dep}) (VQuadrant t {dep})
 ValidLens-WrappedTree = CValidLens lensWrappedTree (ValidLens-WrappedTree-ViewSet) (ValidLens-WrappedTree-SetView) (ValidLens-WrappedTree-SetSet)

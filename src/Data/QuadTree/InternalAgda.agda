@@ -81,7 +81,7 @@ newtype VQuadTree t = CVQuadTree (QuadTree t)
 lensWrappedTree : {t : Set} {{eqT : Eq t}}
   -> {dep : Nat}
   -> CLens (VQuadTree t {dep}) (VQuadrant t {dep})
-lensWrappedTree {dep = dep} fun (CVQuadTree (Wrapper (w , h) qd) {p} {q}) = 
+lensWrappedTree fun (CVQuadTree (Wrapper (w , h) qd) {p} {q}) = 
   fmap 
     (λ where (CVQuadrant qd {p}) → CVQuadTree (Wrapper (w , h) qd) {p} {q})
     (fun (CVQuadrant qd {p}))
