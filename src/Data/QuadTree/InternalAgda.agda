@@ -261,34 +261,34 @@ go (x , y) (S deps) {ff} f v = ifc (y < mid)
     mid = pow 2 deps
 {-# COMPILE AGDA2HS go #-}
 
+atLocation : {t : Set} {{eqT : Eq t}}
+  -> (Nat × Nat) -> (dep : Nat)
+  -> CLens (VQuadTree t {dep}) t
+atLocation index dep = lensWrappedTree ∘ (go index dep)
+{-# COMPILE AGDA2HS atLocation #-}
+
 ---- Safe functions
 
 makeTreeSafe : {t : Set} {{eqT : Eq t}} -> (size : Nat × Nat) -> (v : t) -> VQuadTree t {maxDepth $ Wrapper size (Leaf v)}
 makeTreeSafe (w , h) v = CVQuadTree (Wrapper (w , h) (Leaf v)) {andCombine (zeroLteAny (log2up $ max w h)) IsTrue.itsTrue} {eqReflexivity (maxDepth $ Wrapper (w , h) (Leaf v))}
 {-# COMPILE AGDA2HS makeTreeSafe #-}
 
-atLocationSafe : {t : Set} {{eqT : Eq t}}
-  -> (Nat × Nat) -> (dep : Nat)
-  -> CLens (VQuadTree t {dep}) t
-atLocationSafe index dep = lensWrappedTree ∘ (go index dep)
-{-# COMPILE AGDA2HS atLocationSafe #-}
-
 getLocationSafe : {t : Set} {{eqT : Eq t}}
   -> (Nat × Nat) -> (dep : Nat)
   -> VQuadTree t {dep} -> t
-getLocationSafe index dep = view (atLocationSafe index dep)
+getLocationSafe index dep = view (atLocation index dep)
 {-# COMPILE AGDA2HS getLocationSafe #-}
 
 setLocationSafe : {t : Set} {{eqT : Eq t}}
   -> (Nat × Nat) -> (dep : Nat) 
   -> t -> VQuadTree t {dep} -> VQuadTree t {dep}
-setLocationSafe index dep = set (atLocationSafe index dep)
+setLocationSafe index dep = set (atLocation index dep)
 {-# COMPILE AGDA2HS setLocationSafe #-}
 
 mapLocationSafe : {t : Set} {{eqT : Eq t}}
   -> (Nat × Nat) -> (dep : Nat)
   -> (t -> t) -> VQuadTree t {dep} -> VQuadTree t {dep}
-mapLocationSafe index dep = over (atLocationSafe index dep)
+mapLocationSafe index dep = over (atLocation index dep)
 {-# COMPILE AGDA2HS mapLocationSafe #-}
 
 ---- Unsafe functions (Original)

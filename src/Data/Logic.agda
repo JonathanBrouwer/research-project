@@ -23,7 +23,7 @@ trans : {A : Set} {x y z : A} → x ≡ y → y ≡ z → x ≡ z
 trans refl refl = refl
 
 -- congruence of equality
-cong : {u : Level} {A B : Set u} {x y : A} → (f : A → B) → x ≡ y → f x ≡ f y
+cong : {u v : Level} {A : Set u} {B : Set v} {x y : A} → (f : A → B) → x ≡ y → f x ≡ f y
 cong f refl = refl
 
 begin_ : {A : Set} → {x y : A} → x ≡ y → x ≡ y
