@@ -250,7 +250,7 @@ go : {t : Set} {{eqT : Eq t}}
   -> (Nat × Nat) -> (dep : Nat)
   -> CLens (VQuadrant t {dep}) t
 go _ Z = lensLeaf
-go (x , y) (S deps) f v = ifc (y < mid) 
+go (x , y) (S deps) {ff} f v = ifc (y < mid) 
   then (ifc x < mid 
     then (             (lensA ∘ go (x                 , y                ) deps) f v)
     else (λ {{xgt}} -> (lensB ∘ go (_-_ x mid {{xgt}} , y                ) deps) f v))
@@ -261,63 +261,63 @@ go (x , y) (S deps) f v = ifc (y < mid)
     mid = pow 2 deps
 {-# COMPILE AGDA2HS go #-}
 
----- Agda safe functions
+---- Safe functions
 
-makeTreeAgda : {t : Set} {{eqT : Eq t}} -> (size : Nat × Nat) -> (v : t) -> VQuadTree t {maxDepth $ Wrapper size (Leaf v)}
-makeTreeAgda (w , h) v = CVQuadTree (Wrapper (w , h) (Leaf v)) {andCombine (zeroLteAny (log2up $ max w h)) IsTrue.itsTrue} {eqReflexivity (maxDepth $ Wrapper (w , h) (Leaf v))}
-{-# COMPILE AGDA2HS makeTreeAgda #-}
+makeTreeSafe : {t : Set} {{eqT : Eq t}} -> (size : Nat × Nat) -> (v : t) -> VQuadTree t {maxDepth $ Wrapper size (Leaf v)}
+makeTreeSafe (w , h) v = CVQuadTree (Wrapper (w , h) (Leaf v)) {andCombine (zeroLteAny (log2up $ max w h)) IsTrue.itsTrue} {eqReflexivity (maxDepth $ Wrapper (w , h) (Leaf v))}
+{-# COMPILE AGDA2HS makeTreeSafe #-}
 
-atLocationAgda : {t : Set} {{eqT : Eq t}}
+atLocationSafe : {t : Set} {{eqT : Eq t}}
   -> (Nat × Nat) -> (dep : Nat)
   -> CLens (VQuadTree t {dep}) t
-atLocationAgda index dep = lensWrappedTree ∘ (go index dep)
-{-# COMPILE AGDA2HS atLocationAgda #-}
+atLocationSafe index dep = lensWrappedTree ∘ (go index dep)
+{-# COMPILE AGDA2HS atLocationSafe #-}
 
-getLocationAgda : {t : Set} {{eqT : Eq t}}
+getLocationSafe : {t : Set} {{eqT : Eq t}}
   -> (Nat × Nat) -> (dep : Nat)
   -> VQuadTree t {dep} -> t
-getLocationAgda index dep = view (atLocationAgda index dep)
-{-# COMPILE AGDA2HS getLocationAgda #-}
+getLocationSafe index dep = view (atLocationSafe index dep)
+{-# COMPILE AGDA2HS getLocationSafe #-}
 
-setLocationAgda : {t : Set} {{eqT : Eq t}}
+setLocationSafe : {t : Set} {{eqT : Eq t}}
   -> (Nat × Nat) -> (dep : Nat) 
   -> t -> VQuadTree t {dep} -> VQuadTree t {dep}
-setLocationAgda index dep = set (atLocationAgda index dep)
-{-# COMPILE AGDA2HS setLocationAgda #-}
+setLocationSafe index dep = set (atLocationSafe index dep)
+{-# COMPILE AGDA2HS setLocationSafe #-}
 
-mapLocationAgda : {t : Set} {{eqT : Eq t}}
+mapLocationSafe : {t : Set} {{eqT : Eq t}}
   -> (Nat × Nat) -> (dep : Nat)
   -> (t -> t) -> VQuadTree t {dep} -> VQuadTree t {dep}
-mapLocationAgda index dep = over (atLocationAgda index dep)
-{-# COMPILE AGDA2HS mapLocationAgda #-}
+mapLocationSafe index dep = over (atLocationSafe index dep)
+{-# COMPILE AGDA2HS mapLocationSafe #-}
 
----- Haskell safe functions
+---- Unsafe functions (Original)
 
 postulate invQuadTree : {t : Set} {{eqT : Eq t}} -> {dep : Nat} -> VQuadTree t {dep}
 {-# FOREIGN AGDA2HS invQuadTree = error "Invalid quadtree given" #-}
 
-qtToAgda : {t : Set} {{eqT : Eq t}} -> (qt : QuadTree t) -> VQuadTree t {maxDepth qt}
-qtToAgda qt = ifc ((depth $ treeToQuadrant qt) <= maxDepth qt) && (isCompressed $ treeToQuadrant qt)
+qtToSafe : {t : Set} {{eqT : Eq t}} -> (qt : QuadTree t) -> VQuadTree t {maxDepth qt}
+qtToSafe qt = ifc ((depth $ treeToQuadrant qt) <= maxDepth qt) && (isCompressed $ treeToQuadrant qt)
   then (λ {{p}} -> CVQuadTree qt {p} {eqReflexivity (maxDepth qt)} )
   else invQuadTree
-{-# COMPILE AGDA2HS qtToAgda #-}
+{-# COMPILE AGDA2HS qtToSafe #-}
 
-qtFromAgda : {t : Set} {{eqT : Eq t}} -> {dep : Nat} -> VQuadTree t {dep} -> QuadTree t
-qtFromAgda (CVQuadTree qt) = qt
-{-# COMPILE AGDA2HS qtFromAgda #-}
+qtFromSafe : {t : Set} {{eqT : Eq t}} -> {dep : Nat} -> VQuadTree t {dep} -> QuadTree t
+qtFromSafe (CVQuadTree qt) = qt
+{-# COMPILE AGDA2HS qtFromSafe #-}
 
 makeTree : {t : Set} {{eqT : Eq t}} -> (size : Nat × Nat) -> t -> QuadTree t
-makeTree size v = qtFromAgda $ makeTreeAgda size v
+makeTree size v = qtFromSafe $ makeTreeSafe size v
 {-# COMPILE AGDA2HS makeTree #-}
 
 getLocation : {t : Set} {{eqT : Eq t}} -> (Nat × Nat) -> QuadTree t -> t
-getLocation loc qt = getLocationAgda loc (maxDepth qt) $ qtToAgda qt
+getLocation loc qt = getLocationSafe loc (maxDepth qt) $ qtToSafe qt
 {-# COMPILE AGDA2HS getLocation #-}
 
 setLocation : {t : Set} {{eqT : Eq t}} -> (Nat × Nat) -> t -> QuadTree t -> QuadTree t
-setLocation loc v qt = qtFromAgda $ setLocationAgda loc (maxDepth qt) v $ qtToAgda qt
+setLocation loc v qt = qtFromSafe $ setLocationSafe loc (maxDepth qt) v $ qtToSafe qt
 {-# COMPILE AGDA2HS setLocation #-}
 
 mapLocation : {t : Set} {{eqT : Eq t}} -> (Nat × Nat) -> (t -> t) -> QuadTree t -> QuadTree t
-mapLocation loc f qt = qtFromAgda $ mapLocationAgda loc (maxDepth qt) f $ qtToAgda qt
+mapLocation loc f qt = qtFromSafe $ mapLocationSafe loc (maxDepth qt) f $ qtToSafe qt
 {-# COMPILE AGDA2HS mapLocation #-}
