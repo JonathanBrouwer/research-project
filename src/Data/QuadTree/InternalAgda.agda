@@ -249,7 +249,7 @@ lensD {_} {dep} f (CVQuadrant (Node a b c d) {p}) =
 go : {t : Set} {{eqT : Eq t}}
   -> (Nat × Nat) -> (dep : Nat)
   -> CLens (VQuadrant t {dep}) t
-go _ Z = lensLeaf
+go _ Z f v = lensLeaf f v
 go (x , y) (S deps) {ff} f v = ifc (y < mid) 
   then (ifc x < mid 
     then (             (lensA ∘ go (x                 , y                ) deps) f v)

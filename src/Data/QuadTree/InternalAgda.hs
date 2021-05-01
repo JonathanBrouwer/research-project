@@ -135,61 +135,60 @@ lensD f (CVQuadrant (Node a b c d))
       (f (CVQuadrant d))
 
 go :: Eq t => (Nat, Nat) -> Nat -> CLens (VQuadrant t) t
-go _ Z = lensLeaf
-go (x, y) (S deps)
+go _ Z f v = lensLeaf f v
+go (x, y) (S deps) f v
   = ifc_then_else_ (y < mid)
-      (ifc_then_else_ (x < mid) (lensA . go (x, y) deps)
-         (lensB . go (x - mid, y) deps))
-      (ifc_then_else_ (x < mid) (lensC . go (x, y - mid) deps)
-         (lensD . go (x - mid, y - mid) deps))
+      (ifc_then_else_ (x < mid) ((lensA . go (x, y) deps) f v)
+         ((lensB . go (x - mid, y) deps) f v))
+      (ifc_then_else_ (x < mid) ((lensC . go (x, y - mid) deps) f v)
+         ((lensD . go (x - mid, y - mid) deps) f v))
   where
     mid :: Nat
     mid = pow 2 deps
 
-makeTreeAgda :: Eq t => (Nat, Nat) -> t -> VQuadTree t
-makeTreeAgda (w, h) v = CVQuadTree (Wrapper (w, h) (Leaf v))
+atLocation :: Eq t => (Nat, Nat) -> Nat -> CLens (VQuadTree t) t
+atLocation index dep = lensWrappedTree . go index dep
 
-atLocationAgda ::
-                 Eq t => (Nat, Nat) -> Nat -> CLens (VQuadTree t) t
-atLocationAgda index dep = lensWrappedTree . go index dep
+makeTreeSafe :: Eq t => (Nat, Nat) -> t -> VQuadTree t
+makeTreeSafe (w, h) v = CVQuadTree (Wrapper (w, h) (Leaf v))
 
-getLocationAgda :: Eq t => (Nat, Nat) -> Nat -> VQuadTree t -> t
-getLocationAgda index dep = view (atLocationAgda index dep)
+getLocationSafe :: Eq t => (Nat, Nat) -> Nat -> VQuadTree t -> t
+getLocationSafe index dep = view (atLocation index dep)
 
-setLocationAgda ::
+setLocationSafe ::
                   Eq t => (Nat, Nat) -> Nat -> t -> VQuadTree t -> VQuadTree t
-setLocationAgda index dep = set (atLocationAgda index dep)
+setLocationSafe index dep = set (atLocation index dep)
 
-mapLocationAgda ::
+mapLocationSafe ::
                   Eq t => (Nat, Nat) -> Nat -> (t -> t) -> VQuadTree t -> VQuadTree t
-mapLocationAgda index dep = over (atLocationAgda index dep)
+mapLocationSafe index dep = over (atLocation index dep)
 
 invQuadTree = error "Invalid quadtree given"
 
-qtToAgda :: Eq t => QuadTree t -> VQuadTree t
-qtToAgda qt
+qtToSafe :: Eq t => QuadTree t -> VQuadTree t
+qtToSafe qt
   = ifc_then_else_
       ((depth $ treeToQuadrant qt) <= maxDepth qt &&
          (isCompressed $ treeToQuadrant qt))
       (CVQuadTree qt)
       invQuadTree
 
-qtFromAgda :: Eq t => VQuadTree t -> QuadTree t
-qtFromAgda (CVQuadTree qt) = qt
+qtFromSafe :: Eq t => VQuadTree t -> QuadTree t
+qtFromSafe (CVQuadTree qt) = qt
 
 makeTree :: Eq t => (Nat, Nat) -> t -> QuadTree t
-makeTree size v = qtFromAgda $ makeTreeAgda size v
+makeTree size v = qtFromSafe $ makeTreeSafe size v
 
 getLocation :: Eq t => (Nat, Nat) -> QuadTree t -> t
 getLocation loc qt
-  = getLocationAgda loc (maxDepth qt) $ qtToAgda qt
+  = getLocationSafe loc (maxDepth qt) $ qtToSafe qt
 
 setLocation :: Eq t => (Nat, Nat) -> t -> QuadTree t -> QuadTree t
 setLocation loc v qt
-  = qtFromAgda $ setLocationAgda loc (maxDepth qt) v $ qtToAgda qt
+  = qtFromSafe $ setLocationSafe loc (maxDepth qt) v $ qtToSafe qt
 
 mapLocation ::
               Eq t => (Nat, Nat) -> (t -> t) -> QuadTree t -> QuadTree t
 mapLocation loc f qt
-  = qtFromAgda $ mapLocationAgda loc (maxDepth qt) f $ qtToAgda qt
+  = qtFromSafe $ mapLocationSafe loc (maxDepth qt) f $ qtToSafe qt
 
