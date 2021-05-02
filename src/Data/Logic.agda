@@ -201,10 +201,24 @@ div : Nat -> (divisor : Nat) -> {≢0 : False (divisor ≟ 0)} -> Nat
 div a b {p} = _/_ a b {p}
 -- Does not need compile, since it is already defined in haskell
 
+mod : Nat -> (divisor : Nat) -> {≢0 : False (divisor ≟ 0)} -> Nat
+mod a b {p} = _%_ a b {p}
+-- Does not need compile, since it is already defined in haskell
+
 pow : Nat -> Nat -> Nat
 pow b Z = 1
 pow b (S e) = b * pow b e
 {-# COMPILE AGDA2HS pow #-}
+
+mul_not_zero : {a b : Nat} -> IsFalse (a == 0) -> IsFalse (b == 0) -> IsFalse (a * b == 0)
+mul_not_zero {S a} {S b} az bz = IsFalse.itsFalse
+
+pow_not_zero : (n : Nat) -> IsFalse (pow 2 n == 0)
+pow_not_zero Z = IsFalse.itsFalse
+pow_not_zero (S sn) = mul_not_zero {2} {pow 2 sn} IsFalse.itsFalse (pow_not_zero sn)
+
+-- false_convert : (n : Nat) -> IsFalse (n == 0) -> False (n ≟ 0)
+-- false_convert (S n) if = {!   !}
 
 {-# TERMINATING #-}
 log2up : Nat -> Nat

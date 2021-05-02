@@ -249,16 +249,20 @@ lensD {_} {dep} f (CVQuadrant (Node a b c d) {p}) =
 go : {t : Set} {{eqT : Eq t}}
   -> (Nat × Nat) -> (dep : Nat)
   -> CLens (VQuadrant t {dep}) t
-go _ Z f v = lensLeaf f v
-go (x , y) (S deps) {ff} f v = ifc (y < mid) 
-  then (ifc x < mid 
-    then (             (lensA ∘ go (x                 , y                ) deps) f v)
-    else (λ {{xgt}} -> (lensB ∘ go (_-_ x mid {{xgt}} , y                ) deps) f v))
-  else (λ {{ygt}} -> (ifc x < mid
-    then (             (lensC ∘ go (x                 , _-_ y mid {{ygt}}) deps) f v)
-    else (λ {{xgt}} -> (lensD ∘ go (_-_ x mid {{xgt}} , _-_ y mid {{ygt}}) deps) f v)))
-  where
-    mid = pow 2 deps
+go _ Z = lensLeaf
+go (x , y) (S deps) = 
+  (lensA ∘ go (x , y) deps)
+  -- ifc (y < mid) 
+  --   then (ifc x < mid 
+  --     then (             (lensA ∘ gorec) f v)
+  --     else (λ {{xgt}} -> (lensB ∘ gorec) f v))
+  --   else (λ {{ygt}} -> (ifc x < mid
+  --     then (             (lensC ∘ gorec) f v)
+  --     else (λ {{xgt}} -> (lensD ∘ gorec) f v)))
+  -- where
+  --   mid = pow 2 deps
+  --   gorec = go (x , y) deps
+    -- gorec = go (_%_ x mid {{pow_not_zero mid}} , _%_ y mid {{pow_not_zero mid}}) deps
 {-# COMPILE AGDA2HS go #-}
 
 atLocation : {t : Set} {{eqT : Eq t}}
