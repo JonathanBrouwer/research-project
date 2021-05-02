@@ -25,26 +25,41 @@ postulate
     ext0-impl : ExtensionalityImplicit lzero lzero
 
 
+-- postulate 
+ValidLens-go-ViewSet : 
+    {t : Set} {{eqT : Eq t}}
+    -> (loc : Nat × Nat) -> (dep : Nat)
+    -> ViewSet (go {t} loc dep)
+postulate 
+    ValidLens-go-SetView : 
+        {t : Set} {{eqT : Eq t}}
+        -> (loc : Nat × Nat) -> (dep : Nat)
+        -> SetView (go {t} loc dep)
+postulate 
+    ValidLens-go-SetSet : 
+        {t : Set} {{eqT : Eq t}}
+        -> (loc : Nat × Nat) -> (dep : Nat)
+        -> SetSet (go {t} loc dep)
+
 ValidLens-go : {t : Set} {{eqT : Eq t}}
     -> (loc : Nat × Nat) -> (dep : Nat)
     -> ValidLens (VQuadrant t {dep}) t
+ValidLens-go {t} {{eqT}} loc dep = CValidLens (go loc dep) (ValidLens-go-ViewSet loc dep) (ValidLens-go-SetView loc dep) (ValidLens-go-SetSet loc dep)
 
 ---- Lens laws for go
 
 
-ValidLens-go-ViewSet :
-    {t : Set} {{eqT : Eq t}}
-    -> (loc : Nat × Nat) -> (dep : Nat)
-    -> ViewSet (go {t} loc dep)
 ValidLens-go-ViewSet loc Z v cvq@(CVQuadrant (Leaf x) {p}) = refl
-ValidLens-go-ViewSet (x , y) dep@(S deps) v cvq@(CVQuadrant qd {p}) =
-    begin
-        view (go (x , y) (S deps)) (set (go (x , y) (S deps)) v cvq) 
-    =⟨⟩
-        view (lensA ∘ (go (x , y) deps)) (set (lensA ∘ (go (x , y) deps)) v cvq) 
-    =⟨ prop-Composition-ViewSet (ValidLens-LensA) (ValidLens-go (x , y) deps) v cvq ⟩
-        v
-    end
+ValidLens-go-ViewSet (x , y) dep@(S deps) v cvq@(CVQuadrant qd {p}) = prop-Composition-ViewSet (ValidLens-LensA) (ValidLens-go (x , y) deps) v cvq
+
+
+    -- begin
+    --     view (go (x , y) (S deps)) (set (go (x , y) (S deps)) v cvq) 
+    -- =⟨⟩
+    --     view (lensA ∘ (go (x , y) deps)) (set (lensA ∘ (go (x , y) deps)) v cvq) 
+    -- =⟨ prop-Composition-ViewSet (ValidLens-LensA) (ValidLens-go (x , y) deps) v cvq ⟩
+    --     v
+    -- end
 
 
 -- convertA : {t : Set} {{eqT : Eq t}}
@@ -142,18 +157,3 @@ ValidLens-go-ViewSet (x , y) dep@(S deps) v cvq@(CVQuadrant qd {p}) =
     --             then lensC (go (x , (y - pow 2 deps)) deps g) v
     --             else lensD (go ((x - pow 2 deps) , (y - pow 2 deps)) deps g) v)
 
-postulate 
-    -- ValidLens-go-ViewSet : 
-    --     {t : Set} {{eqT : Eq t}}
-    --     -> (loc : Nat × Nat) -> (dep : Nat)
-    --     -> ViewSet (go {t} loc dep)
-    ValidLens-go-SetView : 
-        {t : Set} {{eqT : Eq t}}
-        -> (loc : Nat × Nat) -> (dep : Nat)
-        -> SetView (go {t} loc dep)
-    ValidLens-go-SetSet : 
-        {t : Set} {{eqT : Eq t}}
-        -> (loc : Nat × Nat) -> (dep : Nat)
-        -> SetSet (go {t} loc dep)
-
-ValidLens-go {t} {{eqT}} (x , y) dep = CValidLens (go (x , y) dep) (ValidLens-go-ViewSet (x , y) dep) (ValidLens-go-SetView (x , y) dep) (ValidLens-go-SetSet (x , y) dep)
