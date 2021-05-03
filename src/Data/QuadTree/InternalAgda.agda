@@ -251,7 +251,7 @@ go : {t : Set} {{eqT : Eq t}}
   -> CLens (VQuadrant t {dep}) t
 go _ Z = lensLeaf
 go {t} (x , y) (S deps) = 
-  (lensA ∘ go (x , y) deps)
+  (lensA ∘ gorec)
   -- ifc (y < mid) 
   --   then (ifc x < mid 
   --     then (             (lensA ∘ gorec) f v)

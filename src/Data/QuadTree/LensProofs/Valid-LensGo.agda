@@ -41,5 +41,5 @@ ValidLens-go {t} {{eqT}} loc dep = CValidLens (go loc dep) (ValidLens-go-ViewSet
 
 
 ValidLens-go-ViewSet loc Z v cvq@(CVQuadrant (Leaf x) {p}) = refl
-ValidLens-go-ViewSet (x , y) dep@(S deps) v cvq@(CVQuadrant qd {p}) = prop-Composition-ViewSet (ValidLens-LensA) (ValidLens-go (x , y) deps) v cvq
+ValidLens-go-ViewSet (x , y) dep@(S deps) v cvq@(CVQuadrant qd {p}) = prop-Composition-ViewSet (ValidLens-LensA) (ValidLens-go (mod x (pow 2 deps) , mod y (pow 2 deps)) deps) v cvq
 
