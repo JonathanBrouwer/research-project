@@ -217,8 +217,11 @@ pow_not_zero : (n : Nat) -> IsFalse (pow 2 n == 0)
 pow_not_zero Z = IsFalse.itsFalse
 pow_not_zero (S sn) = mul_not_zero {2} {pow 2 sn} IsFalse.itsFalse (pow_not_zero sn)
 
--- false_convert : (n : Nat) -> IsFalse (n == 0) -> False (n ≟ 0)
--- false_convert (S n) if = {!   !}
+false_convert : (n : Nat) -> IsFalse (n == 0) -> False (n ≟ 0)
+false_convert (S n) if = tt
+
+pow_not_zero_cv : (n : Nat) -> False (pow 2 n ≟ 0) 
+pow_not_zero_cv n = false_convert (pow 2 n) $ pow_not_zero n
 
 {-# TERMINATING #-}
 log2up : Nat -> Nat
