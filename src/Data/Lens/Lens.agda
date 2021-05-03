@@ -44,7 +44,7 @@ instance
 -- van Laarhoven style implementation
 
 CLens : Set -> Set -> Set₁
-CLens s a = {f : Set -> Set} {{ff : Functor f}} -> (a -> f a) -> s -> f s
+CLens s a = {f : Set -> Set} -> {{ff : Functor f}} -> (a -> f a) -> s -> f s
 {-# FOREIGN AGDA2HS type CLens s a = forall f. Functor f => (a -> f a) -> s -> f s #-}
 
 view : {a b : Set} -> CLens a b -> a -> b

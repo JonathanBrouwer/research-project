@@ -250,8 +250,10 @@ go : {t : Set} {{eqT : Eq t}}
   -> (Nat × Nat) -> (dep : Nat)
   -> CLens (VQuadrant t {dep}) t
 go _ Z = lensLeaf
-go {t} (x , y) (S deps) = 
-  (lensA ∘ gorec)
+go {t} (x , y) (S deps) =
+  ifc y < mid
+    then (lensA ∘ gorec)
+    else (lensC ∘ gorec)
   -- ifc (y < mid) 
   --   then (ifc x < mid 
   --     then (             (lensA ∘ gorec) f v)

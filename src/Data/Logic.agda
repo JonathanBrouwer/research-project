@@ -131,15 +131,15 @@ ifFalse : {t : Set} {a b : t} (c : Bool) -> IsFalse c -> (if c then a else b) �
 ifFalse false fc = refl
 
 infix -2 ifc_then_else_
-ifc_then_else_ : {a : Set} → (c : Bool) → ({{IsTrue c}} → a) → ({{IsFalse c}} → a) → a
+ifc_then_else_ : {u : Level} {a : Set u} → (c : Bool) → ({{IsTrue c}} → a) → ({{IsFalse c}} → a) → a
 ifc false then x else y = y {{IsFalse.itsFalse}}
 ifc true then x else y = x {{IsTrue.itsTrue}}
 {-# COMPILE AGDA2HS ifc_then_else_ #-}
 
-ifcTrue : {t : Set} -> (c : Bool) {a : {{.(IsTrue c)}} -> t} {b : {{.(IsFalse c)}} -> t} -> .(ct : IsTrue c) -> (ifc c then (λ {{p}} -> a) else (λ {{p}} -> b)) ≡ (a {{ct}})
+ifcTrue : {u : Level} {t : Set u} -> (c : Bool) {a : {{.(IsTrue c)}} -> t} {b : {{.(IsFalse c)}} -> t} -> .(ct : IsTrue c) -> (ifc c then (λ {{p}} -> a) else (λ {{p}} -> b)) ≡ (a {{ct}})
 ifcTrue true {a} {b} ct = refl
 
-ifcFalse : {t : Set} -> (c : Bool) {a : {{.(IsTrue c)}} -> t} {b : {{.(IsFalse c)}} -> t} -> .(ct : IsFalse c) -> (ifc c then (λ {{p}} -> a) else (λ {{p}} -> b)) ≡ (b {{ct}})
+ifcFalse : {u : Level} {t : Set u} -> (c : Bool) {a : {{.(IsTrue c)}} -> t} {b : {{.(IsFalse c)}} -> t} -> .(ct : IsFalse c) -> (ifc c then (λ {{p}} -> a) else (λ {{p}} -> b)) ≡ (b {{ct}})
 ifcFalse false {a} {b} ct = refl
 
 propFnIfc : {a b : Set} -> (c : Bool) {x : {{IsTrue c}} -> a} {y : {{IsFalse c}} -> a} (f : a -> b) 
