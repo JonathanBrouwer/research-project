@@ -70,7 +70,7 @@ instance (Eq a, Arbitrary a) => Arbitrary (APITree a) where
 
 -- Generates a random valid location index for a quadtree
 generateIndexOf :: QuadTree a -> Gen (Nat, Nat)
-generateIndexOf (Wrapper _ (l, w)) = do
+generateIndexOf (Wrapper (l, w) _) = do
   x <- choose (0, toInteger l - 1)
   y <- choose (0, toInteger w - 1)
   return (fromInteger x, fromInteger y)
@@ -97,7 +97,7 @@ instance (Eq a, Arbitrary a) => Arbitrary (GenTree a) where
     let depth = smallestDepth (len, wid)
     tree <- generateQuadrant depth
 
-    return . Generated $ Wrapper tree (len, wid)
+    return . Generated $ Wrapper (len, wid) tree
 
 generateQuadrant :: (Eq a, Arbitrary a) => Nat -> Gen (Quadrant a)
 generateQuadrant 0 = generateLeaf
@@ -143,7 +143,7 @@ instance Show Index where
   show (MkIndex index) = show index
 
 outOfBounds :: (Nat, Nat) -> QuadTree a -> Bool
-outOfBounds (x,y) (Wrapper _ (l, w)) = x < 0 || y < 0
+outOfBounds (x,y) (Wrapper (l, w) _) = x < 0 || y < 0
                          || x >= l
                          || y >= w
 
@@ -191,7 +191,7 @@ prop_iscompressed_map (Generated qt) (MkIndex loc) =
     isCompressed (mapLocation loc not qt)
 
 isCompressed :: Eq a => QuadTree a -> Bool
-isCompressed (Wrapper qd _) = isCompressedSub qd where
+isCompressed (Wrapper _ qd) = isCompressedSub qd where
   isCompressedSub :: Eq a => Quadrant a -> Bool
   isCompressedSub (Node (Leaf a) (Leaf b) (Leaf c) (Leaf d)) = not (a == b && b == c && c == d)
   isCompressedSub (Node a b c d) = isCompressedSub a && isCompressedSub b && isCompressedSub c && isCompressedSub d
