@@ -15,28 +15,28 @@ useEq : {x y : Bool} -> x ≡ y -> IsTrue x -> IsTrue y
 useEq {true} {true} eq is = IsTrue.itsTrue
 
 -- symmetry of equality
-sym : {A : Set} {x y : A} → x ≡ y → y ≡ x
+sym : {u : Level} {A : Set u} {x y : A} → x ≡ y → y ≡ x
 sym refl = refl
 
 -- transitivity of equality
-trans : {A : Set} {x y z : A} → x ≡ y → y ≡ z → x ≡ z
+trans : {u : Level} {A : Set u} {x y z : A} → x ≡ y → y ≡ z → x ≡ z
 trans refl refl = refl
 
 -- congruence of equality
 cong : {u v : Level} {A : Set u} {B : Set v} {x y : A} → (f : A → B) → x ≡ y → f x ≡ f y
 cong f refl = refl
 
-begin_ : {A : Set} → {x y : A} → x ≡ y → x ≡ y
+begin_ : {u : Level} {A : Set u} → {x y : A} → x ≡ y → x ≡ y
 begin p = p
 
-_end : {A : Set} → (x : A) → x ≡ x
+_end : {u : Level} {A : Set u} → (x : A) → x ≡ x
 x end = refl
 
-_=⟨_⟩_ : {A : Set} → (x : A) → {y z : A}
+_=⟨_⟩_ : {u : Level} {A : Set u} → (x : A) → {y z : A}
        → x ≡ y → y ≡ z → x ≡ z
 x =⟨ p ⟩ q = trans p q
 
-_=⟨⟩_ : {A : Set} → (x : A) → {y : A} → x ≡ y → x ≡ y
+_=⟨⟩_ : {u : Level} {A : Set u} → (x : A) → {y : A} → x ≡ y → x ≡ y
 x =⟨⟩ q = x =⟨ refl ⟩ q
 
 infix   1  begin_
@@ -124,7 +124,7 @@ boolAndTrue : (a : Bool) -> (a && true) ≡ a
 boolAndTrue false = refl
 boolAndTrue true = refl
 
-ifTrue : {t : Set} {a b : t} (c : Bool) -> IsTrue c -> (if c then a else b) ≡ a
+ifTrue : {u : Level} {t : Set u} {a b : t} (c : Bool) -> IsTrue c -> (if c then a else b) ≡ a
 ifTrue true tc = refl
 
 ifFalse : {t : Set} {a b : t} (c : Bool) -> IsFalse c -> (if c then a else b) ≡ b
