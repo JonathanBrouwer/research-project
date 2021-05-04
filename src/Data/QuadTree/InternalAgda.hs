@@ -137,8 +137,12 @@ lensD f (CVQuadrant (Node a b c d))
 go :: Eq t => (Nat, Nat) -> Nat -> CLens (VQuadrant t) t
 go _ Z = lensLeaf
 go (x, y) (S deps)
-  = ifc_then_else_ (y < mid) (lensA . go (mod x mid, mod y mid) deps)
-      (lensC . go (mod x mid, mod y mid) deps)
+  = if y < mid then
+      if x < mid then lensA . go (mod x mid, mod y mid) deps else
+        lensB . go (mod x mid, mod y mid) deps
+      else
+      if x < mid then lensC . go (mod x mid, mod y mid) deps else
+        lensD . go (mod x mid, mod y mid) deps
   where
     mid :: Nat
     mid = pow 2 deps

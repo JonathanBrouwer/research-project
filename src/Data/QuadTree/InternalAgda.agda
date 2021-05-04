@@ -251,16 +251,16 @@ go : {t : Set} {{eqT : Eq t}}
   -> CLens (VQuadrant t {dep}) t
 go _ Z = lensLeaf
 go {t} (x , y) (S deps) =
-  ifc y < mid
-    then (lensA ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps)
-    else (lensC ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps)
-  -- ifc (y < mid) 
-  --   then (ifc x < mid 
-  --     then (             (lensA ∘ gorec) f v)
-  --     else (λ {{xgt}} -> (lensB ∘ gorec) f v))
-  --   else (λ {{ygt}} -> (ifc x < mid
-  --     then (             (lensC ∘ gorec) f v)
-  --     else (λ {{xgt}} -> (lensD ∘ gorec) f v)))
+  -- if y < mid
+  --   then (lensA ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps)
+  --   else (lensC ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps)
+  if (y < mid) 
+    then if x < mid 
+      then (lensA ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps)
+      else (lensB ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps)
+    else if x < mid
+      then (lensC ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps)
+      else (lensD ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps)
   where
     mid = pow 2 deps
 {-# COMPILE AGDA2HS go #-}

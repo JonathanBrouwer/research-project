@@ -52,21 +52,24 @@ ValidLens-go {t} {{eqT}} loc dep = CValidLens (go loc dep) (ValidLens-go-ViewSet
 ValidLens-go-ViewSet loc Z v cvq@(CVQuadrant (Leaf x) {p}) = refl
 ValidLens-go-ViewSet {t} (x , y) dep@(S deps) v cvq@(CVQuadrant qd {p}) =
     begin
-        view 
-            (λ {f} ⦃ ff ⦄ → (ifc y < mid
-                then (lensA ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps ⦃ ff ⦄  )
-                else (lensC ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps ⦃ ff ⦄  )))
-            (set 
-                (λ {f} ⦃ ff ⦄ → (ifc y < mid
-                    then (lensA ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps ⦃ ff ⦄  )
-                    else (lensC ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps ⦃ ff ⦄  )))
-                v cvq)
-    =⟨ cong {x = (λ {f} ⦃ ff ⦄ → (ifc y < mid
-                then (lensA ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps {f} ⦃ ff ⦄  )
-                else (lensC ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps {f} ⦃ ff ⦄  )))} 
-            {y = (λ {f} ⦃ ff ⦄ → (lensA ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps {f} ⦃ ff ⦄))}
+        view (go (x , y) (S deps)) (set (go (x , y) (S deps)) v cvq)
+    =⟨ cong 
+            -- We need to explicitly provide the x, otherwise agda gets confused
+            {x = (λ {f} ⦃ ff ⦄ → 
+                (if (y < mid) 
+                    then if x < mid 
+                        then (lensA ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps)
+                        else (lensB ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps)
+                    else if x < mid
+                        then (lensC ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps)
+                        else (lensD ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps))
+            )} 
             (λ (g : CLens (VQuadrant t {dep}) t) -> view g (set g v cvq)) 
-            (FunctorExtensionality (ifcTrue (y < mid) yeet)) ⟩
+            (FunctorExtensionality 
+                (trans 
+                    (ifTrue (y < mid) yeetY) 
+                    (ifTrue (x < mid) yeetX)
+                )) ⟩
         view 
             (λ {f} ⦃ ff ⦄ → (lensA ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps {f} ⦃ ff ⦄))
             (set 
@@ -78,4 +81,5 @@ ValidLens-go-ViewSet {t} (x , y) dep@(S deps) v cvq@(CVQuadrant qd {p}) =
 
     where
         mid = pow 2 deps
-        postulate yeet : IsTrue (y < mid)
+        postulate yeetX : IsTrue (x < mid)
+        postulate yeetY : IsTrue (y < mid)
