@@ -14,10 +14,17 @@ open import Data.QuadTree.LensProofs.Valid-LensA
 open import Data.QuadTree.LensProofs.Valid-LensBCD
 open import Axiom.Extensionality.Propositional
 
----- In order to proof this we need some form of Extensionality
--- Because this is quite a complicated application of Extensionality, I did not proof it from generic Extensionality, but just postulated it seperately.
--- It is needed because Agda eagerly applies implicit arguments at the start of a function, which I don't want it to do
--- This can be used to reverse agda doing that
+{-
+I spend close to 50 hours on this file, at the time of writing more than the rest of the lens proofs combined.
+The file still looks horrible and there is very serious code duplication, but I honestly wish to never look at this file again.
+
+In order to proof this we need some form of Extensionality
+Because this is quite a complicated application of Extensionality, I did not proof it from generic Extensionality, but just postulated it seperately.
+It is needed because Agda eagerly applies implicit arguments at the start of a function, which I don't want it to do
+This can be used to reverse agda doing that
+-}
+
+
 
 postulate
     FunctorExtensionality : 
