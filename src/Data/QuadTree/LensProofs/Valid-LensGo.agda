@@ -1,4 +1,4 @@
-{-# OPTIONS --show-implicit --show-irrelevant #-}
+-- {-# OPTIONS --show-implicit --show-irrelevant #-}
 module Data.QuadTree.LensProofs.Valid-LensGo where
 
 open import Haskell.Prelude renaming (zero to Z; suc to S)
@@ -32,16 +32,14 @@ ValidLens-go-ViewSet :
     {t : Set} {{eqT : Eq t}}
     -> (loc : Nat × Nat) -> (dep : Nat)
     -> ViewSet (go {t} loc dep)
-postulate 
-    ValidLens-go-SetView : 
-        {t : Set} {{eqT : Eq t}}
-        -> (loc : Nat × Nat) -> (dep : Nat)
-        -> SetView (go {t} loc dep)
-postulate 
-    ValidLens-go-SetSet : 
-        {t : Set} {{eqT : Eq t}}
-        -> (loc : Nat × Nat) -> (dep : Nat)
-        -> SetSet (go {t} loc dep)
+ValidLens-go-SetView : 
+    {t : Set} {{eqT : Eq t}}
+    -> (loc : Nat × Nat) -> (dep : Nat)
+    -> SetView (go {t} loc dep)
+ValidLens-go-SetSet : 
+    {t : Set} {{eqT : Eq t}}
+    -> (loc : Nat × Nat) -> (dep : Nat)
+    -> SetSet (go {t} loc dep)
 
 ValidLens-go : {t : Set} {{eqT : Eq t}}
     -> (loc : Nat × Nat) -> (dep : Nat)
@@ -62,7 +60,7 @@ ValidLens-go-ViewSet {t} (x , y) dep@(S deps) v cvq@(CVQuadrant qd {p}) =
                     -- Select only the lensA branch
                     (FunctorExtensionality (trans (ifTrue (y < mid) py) (ifTrue (x < mid) px))))
                 -- Then use the property of composition to proof the law
-                (prop-Composition-ViewSet (ValidLens-LensA) (ValidLens-go (mod x (pow 2 deps) , mod y (pow 2 deps)) deps) v cvq)
+                (prop-Composition-ViewSet (ValidLens-LensA) (ValidLens-go (mod x mid , mod y mid) deps) v cvq)
         ) else (λ {{px}} ->
             trans 
                 (cong 
@@ -73,7 +71,7 @@ ValidLens-go-ViewSet {t} (x , y) dep@(S deps) v cvq@(CVQuadrant qd {p}) =
                     -- Select only the lensB branch
                     (FunctorExtensionality (trans (ifTrue (y < mid) py) (ifFalse (x < mid) px))))
                 -- Then use the property of composition to proof the law
-                (prop-Composition-ViewSet (ValidLens-LensB) (ValidLens-go (mod x (pow 2 deps) , mod y (pow 2 deps)) deps) v cvq)
+                (prop-Composition-ViewSet (ValidLens-LensB) (ValidLens-go (mod x mid , mod y mid) deps) v cvq)
         )
     ) else (λ {{py}} ->
         ifc x < mid then (λ {{px}} ->
@@ -86,7 +84,7 @@ ValidLens-go-ViewSet {t} (x , y) dep@(S deps) v cvq@(CVQuadrant qd {p}) =
                     -- Select only the lensC branch
                     (FunctorExtensionality (trans (ifFalse (y < mid) py) (ifTrue (x < mid) px))))
                 -- Then use the property of composition to proof the law
-                (prop-Composition-ViewSet (ValidLens-LensC) (ValidLens-go (mod x (pow 2 deps) , mod y (pow 2 deps)) deps) v cvq)
+                (prop-Composition-ViewSet (ValidLens-LensC) (ValidLens-go (mod x mid , mod y mid) deps) v cvq)
         ) else (λ {{px}} ->
             trans 
                 (cong 
@@ -97,8 +95,89 @@ ValidLens-go-ViewSet {t} (x , y) dep@(S deps) v cvq@(CVQuadrant qd {p}) =
                     -- Select only the lensD branch
                     (FunctorExtensionality (trans (ifFalse (y < mid) py) (ifFalse (x < mid) px))))
                 -- Then use the property of composition to proof the law
-                (prop-Composition-ViewSet (ValidLens-LensD) (ValidLens-go (mod x (pow 2 deps) , mod y (pow 2 deps)) deps) v cvq)
+                (prop-Composition-ViewSet (ValidLens-LensD) (ValidLens-go (mod x mid , mod y mid) deps) v cvq)
         )
     )
     where
         mid = pow 2 deps
+
+ValidLens-go-SetView loc Z cvq@(CVQuadrant (Leaf x) {p}) = refl
+ValidLens-go-SetView {t} (x , y) dep@(S deps) cvq@(CVQuadrant qd {p}) =
+    ifc y < mid then (λ {{py}} ->
+        ifc x < mid then (λ {{px}} ->
+            trans 
+                (cong 
+                    -- We need to explicitly provide the x, otherwise agda gets confused
+                    {x = λ {f} ⦃ ff ⦄ → go (x , y) (S deps) {f} {{ff}} } 
+                    -- We cong over the law, applying the transformation to go
+                    (λ (g : CLens (VQuadrant t {dep}) t) -> set g (view g cvq) cvq) 
+                    -- Select only the lensA branch
+                    (FunctorExtensionality (trans (ifTrue (y < mid) py) (ifTrue (x < mid) px))))
+                -- Then use the property of composition to proof the law
+                (prop-Composition-SetView (ValidLens-LensA) (ValidLens-go (mod x mid , mod y mid) deps) cvq)
+        ) else (λ {{px}} ->
+            trans 
+                (cong 
+                    -- We need to explicitly provide the x, otherwise agda gets confused
+                    {x = λ {f} ⦃ ff ⦄ → go (x , y) (S deps) {f} {{ff}} } 
+                    -- We cong over the law, applying the transformation to go
+                    (λ (g : CLens (VQuadrant t {dep}) t) -> set g (view g cvq) cvq) 
+                    -- Select only the lensB branch
+                    (FunctorExtensionality (trans (ifTrue (y < mid) py) (ifFalse (x < mid) px))))
+                -- Then use the property of composition to proof the law
+                (prop-Composition-SetView (ValidLens-LensB) (ValidLens-go (mod x mid , mod y mid) deps) cvq)
+        )
+    ) else (λ {{py}} ->
+        ifc x < mid then (λ {{px}} ->
+            trans 
+                (cong 
+                    -- We need to explicitly provide the x, otherwise agda gets confused
+                    {x = λ {f} ⦃ ff ⦄ → go (x , y) (S deps) {f} {{ff}} } 
+                    -- We cong over the law, applying the transformation to go
+                    (λ (g : CLens (VQuadrant t {dep}) t) -> set g (view g cvq) cvq) 
+                    -- Select only the lensC branch
+                    (FunctorExtensionality (trans (ifFalse (y < mid) py) (ifTrue (x < mid) px))))
+                -- Then use the property of composition to proof the law
+                (prop-Composition-SetView (ValidLens-LensC) (ValidLens-go (mod x mid , mod y mid) deps) cvq)
+        ) else (λ {{px}} ->
+            trans 
+                (cong 
+                    -- We need to explicitly provide the x, otherwise agda gets confused
+                    {x = λ {f} ⦃ ff ⦄ → go (x , y) (S deps) {f} {{ff}} } 
+                    -- We cong over the law, applying the transformation to go
+                    (λ (g : CLens (VQuadrant t {dep}) t) -> set g (view g cvq) cvq) 
+                    -- Select only the lensD branch
+                    (FunctorExtensionality (trans (ifFalse (y < mid) py) (ifFalse (x < mid) px))))
+                -- Then use the property of composition to proof the law
+                (prop-Composition-SetView (ValidLens-LensD) (ValidLens-go (mod x mid , mod y mid) deps) cvq)
+        )
+    )
+    where
+        mid = pow 2 deps
+
+ValidLens-go-SetSet loc Z v1 v2 cvq@(CVQuadrant (Leaf x) {p}) = refl
+ValidLens-go-SetSet {t} (x , y) dep@(S deps) v1 v2 cvq@(CVQuadrant qd {p}) =
+    begin
+        set (go (x , y) dep) v2 (set (go (x , y) dep) v1 cvq)
+    =⟨ (cong 
+            -- We need to explicitly provide the x, otherwise agda gets confused
+            {x = λ {f} ⦃ ff ⦄ → go (x , y) (S deps) {f} {{ff}} } 
+            -- We cong over the law, applying the transformation to go
+            (λ (g : CLens (VQuadrant t {dep}) t) -> set g v2 (set g v1 cvq)) 
+            -- Select only the lensA branch
+            (FunctorExtensionality (trans (ifTrue (y < mid) py) (ifTrue (x < mid) px)))) ⟩
+        set 
+            (λ {f} ⦃ ff ⦄ → (lensA ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps))
+            v2 
+            (set 
+                (λ {f} ⦃ ff ⦄ → (lensA ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps))
+                v1 cvq)
+    =⟨ prop-Composition-SetSet (ValidLens-LensA) (ValidLens-go (mod x mid , mod y mid) deps) v1 v2 cvq ⟩ -- 
+        set (λ {f} ⦃ ff ⦄ → (lensA ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps)) v2 cvq
+    =⟨ sym $ cong {x = λ {f} ⦃ ff ⦄ → go (x , y) (S deps) {f} {{ff}}} (λ (g : CLens (VQuadrant t {dep}) t) -> set g v2 cvq) (FunctorExtensionality (trans (ifTrue (y < mid) py) (ifTrue (x < mid) px))) ⟩
+        set (go (x , y) dep) v2 cvq
+    end
+    where
+        mid = pow 2 deps
+        postulate px : IsTrue (x < mid)
+        postulate py : IsTrue (y < mid)
