@@ -51,35 +51,54 @@ ValidLens-go {t} {{eqT}} loc dep = CValidLens (go loc dep) (ValidLens-go-ViewSet
 
 ValidLens-go-ViewSet loc Z v cvq@(CVQuadrant (Leaf x) {p}) = refl
 ValidLens-go-ViewSet {t} (x , y) dep@(S deps) v cvq@(CVQuadrant qd {p}) =
-    begin
-        view (go (x , y) (S deps)) (set (go (x , y) (S deps)) v cvq)
-    =⟨ cong 
-            -- We need to explicitly provide the x, otherwise agda gets confused
-            {x = (λ {f} ⦃ ff ⦄ → 
-                (if (y < mid) 
-                    then if x < mid 
-                        then (lensA ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps)
-                        else (lensB ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps)
-                    else if x < mid
-                        then (lensC ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps)
-                        else (lensD ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps))
-            )} 
-            (λ (g : CLens (VQuadrant t {dep}) t) -> view g (set g v cvq)) 
-            (FunctorExtensionality 
-                (trans 
-                    (ifTrue (y < mid) yeetY) 
-                    (ifTrue (x < mid) yeetX)
-                )) ⟩
-        view 
-            (λ {f} ⦃ ff ⦄ → (lensA ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps {f} ⦃ ff ⦄))
-            (set 
-                (λ {f} ⦃ ff ⦄ → (lensA ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps {f} ⦃ ff ⦄  ))
-                v cvq)
-    =⟨ prop-Composition-ViewSet (ValidLens-LensA) (ValidLens-go (mod x (pow 2 deps) , mod y (pow 2 deps)) deps) v cvq ⟩
-        v
-    end
-
+    ifc y < mid then (λ {{py}} ->
+        ifc x < mid then (λ {{px}} ->
+            trans 
+                (cong 
+                    -- We need to explicitly provide the x, otherwise agda gets confused
+                    {x = λ {f} ⦃ ff ⦄ → go (x , y) (S deps) {f} {{ff}} } 
+                    -- We cong over the law, applying the transformation to go
+                    (λ (g : CLens (VQuadrant t {dep}) t) -> view g (set g v cvq)) 
+                    -- Select only the lensA branch
+                    (FunctorExtensionality (trans (ifTrue (y < mid) py) (ifTrue (x < mid) px))))
+                -- Then use the property of composition to proof the law
+                (prop-Composition-ViewSet (ValidLens-LensA) (ValidLens-go (mod x (pow 2 deps) , mod y (pow 2 deps)) deps) v cvq)
+        ) else (λ {{px}} ->
+            trans 
+                (cong 
+                    -- We need to explicitly provide the x, otherwise agda gets confused
+                    {x = λ {f} ⦃ ff ⦄ → go (x , y) (S deps) {f} {{ff}} } 
+                    -- We cong over the law, applying the transformation to go
+                    (λ (g : CLens (VQuadrant t {dep}) t) -> view g (set g v cvq)) 
+                    -- Select only the lensB branch
+                    (FunctorExtensionality (trans (ifTrue (y < mid) py) (ifFalse (x < mid) px))))
+                -- Then use the property of composition to proof the law
+                (prop-Composition-ViewSet (ValidLens-LensB) (ValidLens-go (mod x (pow 2 deps) , mod y (pow 2 deps)) deps) v cvq)
+        )
+    ) else (λ {{py}} ->
+        ifc x < mid then (λ {{px}} ->
+            trans 
+                (cong 
+                    -- We need to explicitly provide the x, otherwise agda gets confused
+                    {x = λ {f} ⦃ ff ⦄ → go (x , y) (S deps) {f} {{ff}} } 
+                    -- We cong over the law, applying the transformation to go
+                    (λ (g : CLens (VQuadrant t {dep}) t) -> view g (set g v cvq)) 
+                    -- Select only the lensC branch
+                    (FunctorExtensionality (trans (ifFalse (y < mid) py) (ifTrue (x < mid) px))))
+                -- Then use the property of composition to proof the law
+                (prop-Composition-ViewSet (ValidLens-LensC) (ValidLens-go (mod x (pow 2 deps) , mod y (pow 2 deps)) deps) v cvq)
+        ) else (λ {{px}} ->
+            trans 
+                (cong 
+                    -- We need to explicitly provide the x, otherwise agda gets confused
+                    {x = λ {f} ⦃ ff ⦄ → go (x , y) (S deps) {f} {{ff}} } 
+                    -- We cong over the law, applying the transformation to go
+                    (λ (g : CLens (VQuadrant t {dep}) t) -> view g (set g v cvq)) 
+                    -- Select only the lensD branch
+                    (FunctorExtensionality (trans (ifFalse (y < mid) py) (ifFalse (x < mid) px))))
+                -- Then use the property of composition to proof the law
+                (prop-Composition-ViewSet (ValidLens-LensD) (ValidLens-go (mod x (pow 2 deps) , mod y (pow 2 deps)) deps) v cvq)
+        )
+    )
     where
         mid = pow 2 deps
-        postulate yeetX : IsTrue (x < mid)
-        postulate yeetY : IsTrue (y < mid)
