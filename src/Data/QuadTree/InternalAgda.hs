@@ -164,15 +164,8 @@ mapLocationSafe ::
                   Eq t => (Nat, Nat) -> Nat -> (t -> t) -> VQuadTree t -> VQuadTree t
 mapLocationSafe index dep = over (atLocation index dep)
 
-invQuadTree = error "Invalid quadtree given"
-
 qtToSafe :: Eq t => QuadTree t -> VQuadTree t
-qtToSafe qt
-  = ifc_then_else_
-      ((depth $ treeToQuadrant qt) <= maxDepth qt &&
-         (isCompressed $ treeToQuadrant qt))
-      (CVQuadTree qt)
-      invQuadTree
+qtToSafe qt = CVQuadTree qt
 
 qtFromSafe :: Eq t => VQuadTree t -> QuadTree t
 qtFromSafe (CVQuadTree qt) = qt
