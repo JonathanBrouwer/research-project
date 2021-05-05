@@ -52,14 +52,14 @@ newtype VQuadrant t = CVQuadrant (Quadrant t)
 
 newtype VQuadTree t = CVQuadTree (QuadTree t)
 
-lensWrappedTree :: Eq t => CLens (VQuadTree t) (VQuadrant t)
+lensWrappedTree :: Eq t => Lens (VQuadTree t) (VQuadrant t)
 lensWrappedTree fun (CVQuadTree (Wrapper (w, h) qd))
   = fmap
       (\case
            CVQuadrant qd₁ -> CVQuadTree (Wrapper (w, h) qd₁))
       (fun (CVQuadrant qd))
 
-lensLeaf :: Eq t => CLens (VQuadrant t) t
+lensLeaf :: Eq t => Lens (VQuadrant t) t
 lensLeaf f (CVQuadrant (Leaf v))
   = fmap (\ x -> CVQuadrant (Leaf x)) (f v)
 lensLeaf x (CVQuadrant (Node qd qd₁ qd₂ qd₃))
@@ -88,7 +88,7 @@ combine (CVQuadrant (Leaf va)) (CVQuadrant (Leaf vb))
   = CVQuadrant
       (Node (Leaf va) (Leaf vb) (Leaf vc) (Node v1 v2 v3 v4))
 
-lensA :: Eq t => CLens (VQuadrant t) (VQuadrant t)
+lensA :: Eq t => Lens (VQuadrant t) (VQuadrant t)
 lensA f (CVQuadrant (Leaf v))
   = fmap
       (\ x ->
@@ -100,7 +100,7 @@ lensA f (CVQuadrant (Node a b c d))
       (\ x -> combine x (CVQuadrant b) (CVQuadrant c) (CVQuadrant d))
       (f (CVQuadrant a))
 
-lensB :: Eq t => CLens (VQuadrant t) (VQuadrant t)
+lensB :: Eq t => Lens (VQuadrant t) (VQuadrant t)
 lensB f (CVQuadrant (Leaf v))
   = fmap
       (\ x ->
@@ -112,7 +112,7 @@ lensB f (CVQuadrant (Node a b c d))
       (\ x -> combine (CVQuadrant a) x (CVQuadrant c) (CVQuadrant d))
       (f (CVQuadrant b))
 
-lensC :: Eq t => CLens (VQuadrant t) (VQuadrant t)
+lensC :: Eq t => Lens (VQuadrant t) (VQuadrant t)
 lensC f (CVQuadrant (Leaf v))
   = fmap
       (\ x ->
@@ -124,7 +124,7 @@ lensC f (CVQuadrant (Node a b c d))
       (\ x -> combine (CVQuadrant a) (CVQuadrant b) x (CVQuadrant d))
       (f (CVQuadrant c))
 
-lensD :: Eq t => CLens (VQuadrant t) (VQuadrant t)
+lensD :: Eq t => Lens (VQuadrant t) (VQuadrant t)
 lensD f (CVQuadrant (Leaf v))
   = fmap
       (combine (CVQuadrant (Leaf v)) (CVQuadrant (Leaf v))
@@ -134,7 +134,7 @@ lensD f (CVQuadrant (Node a b c d))
   = fmap (combine (CVQuadrant a) (CVQuadrant b) (CVQuadrant c))
       (f (CVQuadrant d))
 
-go :: Eq t => (Nat, Nat) -> Nat -> CLens (VQuadrant t) t
+go :: Eq t => (Nat, Nat) -> Nat -> Lens (VQuadrant t) t
 go _ Z = lensLeaf
 go (x, y) (S deps)
   = if y < mid then
@@ -147,7 +147,7 @@ go (x, y) (S deps)
     mid :: Nat
     mid = pow 2 deps
 
-atLocation :: Eq t => (Nat, Nat) -> Nat -> CLens (VQuadTree t) t
+atLocation :: Eq t => (Nat, Nat) -> Nat -> Lens (VQuadTree t) t
 atLocation index dep = lensWrappedTree . go index dep
 
 makeTreeSafe :: Eq t => (Nat, Nat) -> t -> VQuadTree t

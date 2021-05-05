@@ -43,18 +43,18 @@ instance
 ---- Lens
 -- van Laarhoven style implementation
 
-CLens : Set -> Set -> Set₁
-CLens s a = {f : Set -> Set} -> {{ff : Functor f}} -> (a -> f a) -> s -> f s
-{-# FOREIGN AGDA2HS type CLens s a = forall f. Functor f => (a -> f a) -> s -> f s #-}
+Lens : Set -> Set -> Set₁
+Lens s a = {f : Set -> Set} -> {{ff : Functor f}} -> (a -> f a) -> s -> f s
+{-# FOREIGN AGDA2HS type Lens s a = forall f. Functor f => (a -> f a) -> s -> f s #-}
 
-view : {a b : Set} -> CLens a b -> a -> b
+view : {a b : Set} -> Lens a b -> a -> b
 view lens v = getConst $ lens CConst v
 {-# COMPILE AGDA2HS view #-}
 
-set : {a b : Set} -> CLens a b -> b -> a -> a
+set : {a b : Set} -> Lens a b -> b -> a -> a
 set lens to v = runIdentity $ lens (λ _ -> CIdentity to) v
 {-# COMPILE AGDA2HS set #-}
 
-over : {a b : Set} -> CLens a b -> (b -> b) -> a -> a
+over : {a b : Set} -> Lens a b -> (b -> b) -> a -> a
 over lens f v = runIdentity $ lens (CIdentity ∘ f) v
 {-# COMPILE AGDA2HS over #-}

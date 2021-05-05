@@ -80,7 +80,7 @@ newtype VQuadTree t = CVQuadTree (QuadTree t)
 
 lensWrappedTree : {t : Set} {{eqT : Eq t}}
   -> {dep : Nat}
-  -> CLens (VQuadTree t {dep}) (VQuadrant t {dep})
+  -> Lens (VQuadTree t {dep}) (VQuadrant t {dep})
 lensWrappedTree fun (CVQuadTree (Wrapper (w , h) qd) {p} {q}) = 
   fmap 
     (λ where (CVQuadrant qd {p}) → CVQuadTree (Wrapper (w , h) qd) {p} {q})
@@ -88,7 +88,7 @@ lensWrappedTree fun (CVQuadTree (Wrapper (w , h) qd) {p} {q}) =
 {-# COMPILE AGDA2HS lensWrappedTree #-}
 
 lensLeaf : {t : Set} {{eqT : Eq t}}
-  -> CLens (VQuadrant t {0}) t
+  -> Lens (VQuadrant t {0}) t
 lensLeaf f (CVQuadrant (Leaf v)) = fmap (λ x -> CVQuadrant (Leaf x) {IsTrue.itsTrue}) (f v)
 {-# COMPILE AGDA2HS lensLeaf #-}
 
@@ -183,7 +183,7 @@ dSub {_} {dep} a b c d p = andCombine
 lensA : 
   {t : Set} {{eqT : Eq t}}
   -> {dep : Nat}
-  -> CLens (VQuadrant t {S dep}) (VQuadrant t {dep})
+  -> Lens (VQuadrant t {S dep}) (VQuadrant t {dep})
 lensA {_} {dep} f (CVQuadrant (Leaf v) {p}) = 
   let sub = CVQuadrant (Leaf v) {andCombine (zeroLteAny dep) IsTrue.itsTrue}
   in fmap (λ x -> combine x sub sub sub ) (f sub)
@@ -199,7 +199,7 @@ lensA {_} {dep} f (CVQuadrant (Node a b c d) {p}) =
 lensB : 
   {t : Set} {{eqT : Eq t}}
   -> {dep : Nat}
-  -> CLens (VQuadrant t {S dep}) (VQuadrant t {dep})
+  -> Lens (VQuadrant t {S dep}) (VQuadrant t {dep})
 lensB {_} {dep} f (CVQuadrant (Leaf v) {p}) = 
   let sub = CVQuadrant (Leaf v) {andCombine (zeroLteAny dep) IsTrue.itsTrue}
   in fmap (λ x -> combine sub x sub sub ) (f sub)
@@ -215,7 +215,7 @@ lensB {_} {dep} f (CVQuadrant (Node a b c d) {p}) =
 lensC : 
   {t : Set} {{eqT : Eq t}}
   -> {dep : Nat}
-  -> CLens (VQuadrant t {S dep}) (VQuadrant t {dep})
+  -> Lens (VQuadrant t {S dep}) (VQuadrant t {dep})
 lensC {_} {dep} f (CVQuadrant (Leaf v) {p}) = 
   let sub = CVQuadrant (Leaf v) {andCombine (zeroLteAny dep) IsTrue.itsTrue}
   in fmap (λ x -> combine sub sub x sub ) (f sub)
@@ -231,7 +231,7 @@ lensC {_} {dep} f (CVQuadrant (Node a b c d) {p}) =
 lensD : 
   {t : Set} {{eqT : Eq t}}
   -> {dep : Nat}
-  -> CLens (VQuadrant t {S dep}) (VQuadrant t {dep})
+  -> Lens (VQuadrant t {S dep}) (VQuadrant t {dep})
 lensD {_} {dep} f (CVQuadrant (Leaf v) {p}) = 
   let sub = CVQuadrant (Leaf v) {andCombine (zeroLteAny dep) IsTrue.itsTrue}
   in fmap (λ x -> combine sub sub sub x ) (f sub)
@@ -248,7 +248,7 @@ lensD {_} {dep} f (CVQuadrant (Node a b c d) {p}) =
 
 go : {t : Set} {{eqT : Eq t}}
   -> (Nat × Nat) -> (dep : Nat)
-  -> CLens (VQuadrant t {dep}) t
+  -> Lens (VQuadrant t {dep}) t
 go _ Z = lensLeaf
 go {t} (x , y) (S deps) =
   -- if y < mid
@@ -267,7 +267,7 @@ go {t} (x , y) (S deps) =
 
 atLocation : {t : Set} {{eqT : Eq t}}
   -> (Nat × Nat) -> (dep : Nat)
-  -> CLens (VQuadTree t {dep}) t
+  -> Lens (VQuadTree t {dep}) t
 atLocation index dep = lensWrappedTree ∘ (go index dep)
 {-# COMPILE AGDA2HS atLocation #-}
 
