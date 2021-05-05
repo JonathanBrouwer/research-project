@@ -15,6 +15,7 @@ import Data.Logic
 #-}
 
 ---- Quadrants
+-- A quadrant is either a leaf or a node with 4 sub-quadrants
 
 data Quadrant (t : Set) : Set where
   Leaf : t -> Quadrant t
@@ -28,9 +29,9 @@ instance
 {-# COMPILE AGDA2HS quadrantFunctor #-}
 
 ---- QuadTree
+-- A quadtree is the width/height + the root quadrant
 
 data QuadTree (t : Set) : Set where
-  -- wrappedTree, (width x height)
   Wrapper : (Nat × Nat) -> Quadrant t -> QuadTree t
 {-# COMPILE AGDA2HS QuadTree deriving (Show, Eq) #-}
 
@@ -41,35 +42,42 @@ instance
 
 ---- Valid types
 
+-- Calculates the depth of a quadrant
 depth : {t : Set} -> Quadrant t -> Nat
 depth (Leaf x) = 0
 depth (Node a b c d) = 1 + max4 (depth a) (depth b) (depth c) (depth d)
 {-# COMPILE AGDA2HS depth #-}
 
+-- Calculates the maximum legal depth of a quadtree
 maxDepth : {t : Set} -> QuadTree t -> Nat
 maxDepth (Wrapper (w , h) _) = log2up (max w h)
 {-# COMPILE AGDA2HS maxDepth #-}
 
+-- Converts a tree to its root quadrant
 treeToQuadrant : {t : Set} -> QuadTree t -> Quadrant t
 treeToQuadrant (Wrapper _ qd) = qd
 {-# COMPILE AGDA2HS treeToQuadrant #-}
 
+-- Checks whether a quadrant is compressed
 isCompressed : {t : Set} -> {{eqT : Eq t}} -> Quadrant t -> Bool
 isCompressed (Leaf _) = true
 isCompressed (Node (Leaf a) (Leaf b) (Leaf c) (Leaf d)) = not (a == b && b == c && c == d)
 isCompressed (Node a b c d) = isCompressed a && isCompressed b && isCompressed c && isCompressed d
 {-# COMPILE AGDA2HS isCompressed #-}
 
+-- Checks whether the invariants of a quadrant hold
 isValid : {t : Set} -> {{eqT : Eq t}} -> (dep : Nat) -> Quadrant t -> Bool
 isValid dep qd = (depth qd <= dep) && isCompressed qd
 {-# COMPILE AGDA2HS isValid #-}
 
+-- A type that represents a valid quadrant
 data VQuadrant (t : Set) {{eqT : Eq t}} {dep : Nat} : Set where
   CVQuadrant : (qd : Quadrant t) -> {.(IsTrue (isValid dep qd))} -> VQuadrant t {dep}
 {-# FOREIGN AGDA2HS
 newtype VQuadrant t = CVQuadrant (Quadrant t)
 #-}
 
+-- A type that represents a valid quadtree
 data VQuadTree (t : Set) {{eqT : Eq t}} {dep : Nat} : Set where
   CVQuadTree : (qt : QuadTree t) -> {.(IsTrue (isValid dep (treeToQuadrant qt)))} -> {.(IsTrue (dep == maxDepth qt))} -> VQuadTree t {dep}
 {-# FOREIGN AGDA2HS
@@ -78,6 +86,7 @@ newtype VQuadTree t = CVQuadTree (QuadTree t)
 
 ---- Lenses
 
+-- Lenses into the root quadrant of a quadtree
 lensWrappedTree : {t : Set} {{eqT : Eq t}}
   -> {dep : Nat}
   -> Lens (VQuadTree t {dep}) (VQuadrant t {dep})
@@ -87,14 +96,13 @@ lensWrappedTree fun (CVQuadTree (Wrapper (w , h) qd) {p} {q}) =
     (fun (CVQuadrant qd {p}))
 {-# COMPILE AGDA2HS lensWrappedTree #-}
 
+-- Lenses into a leaf of a depth zero quadrant
 lensLeaf : {t : Set} {{eqT : Eq t}}
   -> Lens (VQuadrant t {0}) t
 lensLeaf f (CVQuadrant (Leaf v)) = fmap (λ x -> CVQuadrant (Leaf x) {IsTrue.itsTrue}) (f v)
 {-# COMPILE AGDA2HS lensLeaf #-}
 
-propDepthRelationEq : {t : Set} -> (a b c d : Quadrant t) -> depth (Node a b c d) ≡ S (max4 (depth a) (depth b) (depth c) (depth d))
-propDepthRelationEq a b c d = refl
-
+-- A proof of the depth relation of a node and its children
 propDepthRelationLte : {t : Set} -> (a b c d : Quadrant t) -> (dep : Nat) 
   -> ((depth a <= dep && depth b <= dep) && (depth c <= dep && depth d <= dep)) ≡ (depth (Node a b c d) <= (S dep))
 propDepthRelationLte a b c d dep =
@@ -106,6 +114,7 @@ propDepthRelationLte a b c d dep =
     (depth (Node a b c d) <= S dep)
   end
 
+-- A proof of the compressed relation of a node and its children
 propCompressedRelation : {t : Set} {{eqT : Eq t}} -> {a b c d : Quadrant t}
   -> IsTrue (isCompressed (Node a b c d))
   -> IsTrue (isCompressed a && isCompressed b && isCompressed c && isCompressed d)
@@ -115,16 +124,15 @@ propCompressedRelation {_} {Leaf _} {Node _ _ _ _} {c} {d} p = p
 propCompressedRelation {_} {Leaf _} {Leaf _} {Node _ _ _ _} {d} p = p
 propCompressedRelation {_} {Leaf _} {Leaf _} {Leaf _} {Node _ _ _ _} p = p
 
+-- Combine 4 valid quadrants to a new valid quadrant
 combine : {t : Set} {{eqT : Eq t}}
   -> {dep : Nat}
   -> (a b c d : VQuadrant t {dep})
   -> VQuadrant t {S dep}
-
 combine {t} {dep} (CVQuadrant a@(Leaf va) {pa}) (CVQuadrant b@(Leaf vb) {pb}) (CVQuadrant c@(Leaf vc) {pc}) (CVQuadrant d@(Leaf vd) {pd})
   = ifc (va == vb && vb == vc && vc == vd)
     then CVQuadrant a {IsTrue.itsTrue}
     else (λ {{pn}} -> CVQuadrant (Node a b c d) {andCombine (zeroLteAny dep) (falseToNotTrue $ pn)})
-
 -- The next 4 cases are all identical, but I could not figure out another way to convince agda
 combine {t} {dep} (CVQuadrant a@(Node v1 v2 v3 v4) {pa}) (CVQuadrant b {pb}) (CVQuadrant c {pc}) (CVQuadrant d {pd}) 
   = CVQuadrant (Node a b c d) {andCombine 
@@ -148,6 +156,7 @@ combine {t} {dep} (CVQuadrant a@(Leaf va) {pa}) (CVQuadrant b@(Leaf vb) {pb}) (C
   }
 {-# COMPILE AGDA2HS combine #-}
 
+-- Goes from a valid quadrant to its a subquadrant
 aSub : {t : Set} {{eqT : Eq t}} -> {dep : Nat} -> (a b c d : Quadrant t) 
   -> IsTrue (isValid (S dep) (Node a b c d)) -> IsTrue (isValid (dep) a)
 aSub {_} {dep} a b c d p = andCombine 
@@ -156,6 +165,7 @@ aSub {_} {dep} a b c d p = andCombine
   -- Convert compressed proof using propCompressedRelation
   (and1 {isCompressed a} {isCompressed b} {isCompressed c} {isCompressed d} (propCompressedRelation {_} {a} (andSnd p)))
 
+-- Goes from a valid quadrant to its b subquadrant
 bSub : {t : Set} {{eqT : Eq t}} -> {dep : Nat} -> (a b c d : Quadrant t) 
   -> IsTrue (isValid (S dep) (Node a b c d)) -> IsTrue (isValid (dep) b)
 bSub {_} {dep} a b c d p = andCombine 
@@ -164,6 +174,7 @@ bSub {_} {dep} a b c d p = andCombine
   -- Convert compressed proof using propCompressedRelation
   (and2 {isCompressed a} {isCompressed b} {isCompressed c} {isCompressed d} (propCompressedRelation {_} {a} (andSnd p)))
 
+-- Goes from a valid quadrant to its c subquadrant
 cSub : {t : Set} {{eqT : Eq t}} -> {dep : Nat} -> (a b c d : Quadrant t) 
   -> IsTrue (isValid (S dep) (Node a b c d)) -> IsTrue (isValid (dep) c)
 cSub {_} {dep} a b c d p = andCombine 
@@ -172,6 +183,7 @@ cSub {_} {dep} a b c d p = andCombine
   -- Convert compressed proof using propCompressedRelation
   (and3 {isCompressed a} {isCompressed b} {isCompressed c} {isCompressed d} (propCompressedRelation {_} {a} (andSnd p)))
 
+-- Goes from a valid quadrant to its d subquadrant
 dSub : {t : Set} {{eqT : Eq t}} -> {dep : Nat} -> (a b c d : Quadrant t) 
   -> IsTrue (isValid (S dep) (Node a b c d)) -> IsTrue (isValid (dep) d)
 dSub {_} {dep} a b c d p = andCombine 
@@ -180,6 +192,7 @@ dSub {_} {dep} a b c d p = andCombine
   -- Convert compressed proof using propCompressedRelation
   (and4 {isCompressed a} {isCompressed b} {isCompressed c} {isCompressed d} (propCompressedRelation {_} {a} (andSnd p)))
 
+-- Lens into the a subquadrant
 lensA : 
   {t : Set} {{eqT : Eq t}}
   -> {dep : Nat}
@@ -196,6 +209,7 @@ lensA {_} {dep} f (CVQuadrant (Node a b c d) {p}) =
   in fmap (λ x -> combine x sB sC sD ) (f sA)
 {-# COMPILE AGDA2HS lensA #-}
 
+-- Lens into the b subquadrant
 lensB : 
   {t : Set} {{eqT : Eq t}}
   -> {dep : Nat}
@@ -212,6 +226,7 @@ lensB {_} {dep} f (CVQuadrant (Node a b c d) {p}) =
   in fmap (λ x -> combine sA x sC sD ) (f sB)
 {-# COMPILE AGDA2HS lensB #-}
 
+-- Lens into the c subquadrant
 lensC : 
   {t : Set} {{eqT : Eq t}}
   -> {dep : Nat}
@@ -228,6 +243,7 @@ lensC {_} {dep} f (CVQuadrant (Node a b c d) {p}) =
   in fmap (λ x -> combine sA sB x sD ) (f sC)
 {-# COMPILE AGDA2HS lensC #-}
 
+-- Lens into the d subquadrant
 lensD : 
   {t : Set} {{eqT : Eq t}}
   -> {dep : Nat}
@@ -246,14 +262,12 @@ lensD {_} {dep} f (CVQuadrant (Node a b c d) {p}) =
 
 ---- Data access
 
+-- Lens into the leaf quadrant corresponding to a location in a quadrant
 go : {t : Set} {{eqT : Eq t}}
   -> (Nat × Nat) -> (dep : Nat)
   -> Lens (VQuadrant t {dep}) t
 go _ Z = lensLeaf
 go {t} (x , y) (S deps) =
-  -- if y < mid
-  --   then (lensA ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps)
-  --   else (lensC ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps)
   if (y < mid) 
     then if x < mid 
       then (lensA ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps)
@@ -265,6 +279,7 @@ go {t} (x , y) (S deps) =
     mid = pow 2 deps
 {-# COMPILE AGDA2HS go #-}
 
+-- Lens into the leaf quadrant corresponding to a location in a quadtree
 atLocation : {t : Set} {{eqT : Eq t}}
   -> (Nat × Nat) -> (dep : Nat)
   -> Lens (VQuadTree t {dep}) t
