@@ -86,16 +86,6 @@ newtype VQuadTree t = CVQuadTree (QuadTree t)
 
 ---- Lenses
 
--- Lenses into the root quadrant of a quadtree
-lensWrappedTree : {t : Set} {{eqT : Eq t}}
-  -> {dep : Nat}
-  -> Lens (VQuadTree t {dep}) (VQuadrant t {dep})
-lensWrappedTree fun (CVQuadTree (Wrapper (w , h) qd) {p} {q}) = 
-  fmap 
-    (λ where (CVQuadrant qd {p}) → CVQuadTree (Wrapper (w , h) qd) {p} {q})
-    (fun (CVQuadrant qd {p}))
-{-# COMPILE AGDA2HS lensWrappedTree #-}
-
 -- Lenses into a leaf of a depth zero quadrant
 lensLeaf : {t : Set} {{eqT : Eq t}}
   -> Lens (VQuadrant t {0}) t
@@ -278,6 +268,16 @@ go {t} (x , y) (S deps) =
   where
     mid = pow 2 deps
 {-# COMPILE AGDA2HS go #-}
+
+-- Lenses into the root quadrant of a quadtree
+lensWrappedTree : {t : Set} {{eqT : Eq t}}
+  -> {dep : Nat}
+  -> Lens (VQuadTree t {dep}) (VQuadrant t {dep})
+lensWrappedTree fun (CVQuadTree (Wrapper (w , h) qd) {p} {q}) = 
+  fmap 
+    (λ where (CVQuadrant qd {p}) → CVQuadTree (Wrapper (w , h) qd) {p} {q})
+    (fun (CVQuadrant qd {p}))
+{-# COMPILE AGDA2HS lensWrappedTree #-}
 
 -- Lens into the leaf quadrant corresponding to a location in a quadtree
 atLocation : {t : Set} {{eqT : Eq t}}
