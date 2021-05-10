@@ -52,12 +52,11 @@ newtype VQuadrant t = CVQuadrant (Quadrant t)
 
 newtype VQuadTree t = CVQuadTree (QuadTree t)
 
-lensWrappedTree :: Eq t => Lens (VQuadTree t) (VQuadrant t)
-lensWrappedTree fun (CVQuadTree (Wrapper (w, h) qd))
-  = fmap
-      (\case
-           CVQuadrant qd₁ -> CVQuadTree (Wrapper (w, h) qd₁))
-      (fun (CVQuadrant qd))
+qtToSafe :: Eq t => QuadTree t -> VQuadTree t
+qtToSafe qt = CVQuadTree qt
+
+qtFromSafe :: Eq t => VQuadTree t -> QuadTree t
+qtFromSafe (CVQuadTree qt) = qt
 
 lensLeaf :: Eq t => Lens (VQuadrant t) t
 lensLeaf f (CVQuadrant (Leaf v))
@@ -147,6 +146,13 @@ go (x, y) (S deps)
     mid :: Nat
     mid = pow 2 deps
 
+lensWrappedTree :: Eq t => Lens (VQuadTree t) (VQuadrant t)
+lensWrappedTree fun (CVQuadTree (Wrapper (w, h) qd))
+  = fmap
+      (\case
+           CVQuadrant qd₁ -> CVQuadTree (Wrapper (w, h) qd₁))
+      (fun (CVQuadrant qd))
+
 atLocation :: Eq t => (Nat, Nat) -> Nat -> Lens (VQuadTree t) t
 atLocation index dep = lensWrappedTree . go index dep
 
@@ -154,35 +160,29 @@ makeTreeSafe :: Eq t => (Nat, Nat) -> t -> VQuadTree t
 makeTreeSafe (w, h) v = CVQuadTree (Wrapper (w, h) (Leaf v))
 
 getLocationSafe :: Eq t => (Nat, Nat) -> Nat -> VQuadTree t -> t
-getLocationSafe index dep = view (atLocation index dep)
+getLocationSafe index dep vqt = view (atLocation index dep) vqt
 
 setLocationSafe ::
                   Eq t => (Nat, Nat) -> Nat -> t -> VQuadTree t -> VQuadTree t
-setLocationSafe index dep = set (atLocation index dep)
+setLocationSafe index dep v vqt = set (atLocation index dep) v vqt
 
 mapLocationSafe ::
                   Eq t => (Nat, Nat) -> Nat -> (t -> t) -> VQuadTree t -> VQuadTree t
-mapLocationSafe index dep = over (atLocation index dep)
-
-qtToSafe :: Eq t => QuadTree t -> VQuadTree t
-qtToSafe qt = CVQuadTree qt
-
-qtFromSafe :: Eq t => VQuadTree t -> QuadTree t
-qtFromSafe (CVQuadTree qt) = qt
+mapLocationSafe index dep f vqt = over (atLocation index dep) f vqt
 
 makeTree :: Eq t => (Nat, Nat) -> t -> QuadTree t
 makeTree size v = qtFromSafe $ makeTreeSafe size v
 
 getLocation :: Eq t => (Nat, Nat) -> QuadTree t -> t
 getLocation loc qt
-  = getLocationSafe loc (maxDepth qt) $ qtToSafe qt
+  = getLocationSafe loc (maxDepth qt) (qtToSafe qt)
 
 setLocation :: Eq t => (Nat, Nat) -> t -> QuadTree t -> QuadTree t
 setLocation loc v qt
-  = qtFromSafe $ setLocationSafe loc (maxDepth qt) v $ qtToSafe qt
+  = qtFromSafe $ setLocationSafe loc (maxDepth qt) v (qtToSafe qt)
 
 mapLocation ::
               Eq t => (Nat, Nat) -> (t -> t) -> QuadTree t -> QuadTree t
 mapLocation loc f qt
-  = qtFromSafe $ mapLocationSafe loc (maxDepth qt) f $ qtToSafe qt
+  = qtFromSafe $ mapLocationSafe loc (maxDepth qt) f (qtToSafe qt)
 

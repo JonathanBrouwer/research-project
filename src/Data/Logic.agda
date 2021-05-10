@@ -205,6 +205,43 @@ mod : Nat -> (divisor : Nat) -> {≢0 : False (divisor ≟ 0)} -> Nat
 mod a b {p} = _%_ a b {p}
 -- Does not need compile, since it is already defined in haskell
 
+addLte : (a b c : Nat) -> IsTrue (c == a + b) -> IsTrue (a <= c)
+addLte Z Z Z abc = IsTrue.itsTrue
+addLte Z (S b) (S c) abc = IsTrue.itsTrue
+addLte (S a) Z (S c) abc = addLte a Z c abc
+addLte (S a) (S b) (S c) abc = addLte a (S b) c abc
+
+0+n : (n : Nat) -> IsTrue (n == 0 + n)
+0+n Z = IsTrue.itsTrue
+0+n (S n) = 0+n n
+
+addSuc : (a b c : Nat) -> IsTrue (c == a + S b) -> IsTrue (c == S a + b)
+addSuc Z Z (S c) abc = abc
+addSuc Z (S b) (S c) abc = abc
+addSuc (S a) Z (S c) abc = addSuc a Z c abc
+addSuc (S a) (S b) (S c) abc = addSuc a (S b) c abc
+
+--  m = k + j  ==>  mod-helper k m n j = (n + k) mod (1 + m).
+modHelperLt : (k m n j : Nat) 
+  -> IsTrue (m == k + j)
+  -> IsTrue (mod-helper k m n j <= m)
+modHelperLt k m  Z    j     i1 = addLte k j m i1
+modHelperLt k m (S n)  Z    i1 = modHelperLt 0 m n m (0+n m)
+modHelperLt k m (S n) (S j) i1 = modHelperLt (S k) m n j (addSuc k j m i1)
+
+lteToLt : (a b : Nat) -> (a <= b) ≡ (a < S b)
+lteToLt Z Z = refl
+lteToLt Z (S b) = refl
+lteToLt (S a) Z = refl
+lteToLt (S a) (S b) = lteToLt a b
+
+modLt : (a b : Nat) {≢0 : False (b ≟ 0)} -> IsTrue ((mod a b {≢0}) < b)
+modLt a b@(S bs) = 
+  let
+    pgoal : IsTrue (mod a b <= bs)
+    pgoal = modHelperLt 0 bs a bs (0+n bs)
+  in useEq (lteToLt (mod a b) bs) pgoal
+
 pow : Nat -> Nat -> Nat
 pow b Z = 1
 pow b (S e) = b * pow b e

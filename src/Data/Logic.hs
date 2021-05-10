@@ -13,7 +13,7 @@ pow b (S e) = b * pow b e
 log2up :: Nat -> Nat
 log2up Z = 0
 log2up (S Z) = 0
-log2up x = S (log2up (div (x + 1) 2))
+log2up (S (S x)) = S (log2up (div (S (S (S x))) 2))
 
 impossible = error "Impossible"
 
