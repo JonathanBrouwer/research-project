@@ -11,7 +11,7 @@ import Data.Nat
 
 
 ---- Equational reasoning
-useEq : {x y : Bool} -> x ≡ y -> IsTrue x -> IsTrue y
+useEq : {x y : Bool} -> x ≡ y -> .(IsTrue x) -> IsTrue y
 useEq {true} {true} eq is = IsTrue.itsTrue
 
 -- symmetry of equality
@@ -383,7 +383,7 @@ mul-div (S (S x)) =
     goal = useEq (cong (λ q -> 2 * q >= 2 + x) (sym $ div2Reduce (1 + x))) p3
   in goal
 
-log2upPow : (a b : Nat) -> IsTrue (a >= log2up b) -> IsTrue (pow 2 a >= b)
+log2upPow : (a b : Nat) -> .(IsTrue (a >= log2up b)) -> IsTrue (pow 2 a >= b)
 log2upPow Z Z p = IsTrue.itsTrue
 log2upPow Z (S Z) p = IsTrue.itsTrue
 log2upPow (S a) Z p = anyGteZero (pow 2 (S a))
@@ -404,6 +404,13 @@ log2upPow (S a) (S (S b)) p =
     p2 = useEq (gteMultBoth (pow 2 a) (div (3 + b) 2)) p1
   in gteTransitive (pow 2 (S a)) (2 * (div (3 + b) 2)) (2 + b) p2 ((mul-div (2 + b)))
 
+orSnd : (a b : Bool) -> IsTrue b -> IsTrue (a || b)
+orSnd false true ab = IsTrue.itsTrue
+orSnd true b ab = IsTrue.itsTrue
+
+eqToGte : (a b : Nat) -> IsTrue (a == b) -> IsTrue (a >= b)
+eqToGte Z b ab = ab
+eqToGte (S a) (S b) ab = eqToGte a b ab
 
 lteTransitive : (a b c : Nat) -> IsTrue (a <= b) -> IsTrue (b <= c) -> IsTrue (a <= c)
 lteTransitive Z Z c ab bc = bc

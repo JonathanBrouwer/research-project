@@ -103,7 +103,11 @@ isInsidePow (x , y) deps = x < pow 2 deps && y < pow 2 deps
 insideQTtoInsidePow : {t : Set} {{eqT : Eq t}} -> (loc : Nat × Nat) -> {dep : Nat} -> (vqt : VQuadTree t {dep})
   -> IsTrue (isInsideQuadTree loc (qtFromSafe vqt))
   -> IsTrue (isInsidePow loc dep)
-insideQTtoInsidePow (x , y) {dep} (CVQuadTree qt {p} {q}) it = {!   !}
+insideQTtoInsidePow (x , y) {dep} (CVQuadTree (Wrapper (w , h) qd) {p} {q}) it =
+  let
+    p1 : IsTrue (pow 2 dep >= (max w h))
+    p1 = log2upPow dep (max w h) (eqToGte dep (log2up (max w h)) q)
+  in {!   !}
 -- dep == log2up (max w h)
 -- depth qd <= dep
 -- x < w && y < h
