@@ -107,15 +107,16 @@ insideQTtoInsidePow (x , y) {dep} (CVQuadTree (Wrapper (w , h) qd) {p} {q}) it =
   let
     p1 : IsTrue (pow 2 dep >= (max w h))
     p1 = log2upPow dep (max w h) (eqToGte dep (log2up (max w h)) q)
-  in {!   !}
--- dep == log2up (max w h)
--- depth qd <= dep
--- x < w && y < h
 
--- -> pow 2 dep >= max w h
+    p2 : IsTrue ((max w h) <= pow 2 dep)
+    p2 = gteInvert (pow 2 dep) (max w h) p1
 
--- -> x < pow 2 deps && y < pow 2 deps
-
+    p3 : IsTrue (w <= pow 2 dep && h <= pow 2 dep)
+    p3 = useEq (sym $ propMaxLte w h (pow 2 dep)) p2
+  in andCombine 
+    ( ltLteTransitive x w (pow 2 dep) (andFst {x < w} it) (andFst p3) )
+    ( ltLteTransitive y h (pow 2 dep) (andSnd {x < w} it) (andSnd p3) )
+  
 ---- Lenses
 
 -- Lenses into a leaf of a depth zero quadrant
@@ -330,7 +331,7 @@ getLocationSafe : {t : Set} {{eqT : Eq t}}
   -> (qt : VQuadTree t {dep})
   -> {IsTrue (isInsideQuadTree loc (qtFromSafe qt))} 
   -> t
-getLocationSafe index dep qt {inside} = view (atLocation index dep {{!   !}}) qt
+getLocationSafe index dep vqt {inside} = view (atLocation index dep {insideQTtoInsidePow index vqt inside}) vqt
 {-# COMPILE AGDA2HS getLocationSafe #-}
 
 setLocationSafe : {t : Set} {{eqT : Eq t}}
@@ -338,7 +339,7 @@ setLocationSafe : {t : Set} {{eqT : Eq t}}
   -> t -> (qt : VQuadTree t {dep}) 
   -> {IsTrue (isInsideQuadTree loc (qtFromSafe qt))} 
   -> VQuadTree t {dep}
-setLocationSafe index dep v qt = set (atLocation index dep) v qt
+setLocationSafe index dep v vqt {inside} = set (atLocation index dep {insideQTtoInsidePow index vqt inside}) v vqt
 {-# COMPILE AGDA2HS setLocationSafe #-}
 
 mapLocationSafe : {t : Set} {{eqT : Eq t}}
@@ -346,7 +347,7 @@ mapLocationSafe : {t : Set} {{eqT : Eq t}}
   -> (t -> t) -> (qt : VQuadTree t {dep}) 
   -> {IsTrue (isInsideQuadTree loc (qtFromSafe qt))} 
   -> VQuadTree t {dep}
-mapLocationSafe index dep f qt = over (atLocation index dep) f qt
+mapLocationSafe index dep f vqt {inside} = over (atLocation index dep {insideQTtoInsidePow index vqt inside}) f vqt
 {-# COMPILE AGDA2HS mapLocationSafe #-}
 
 ---- Unsafe functions (Original)

@@ -404,13 +404,18 @@ log2upPow (S a) (S (S b)) p =
     p2 = useEq (gteMultBoth (pow 2 a) (div (3 + b) 2)) p1
   in gteTransitive (pow 2 (S a)) (2 * (div (3 + b) 2)) (2 + b) p2 ((mul-div (2 + b)))
 
-orSnd : (a b : Bool) -> IsTrue b -> IsTrue (a || b)
-orSnd false true ab = IsTrue.itsTrue
-orSnd true b ab = IsTrue.itsTrue
-
 eqToGte : (a b : Nat) -> IsTrue (a == b) -> IsTrue (a >= b)
 eqToGte Z b ab = ab
 eqToGte (S a) (S b) ab = eqToGte a b ab
+
+gteInvert : (a b : Nat) -> IsTrue (a >= b) -> IsTrue (b <= a)
+gteInvert Z Z ab = IsTrue.itsTrue
+gteInvert (S a) Z ab = IsTrue.itsTrue
+gteInvert (S a) (S b) ab = gteInvert a b ab
+
+ltLteTransitive : (a b c : Nat) -> IsTrue (a < b) -> IsTrue (b <= c) -> IsTrue (a < c)
+ltLteTransitive Z (S b) (S c) ab bc = IsTrue.itsTrue
+ltLteTransitive (S a) (S b) (S c) ab bc = ltLteTransitive a b c ab bc
 
 lteTransitive : (a b c : Nat) -> IsTrue (a <= b) -> IsTrue (b <= c) -> IsTrue (a <= c)
 lteTransitive Z Z c ab bc = bc
