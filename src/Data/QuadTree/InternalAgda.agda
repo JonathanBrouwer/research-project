@@ -294,13 +294,15 @@ go _ Z = lensLeaf
 go {t} (x , y) (S deps) =
   if (y < mid) 
     then if x < mid 
-      then (lensA ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps {andCombine (modLt x mid {pow_not_zero_cv deps}) (modLt y mid {pow_not_zero_cv deps})})
-      else (lensB ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps {andCombine (modLt x mid {pow_not_zero_cv deps}) (modLt y mid {pow_not_zero_cv deps})})
+      then (lensA ∘ gorec)
+      else (lensB ∘ gorec)
     else if x < mid
-      then (lensC ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps {andCombine (modLt x mid {pow_not_zero_cv deps}) (modLt y mid {pow_not_zero_cv deps})})
-      else (lensD ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps {andCombine (modLt x mid {pow_not_zero_cv deps}) (modLt y mid {pow_not_zero_cv deps})})
+      then (lensC ∘ gorec)
+      else (lensD ∘ gorec)
   where
     mid = pow 2 deps
+    gorec = go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps 
+      {andCombine (modLt x mid {pow_not_zero_cv deps}) (modLt y mid {pow_not_zero_cv deps})}
 {-# COMPILE AGDA2HS go #-}
 
 -- Lenses into the root quadrant of a quadtree

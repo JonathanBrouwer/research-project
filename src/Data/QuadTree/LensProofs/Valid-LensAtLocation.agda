@@ -21,22 +21,26 @@ open import Data.QuadTree.LensProofs.Valid-LensGo
 ValidLens-AtLocation-ViewSet : 
     {t : Set} {{eqT : Eq t}}
     -> (loc : Nat × Nat) -> (dep : Nat)
-    -> ViewSet (atLocation {t} loc dep)
-ValidLens-AtLocation-ViewSet (x , y) dep v s = trans refl (prop-Composition-ViewSet (ValidLens-WrappedTree) (ValidLens-go (x , y) dep) v s)
+    -> {ins : IsTrue (isInsidePow loc dep)}
+    -> ViewSet (atLocation {t} loc dep {ins})
+ValidLens-AtLocation-ViewSet (x , y) dep {ins} v s = trans refl (prop-Composition-ViewSet (ValidLens-WrappedTree) (ValidLens-go (x , y) dep {ins}) v s)
 
 ValidLens-AtLocation-SetView : 
     {t : Set} {{eqT : Eq t}}
     -> (loc : Nat × Nat) -> (dep : Nat)
-    -> SetView (atLocation {t} loc dep)
-ValidLens-AtLocation-SetView (x , y) dep s = trans refl (prop-Composition-SetView (ValidLens-WrappedTree) (ValidLens-go (x , y) dep) s)
+    -> {ins : IsTrue (isInsidePow loc dep)}
+    -> SetView (atLocation {t} loc dep {ins})
+ValidLens-AtLocation-SetView (x , y) dep {ins} s = trans refl (prop-Composition-SetView (ValidLens-WrappedTree) (ValidLens-go (x , y) dep {ins}) s)
 
 ValidLens-AtLocation-SetSet : 
     {t : Set} {{eqT : Eq t}}
     -> (loc : Nat × Nat) -> (dep : Nat)
-    -> SetSet (atLocation {t} loc dep)
-ValidLens-AtLocation-SetSet (x , y) dep v1 v2 s = trans refl (prop-Composition-SetSet (ValidLens-WrappedTree) (ValidLens-go (x , y) dep) v1 v2 s)
+    -> {ins : IsTrue (isInsidePow loc dep)}
+    -> SetSet (atLocation {t} loc dep {ins})
+ValidLens-AtLocation-SetSet (x , y) dep {ins} v1 v2 s = trans refl (prop-Composition-SetSet (ValidLens-WrappedTree) (ValidLens-go (x , y) dep {ins}) v1 v2 s)
 
 ValidLens-AtLocation : {t : Set} {{eqT : Eq t}}
     -> (loc : Nat × Nat) -> (dep : Nat)
+    -> {ins : IsTrue (isInsidePow loc dep)}
     -> ValidLens (VQuadTree t {dep}) t
-ValidLens-AtLocation {t} {{eqT}} (x , y) dep = CValidLens (atLocation (x , y) dep) (ValidLens-AtLocation-ViewSet (x , y) dep) (ValidLens-AtLocation-SetView (x , y) dep) (ValidLens-AtLocation-SetSet (x , y) dep)
+ValidLens-AtLocation {t} {{eqT}} (x , y) dep {ins} = CValidLens (atLocation (x , y) dep {ins}) (ValidLens-AtLocation-ViewSet (x , y) dep {ins}) (ValidLens-AtLocation-SetView (x , y) dep {ins}) (ValidLens-AtLocation-SetSet (x , y) dep {ins})
