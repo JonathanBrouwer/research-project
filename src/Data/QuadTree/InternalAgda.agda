@@ -234,6 +234,7 @@ lensB :
   -> Lens (VQuadrant t {S dep}) (VQuadrant t {dep})
 lensB {_} {dep} f (CVQuadrant (Leaf v) {p}) = 
   let sub = CVQuadrant (Leaf v) {andCombine (zeroLteAny dep) IsTrue.itsTrue}
+  in fmap (λ x -> combine sub x sub sub ) (f sub)
 lensB {_} {dep} f (CVQuadrant (Node a b c d) {p}) = 
   let 
     sA = CVQuadrant a {aSub a b c d p}
