@@ -249,9 +249,9 @@ divHelperReduce x a (S b) Z =
   end
 divHelperReduce x a (S b) (S c) = divHelperReduce x a b c
 
-div2Reduce : {x : Nat} -> div (2 + x) 2 ≡ S (div x 2)
-div2Reduce {Z} = refl
-div2Reduce {x@(S sx)} =
+div2Reduce : (x : Nat) -> div (2 + x) 2 ≡ S (div x 2)
+div2Reduce Z = refl
+div2Reduce x@(S sx) =
   begin
     div (2 + x) 2
   =⟨⟩
@@ -275,32 +275,134 @@ powGteOne : (n : Nat) -> IsTrue (pow 2 n >= 1)
 powGteOne Z = IsTrue.itsTrue
 powGteOne (S n) = multGteOne 2 (pow 2 n) IsTrue.itsTrue (powGteOne n)
 
-log2upPow : (a b : Nat) -> (a >= log2up b) ≡ (pow 2 a >= b)
-log2upPow Z Z = refl
-log2upPow Z (S Z) = refl
-log2upPow Z (S (S b)) = refl
-log2upPow (S a) Z = isTrueEquiv $ anyGteZero (pow 2 (S a))
-log2upPow (S a) (S Z) =
+add-assoc : (a b c : Nat) → (a + b) + c ≡ a + (b + c)
+add-assoc Z b c = refl
+add-assoc (S a) b c = cong S (add-assoc a b c)
+
+add-n-zero : (n : Nat) → n + Z ≡ n
+add-n-zero Z = refl
+add-n-zero (S n) = cong S (add-n-zero n)
+
+add-n-suc : (m n : Nat) → m + (S n) ≡ S (m + n)
+add-n-suc Z n = refl
+add-n-suc (S m) n = cong S (add-n-suc m n)
+
+add-comm : (m n : Nat) → m + n ≡ n + m
+add-comm m Z = add-n-zero m
+add-comm m (S n) = 
   begin
+    m + (S n)
+  =⟨ add-n-suc m n ⟩ 
+    S (m + n)
+  =⟨ cong S (add-comm m n) ⟩ 
+    (S n) + m
+  end
+
+mul-n-zero : (a : Nat) -> a * Z ≡ Z
+mul-n-zero Z = refl
+mul-n-zero (S a) = mul-n-zero a
+
+mul-n-suc : (a b : Nat) -> a * (S b) ≡ a + a * b
+mul-n-suc Z b = refl
+mul-n-suc (S a) b =
+  begin
+    (S a) * (S b)
+  =⟨⟩
+    (S b) + a * (S b)
+  =⟨ cong (λ q -> (S b) + q) (mul-n-suc a b) ⟩
+    S (b + (a + a * b))
+  =⟨ cong S (sym $ add-assoc b a (a * b)) ⟩
+    S ((b + a) + a * b)
+  =⟨ cong (λ q -> S (q + a * b)) (add-comm b a) ⟩
+    S ((a + b) + a * b)
+  =⟨ cong S (add-assoc a b (a * b)) ⟩
+    S (a + (b + a * b) )
+  =⟨⟩
+    (S a) + (S a) * b
+  end
+
+mul-comm : (a b : Nat) -> a * b ≡ b * a
+mul-comm a Z = mul-n-zero a
+mul-comm a (S b) =
+  begin
+    a * (S b)
+  =⟨ mul-n-suc a b ⟩
+    a + a * b
+  =⟨ cong (λ q -> a + q) (mul-comm a b) ⟩
+    (S b) * a
+  end
+
+gteDouble : (a b : Nat) -> (a >= b) ≡ (a + a >= b + b)
+gteDouble Z Z = refl
+gteDouble Z (S b) = refl
+gteDouble (S a) Z = refl
+gteDouble (S a) (S b) =
+  begin
+    a >= b
+  =⟨ gteDouble a b ⟩
+    (S a) + a >= (S b) + b
+  =⟨ cong (λ q -> q >= (S b) + b) (add-comm (S a) a) ⟩
+    a + S a >= S b + b
+  =⟨ cong (λ q -> a + S a >= q) (add-comm (S b) b) ⟩
+    a + S a >= b + S b
+  end
+
+gteMultBoth : (a b : Nat) -> (a >= b) ≡ (2 * a >= 2 * b)
+gteMultBoth a b = 
+  begin
+    a >= b
+  =⟨ gteDouble a b ⟩
+    a + a >= b + b
+  =⟨ cong (λ q -> a + q >= b + b) (sym $ add-comm a 0) ⟩
+    a + (a + 0) >= b + b
+  =⟨ cong (λ q -> a + (a + 0) >= b + q) (sym $ add-comm b 0) ⟩
+    a + (a + 0) >= b + (b + 0)
+  end
+
+gteTransitive : (a b c : Nat) -> IsTrue (a >= b) -> IsTrue (b >= c) -> IsTrue (a >= c)
+gteTransitive Z Z Z ab bc = IsTrue.itsTrue
+gteTransitive (S a) Z Z ab bc = IsTrue.itsTrue
+gteTransitive (S a) (S b) Z ab bc = IsTrue.itsTrue
+gteTransitive (S a) (S b) (S c) ab bc = gteTransitive a b c ab bc
+
+mul-div : (x : Nat) -> IsTrue (2 * (div (1 + x) 2) >= x)
+mul-div Z = IsTrue.itsTrue
+mul-div (S Z) = IsTrue.itsTrue
+mul-div (S (S x)) =
+  let
+    p1 : IsTrue (2 + 2 * (div (1 + x) 2) >= 2 + x)
+    p1 = mul-div x
+
+    p2 : IsTrue (S (div (1 + x) 2) * 2 >= 2 + x)
+    p2 = useEq (cong (λ q -> 2 + q >= 2 + x) (mul-comm 2 (div (1 + x) 2))) p1
+
+    p3 : IsTrue (2 * S (div (1 + x) 2) >= 2 + x)
+    p3 = useEq (cong (λ q -> q >= 2 + x) (mul-comm (S (div (1 + x) 2)) 2)) p2
+
+    goal : IsTrue (2 * (div (3 + x) 2) >= 2 + x)
+    goal = useEq (cong (λ q -> 2 * q >= 2 + x) (sym $ div2Reduce (1 + x))) p3
+  in goal
+
+log2upPow : (a b : Nat) -> IsTrue (a >= log2up b) -> IsTrue (pow 2 a >= b)
+log2upPow Z Z p = IsTrue.itsTrue
+log2upPow Z (S Z) p = IsTrue.itsTrue
+log2upPow (S a) Z p = anyGteZero (pow 2 (S a))
+log2upPow (S a) (S Z) p = useEq
+  (begin
     (S a) >= 0
   =⟨ isTrueEquiv $ anyGteZero (S a) ⟩
     true
   =⟨ isTrueEquiv $ powGteOne (S a) ⟩
     pow 2 (S a) >= 1
-  end
-log2upPow (S a) (S (S b)) = {!   !}
--- log2upPow {S a} {S (S b)} p = useEq (
---   begin 
---     S a >= log2up (S (S b)) 
---   =⟨⟩
---     a == log2up (div (3 + b) 2)
---   =⟨ cong (λ q -> a == log2up q) (div2Reduce {1 + b}) ⟩
---     a == log2up (S (div (1 + b) 2))
---   =⟨ {! log2upPow {a} {S b} !} ⟩ 
---     {!   !}
---   =⟨ {!   !} ⟩
---     pow 2 (S a) >= (S (S b)) 
---   end) p
+  end) p
+log2upPow (S a) (S (S b)) p = 
+  let
+    p1 : IsTrue (  pow 2 a >= div (3 + b) 2  )
+    p1 = log2upPow a (div (3 + b) 2) p 
+
+    p2 : IsTrue (  pow 2 (S a) >= 2 * (div (3 + b) 2)  )
+    p2 = useEq (gteMultBoth (pow 2 a) (div (3 + b) 2)) p1
+  in gteTransitive (pow 2 (S a)) (2 * (div (3 + b) 2)) (2 + b) p2 ((mul-div (2 + b)))
 
 
 lteTransitive : (a b c : Nat) -> IsTrue (a <= b) -> IsTrue (b <= c) -> IsTrue (a <= c)

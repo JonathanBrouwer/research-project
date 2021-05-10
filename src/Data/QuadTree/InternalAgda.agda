@@ -232,11 +232,8 @@ lensB :
   {t : Set} {{eqT : Eq t}}
   -> {dep : Nat}
   -> Lens (VQuadrant t {S dep}) (VQuadrant t {dep})
-lensB {_} {dep} f ZCVQu ?
-divHelperReduce aa(San) c =t?Leaf v) {p}) = 
-  let sub = CVQuadrantZ(Leaf  ?
-divHelperReducev(S{x) (S a) Z Z =n?ombine (zeroLteAny dep) IsTrue.itsTrue}
-  in fmap (λ x -> combine sub x sub sub ) (f sub)
+lensB {_} {dep} f (CVQuadrant (Leaf v) {p}) = 
+  let sub = CVQuadrant (Leaf v) {andCombine (zeroLteAny dep) IsTrue.itsTrue}
 lensB {_} {dep} f (CVQuadrant (Node a b c d) {p}) = 
   let 
     sA = CVQuadrant a {aSub a b c d p}
@@ -257,8 +254,7 @@ lensC {_} {dep} f (CVQuadrant (Leaf v) {p}) =
 lensC {_} {dep} f (CVQuadrant (Node a b c d) {p}) = 
   let 
     sA = CVQuadrant a {aSub a b c d p}
-    sB = CVQuadraZt b { ?
-log2upPow {Sba} SSb } p =a? c d p}
+    sB = CVQuadrant b {bSub a b c d p}
     sC = CVQuadrant c {cSub a b c d p}
     sD = CVQuadrant d {dSub a b c d p}
   in fmap (λ x -> combine sA sB x sD ) (f sC)
