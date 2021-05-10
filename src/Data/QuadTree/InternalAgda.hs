@@ -136,15 +136,14 @@ lensD f (CVQuadrant (Node a b c d))
 go :: Eq t => (Nat, Nat) -> Nat -> Lens (VQuadrant t) t
 go _ Z = lensLeaf
 go (x, y) (S deps)
-  = if y < mid then
-      if x < mid then lensA . go (mod x mid, mod y mid) deps else
-        lensB . go (mod x mid, mod y mid) deps
+  = if y < pow 2 deps then
+      if x < pow 2 deps then
+        lensA . go (mod x (pow 2 deps), mod y (pow 2 deps)) deps else
+        lensB . go (mod x (pow 2 deps), mod y (pow 2 deps)) deps
       else
-      if x < mid then lensC . go (mod x mid, mod y mid) deps else
-        lensD . go (mod x mid, mod y mid) deps
-  where
-    mid :: Nat
-    mid = pow 2 deps
+      if x < pow 2 deps then
+        lensC . go (mod x (pow 2 deps), mod y (pow 2 deps)) deps else
+        lensD . go (mod x (pow 2 deps), mod y (pow 2 deps)) deps
 
 lensWrappedTree :: Eq t => Lens (VQuadTree t) (VQuadrant t)
 lensWrappedTree fun (CVQuadTree (Wrapper (w, h) qd))
