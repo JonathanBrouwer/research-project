@@ -44,3 +44,6 @@ ValidLens-AtLocation : {t : Set} {{eqT : Eq t}}
     -> {ins : IsTrue (isInsidePow loc dep)}
     -> ValidLens (VQuadTree t {dep}) t
 ValidLens-AtLocation {t} {{eqT}} (x , y) dep {ins} = CValidLens (atLocation (x , y) dep {ins}) (ValidLens-AtLocation-ViewSet (x , y) dep {ins}) (ValidLens-AtLocation-SetView (x , y) dep {ins}) (ValidLens-AtLocation-SetSet (x , y) dep {ins})
+
+test : {.(a : Bool)} -> Bool
+test = true

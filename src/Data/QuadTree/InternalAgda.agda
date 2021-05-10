@@ -85,7 +85,7 @@ newtype VQuadTree t = CVQuadTree (QuadTree t)
 #-}
 
 qtToSafe : {t : Set} {{eqT : Eq t}} {dep : Nat}
-  -> (qt : QuadTree t) -> {IsTrue (isValid dep (treeToQuadrant qt))} -> {IsTrue (dep == maxDepth qt)} 
+  -> (qt : QuadTree t) -> {.(IsTrue (isValid dep (treeToQuadrant qt)))} -> {.(IsTrue (dep == maxDepth qt))} 
   -> VQuadTree t {maxDepth qt}
 qtToSafe {dep = dep} qt {p} {q} = CVQuadTree qt {useEq (cong (λ g -> isValid g (treeToQuadrant qt)) (eqToEquiv dep (maxDepth qt) q)) p} {eqReflexivity (maxDepth qt)}
 {-# COMPILE AGDA2HS qtToSafe #-}
@@ -95,7 +95,7 @@ qtFromSafe (CVQuadTree qt) = qt
 {-# COMPILE AGDA2HS qtFromSafe #-}
 
 isInsideQuadTree : {t : Set} -> (Nat × Nat) -> QuadTree t -> Bool
-isInsideQuadTree (x , y) (Wrapper (w , h) x₂) = x < w && y < h
+isInsideQuadTree (x , y) (Wrapper (w , h) _) = x < w && y < h
 
 isInsidePow : (Nat × Nat) -> Nat -> Bool
 isInsidePow (x , y) deps = x < pow 2 deps && y < pow 2 deps
@@ -332,7 +332,7 @@ makeTreeSafe (w , h) v = CVQuadTree (Wrapper (w , h) (Leaf v)) {andCombine (zero
 getLocationSafe : {t : Set} {{eqT : Eq t}}
   -> (loc : Nat × Nat) -> (dep : Nat)
   -> (qt : VQuadTree t {dep})
-  -> {IsTrue (isInsideQuadTree loc (qtFromSafe qt))} 
+  -> {.(IsTrue (isInsideQuadTree loc (qtFromSafe qt)))} 
   -> t
 getLocationSafe index dep vqt {inside} = view (atLocation index dep {insideQTtoInsidePow index vqt inside}) vqt
 {-# COMPILE AGDA2HS getLocationSafe #-}
@@ -340,7 +340,7 @@ getLocationSafe index dep vqt {inside} = view (atLocation index dep {insideQTtoI
 setLocationSafe : {t : Set} {{eqT : Eq t}}
   -> (loc : Nat × Nat) -> (dep : Nat) 
   -> t -> (qt : VQuadTree t {dep}) 
-  -> {IsTrue (isInsideQuadTree loc (qtFromSafe qt))} 
+  -> {.(IsTrue (isInsideQuadTree loc (qtFromSafe qt)))} 
   -> VQuadTree t {dep}
 setLocationSafe index dep v vqt {inside} = set (atLocation index dep {insideQTtoInsidePow index vqt inside}) v vqt
 {-# COMPILE AGDA2HS setLocationSafe #-}
@@ -348,7 +348,7 @@ setLocationSafe index dep v vqt {inside} = set (atLocation index dep {insideQTto
 mapLocationSafe : {t : Set} {{eqT : Eq t}}
   -> (loc : Nat × Nat) -> (dep : Nat)
   -> (t -> t) -> (qt : VQuadTree t {dep}) 
-  -> {IsTrue (isInsideQuadTree loc (qtFromSafe qt))} 
+  -> {.(IsTrue (isInsideQuadTree loc (qtFromSafe qt)))} 
   -> VQuadTree t {dep}
 mapLocationSafe index dep f vqt {inside} = over (atLocation index dep {insideQTtoInsidePow index vqt inside}) f vqt
 {-# COMPILE AGDA2HS mapLocationSafe #-}
@@ -362,8 +362,8 @@ makeTree size v = qtFromSafe $ makeTreeSafe size v
 getLocation : {t : Set} {{eqT : Eq t}} 
   -> (loc : Nat × Nat) -> {dep : Nat}
   -> (qt : QuadTree t) 
-  -> {IsTrue (isInsideQuadTree loc qt)}
-  -> {IsTrue (isValid dep (treeToQuadrant qt))} -> {IsTrue (dep == maxDepth qt)} 
+  -> {.(IsTrue (isInsideQuadTree loc qt))}
+  -> {.(IsTrue (isValid dep (treeToQuadrant qt)))} -> {.(IsTrue (dep == maxDepth qt))} 
   -> t
 getLocation loc qt {inside} {p} {q} = getLocationSafe loc (maxDepth qt) (qtToSafe qt {p} {q}) {inside}
 {-# COMPILE AGDA2HS getLocation #-}
@@ -371,8 +371,8 @@ getLocation loc qt {inside} {p} {q} = getLocationSafe loc (maxDepth qt) (qtToSaf
 setLocation : {t : Set} {{eqT : Eq t}} 
   -> (loc : Nat × Nat) -> t
   -> {dep : Nat} -> (qt : QuadTree t) 
-  -> {IsTrue (isInsideQuadTree loc qt)}
-  -> {IsTrue (isValid dep (treeToQuadrant qt))} -> {IsTrue (dep == maxDepth qt)} 
+  -> {.(IsTrue (isInsideQuadTree loc qt))}
+  -> {.(IsTrue (isValid dep (treeToQuadrant qt)))} -> {.(IsTrue (dep == maxDepth qt))} 
   -> QuadTree t
 setLocation loc v qt {inside} {p} {q} = qtFromSafe $ setLocationSafe loc (maxDepth qt) v (qtToSafe qt {p} {q}) {inside}
 {-# COMPILE AGDA2HS setLocation #-}
@@ -380,8 +380,8 @@ setLocation loc v qt {inside} {p} {q} = qtFromSafe $ setLocationSafe loc (maxDep
 mapLocation : {t : Set} {{eqT : Eq t}} 
   -> (loc : Nat × Nat) -> (t -> t) 
   -> {dep : Nat} -> (qt : QuadTree t) 
-  -> {IsTrue (isInsideQuadTree loc qt)}
-  -> {IsTrue (isValid dep (treeToQuadrant qt))} -> {IsTrue (dep == maxDepth qt)} 
+  -> {.(IsTrue (isInsideQuadTree loc qt))}
+  -> {.(IsTrue (isValid dep (treeToQuadrant qt)))} -> {.(IsTrue (dep == maxDepth qt))} 
   -> QuadTree t
 mapLocation loc f qt {inside} {p} {q} = qtFromSafe $ mapLocationSafe loc (maxDepth qt) f (qtToSafe qt {p} {q}) {inside}
 {-# COMPILE AGDA2HS mapLocation #-}
