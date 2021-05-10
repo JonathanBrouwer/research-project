@@ -42,9 +42,6 @@ instance
 
 ---- Valid types
 
-isInsideQuadTree : {t : Set} -> (Nat × Nat) -> QuadTree t -> Bool
-isInsideQuadTree (x , y) (Wrapper (w , h) x₂) = x < w && y < h
-
 -- Calculates the depth of a quadrant
 depth : {t : Set} -> Quadrant t -> Nat
 depth (Leaf x) = 0
@@ -96,6 +93,24 @@ qtToSafe {dep = dep} qt {p} {q} = CVQuadTree qt {useEq (cong (λ g -> isValid g 
 qtFromSafe : {t : Set} {{eqT : Eq t}} -> {dep : Nat} -> VQuadTree t {dep} -> QuadTree t
 qtFromSafe (CVQuadTree qt) = qt
 {-# COMPILE AGDA2HS qtFromSafe #-}
+
+isInsideQuadTree : {t : Set} -> (Nat × Nat) -> QuadTree t -> Bool
+isInsideQuadTree (x , y) (Wrapper (w , h) x₂) = x < w && y < h
+
+isInsidePow : (Nat × Nat) -> Nat -> Bool
+isInsidePow (x , y) deps = x < pow 2 deps && y < pow 2 deps
+
+insideQTtoInsidePow : {t : Set} {{eqT : Eq t}} -> (loc : Nat × Nat) -> {dep : Nat} -> (vqt : VQuadTree t {dep})
+  -> IsTrue (isInsideQuadTree loc (qtFromSafe vqt))
+  -> IsTrue (isInsidePow loc dep)
+insideQTtoInsidePow (x , y) {dep} (CVQuadTree qt {p} {q}) it = {!   !}
+-- dep == log2up (max w h)
+-- depth qd <= dep
+-- x < w && y < h
+
+-- -> pow 2 dep >= max w h
+
+-- -> x < pow 2 deps && y < pow 2 deps
 
 ---- Lenses
 
@@ -217,8 +232,10 @@ lensB :
   {t : Set} {{eqT : Eq t}}
   -> {dep : Nat}
   -> Lens (VQuadrant t {S dep}) (VQuadrant t {dep})
-lensB {_} {dep} f (CVQuadrant (Leaf v) {p}) = 
-  let sub = CVQuadrant (Leaf v) {andCombine (zeroLteAny dep) IsTrue.itsTrue}
+lensB {_} {dep} f ZCVQu ?
+divHelperReduce aa(San) c =t?Leaf v) {p}) = 
+  let sub = CVQuadrantZ(Leaf  ?
+divHelperReducev(S{x) (S a) Z Z =n?ombine (zeroLteAny dep) IsTrue.itsTrue}
   in fmap (λ x -> combine sub x sub sub ) (f sub)
 lensB {_} {dep} f (CVQuadrant (Node a b c d) {p}) = 
   let 
@@ -240,7 +257,8 @@ lensC {_} {dep} f (CVQuadrant (Leaf v) {p}) =
 lensC {_} {dep} f (CVQuadrant (Node a b c d) {p}) = 
   let 
     sA = CVQuadrant a {aSub a b c d p}
-    sB = CVQuadrant b {bSub a b c d p}
+    sB = CVQuadraZt b { ?
+log2upPow {Sba} SSb } p =a? c d p}
     sC = CVQuadrant c {cSub a b c d p}
     sD = CVQuadrant d {dSub a b c d p}
   in fmap (λ x -> combine sA sB x sD ) (f sC)
@@ -295,6 +313,7 @@ lensWrappedTree fun (CVQuadTree (Wrapper (w , h) qd) {p} {q}) =
 -- Lens into the leaf quadrant corresponding to a location in a quadtree
 atLocation : {t : Set} {{eqT : Eq t}}
   -> (loc : Nat × Nat) -> (dep : Nat)
+  -> {IsTrue (isInsidePow loc dep)}
   -> Lens (VQuadTree t {dep}) t
 atLocation index dep = lensWrappedTree ∘ (go index dep)
 {-# COMPILE AGDA2HS atLocation #-}
@@ -310,7 +329,7 @@ getLocationSafe : {t : Set} {{eqT : Eq t}}
   -> (qt : VQuadTree t {dep})
   -> {IsTrue (isInsideQuadTree loc (qtFromSafe qt))} 
   -> t
-getLocationSafe index dep qt = view (atLocation index dep) qt
+getLocationSafe index dep qt {inside} = view (atLocation index dep {{!   !}}) qt
 {-# COMPILE AGDA2HS getLocationSafe #-}
 
 setLocationSafe : {t : Set} {{eqT : Eq t}}

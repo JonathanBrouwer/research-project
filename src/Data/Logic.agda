@@ -223,18 +223,85 @@ false_convert (S n) if = tt
 pow_not_zero_cv : (n : Nat) -> False (pow 2 n ≟ 0) 
 pow_not_zero_cv n = false_convert (pow 2 n) $ pow_not_zero n
 
+zeroLteAny : (a : Nat) -> IsTrue (0 <= a)
+zeroLteAny Z = IsTrue.itsTrue
+zeroLteAny (S a) = IsTrue.itsTrue
+
+anyGteZero : (a : Nat) -> IsTrue (a >= 0)
+anyGteZero Z = IsTrue.itsTrue
+anyGteZero (S a) = IsTrue.itsTrue
+
 {-# TERMINATING #-}
 log2up : Nat -> Nat
 -- UNSAFE: This terminates since x/2 always decreases if x > 1
 log2up 0 = 0
 log2up 1 = 0
-log2up x = S (log2up (div (x + 1) 2))
+log2up (S (S x)) = S (log2up (div (S (S (S x))) 2))
 {-# COMPILE AGDA2HS log2up #-}
 
+divHelperReduce : (x a b c : Nat) -> div-helper (S x) a b c ≡ S (div-helper x a b c)
+divHelperReduce x a Z c = refl
+divHelperReduce x a (S b) Z =
+  begin
+    div-helper (S (S x)) a b a
+  =⟨ divHelperReduce (S x) a b a ⟩
+    S (div-helper (S x) a b a)
+  end
+divHelperReduce x a (S b) (S c) = divHelperReduce x a b c
 
-zeroLteAny : (a : Nat) -> IsTrue (0 <= a)
-zeroLteAny Z = IsTrue.itsTrue
-zeroLteAny (S a) = IsTrue.itsTrue
+div2Reduce : {x : Nat} -> div (2 + x) 2 ≡ S (div x 2)
+div2Reduce {Z} = refl
+div2Reduce {x@(S sx)} =
+  begin
+    div (2 + x) 2
+  =⟨⟩
+    div-helper 1 1 sx 0
+  =⟨ divHelperReduce 0 1 sx 0 ⟩
+    S (div-helper 0 1 sx 0)
+  =⟨⟩
+    S (div x 2)
+  end
+
+isTrueEquiv : {b : Bool} -> IsTrue b -> true ≡ b
+isTrueEquiv {true} t = refl
+
+plusGteOne : (a b : Nat) -> IsTrue (a >= 1) -> IsTrue (a + b >= 1)
+plusGteOne (S a) b p = anyGteZero (a + b)
+
+multGteOne : (a b : Nat) -> IsTrue (a >= 1) -> IsTrue (b >= 1) -> IsTrue (a * b >= 1)
+multGteOne (S a) (S b) pa pb = plusGteOne (S b) (a * (S b)) pb
+
+powGteOne : (n : Nat) -> IsTrue (pow 2 n >= 1)
+powGteOne Z = IsTrue.itsTrue
+powGteOne (S n) = multGteOne 2 (pow 2 n) IsTrue.itsTrue (powGteOne n)
+
+log2upPow : (a b : Nat) -> (a >= log2up b) ≡ (pow 2 a >= b)
+log2upPow Z Z = refl
+log2upPow Z (S Z) = refl
+log2upPow Z (S (S b)) = refl
+log2upPow (S a) Z = isTrueEquiv $ anyGteZero (pow 2 (S a))
+log2upPow (S a) (S Z) =
+  begin
+    (S a) >= 0
+  =⟨ isTrueEquiv $ anyGteZero (S a) ⟩
+    true
+  =⟨ isTrueEquiv $ powGteOne (S a) ⟩
+    pow 2 (S a) >= 1
+  end
+log2upPow (S a) (S (S b)) = {!   !}
+-- log2upPow {S a} {S (S b)} p = useEq (
+--   begin 
+--     S a >= log2up (S (S b)) 
+--   =⟨⟩
+--     a == log2up (div (3 + b) 2)
+--   =⟨ cong (λ q -> a == log2up q) (div2Reduce {1 + b}) ⟩
+--     a == log2up (S (div (1 + b) 2))
+--   =⟨ {! log2upPow {a} {S b} !} ⟩ 
+--     {!   !}
+--   =⟨ {!   !} ⟩
+--     pow 2 (S a) >= (S (S b)) 
+--   end) p
+
 
 lteTransitive : (a b c : Nat) -> IsTrue (a <= b) -> IsTrue (b <= c) -> IsTrue (a <= c)
 lteTransitive Z Z c ab bc = bc
