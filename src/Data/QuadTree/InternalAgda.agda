@@ -287,17 +287,18 @@ lensD {_} {dep} f (CVQuadrant (Node a b c d) {p}) =
 
 -- Lens into the leaf quadrant corresponding to a location in a quadrant
 go : {t : Set} {{eqT : Eq t}}
-  -> (Nat × Nat) -> (dep : Nat)
+  -> (loc : Nat × Nat) -> (dep : Nat)
+  -> {.(IsTrue (isInsidePow loc dep))}
   -> Lens (VQuadrant t {dep}) t
 go _ Z = lensLeaf
 go {t} (x , y) (S deps) =
   if (y < mid) 
     then if x < mid 
-      then (lensA ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps)
-      else (lensB ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps)
+      then (lensA ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps {andCombine (modLt x mid {pow_not_zero_cv deps}) (modLt y mid {pow_not_zero_cv deps})})
+      else (lensB ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps {andCombine (modLt x mid {pow_not_zero_cv deps}) (modLt y mid {pow_not_zero_cv deps})})
     else if x < mid
-      then (lensC ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps)
-      else (lensD ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps)
+      then (lensC ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps {andCombine (modLt x mid {pow_not_zero_cv deps}) (modLt y mid {pow_not_zero_cv deps})})
+      else (lensD ∘ go {t} (mod x mid {pow_not_zero_cv deps} , mod y mid {pow_not_zero_cv deps}) deps {andCombine (modLt x mid {pow_not_zero_cv deps}) (modLt y mid {pow_not_zero_cv deps})})
   where
     mid = pow 2 deps
 {-# COMPILE AGDA2HS go #-}
@@ -315,9 +316,9 @@ lensWrappedTree fun (CVQuadTree (Wrapper (w , h) qd) {p} {q}) =
 -- Lens into the leaf quadrant corresponding to a location in a quadtree
 atLocation : {t : Set} {{eqT : Eq t}}
   -> (loc : Nat × Nat) -> (dep : Nat)
-  -> {IsTrue (isInsidePow loc dep)}
+  -> {.(IsTrue (isInsidePow loc dep))}
   -> Lens (VQuadTree t {dep}) t
-atLocation index dep = lensWrappedTree ∘ (go index dep)
+atLocation index dep {p} = lensWrappedTree ∘ (go index dep {p})
 {-# COMPILE AGDA2HS atLocation #-}
 
 ---- Safe functions
