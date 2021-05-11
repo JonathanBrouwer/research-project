@@ -29,7 +29,12 @@ library
       Data.Logic
       Data.Nat
       Data.QuadTree
-      Data.QuadTree.InternalAgda
+      Data.QuadTree.Implementation.DataLenses
+      Data.QuadTree.Implementation.Definition
+      Data.QuadTree.Implementation.PublicFunctions
+      Data.QuadTree.Implementation.QuadrantLenses
+      Data.QuadTree.Implementation.SafeFunctions
+      Data.QuadTree.Implementation.ValidTypes
   other-modules:
       Paths_research_project
   hs-source-dirs:

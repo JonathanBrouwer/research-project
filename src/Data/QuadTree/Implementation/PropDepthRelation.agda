@@ -1,4 +1,4 @@
-module Data.QuadTree.PropDepthRelation where
+module Data.QuadTree.Implementation.PropDepthRelation where
 
 open import Haskell.Prelude
 open import Data.Logic

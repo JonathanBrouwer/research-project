@@ -14,4 +14,9 @@ module Data.QuadTree (
   getLocation, setLocation, mapLocation
   ) where
 
-import Data.QuadTree.InternalAgda
+import Data.QuadTree.Implementation.Definition
+import Data.QuadTree.Implementation.ValidTypes
+import Data.QuadTree.Implementation.QuadrantLenses
+import Data.QuadTree.Implementation.DataLenses
+import Data.QuadTree.Implementation.SafeFunctions
+import Data.QuadTree.Implementation.PublicFunctions
