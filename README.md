@@ -1,5 +1,8 @@
 # A practical verification of QuadTree
 
+## What is this?
+//TODO add abstract + link to research paper here
+
 ## How to install and run
 - Make sure Haskell and Agda are installed via Stack
 - Download and install my fork of agda2hs, available at https://github.com/JonathanBrouwer/agda2hs (This adds a fix for Nats and for instance arguments)
