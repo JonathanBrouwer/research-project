@@ -1,0 +1,7 @@
+# src/Data/QuadTree/Implementation
+- [Definition.agda](https://github.com/JonathanBrouwer/research-project/tree/master/src/Data/QuadTree/Implementation/Definition.agda) - Defines Quadrant, and QuadTree
+- [ValidTypes.agda](https://github.com/JonathanBrouwer/research-project/tree/master/src/Data/QuadTree/Implementation/ValidTypes.agda) - Defines VQuadrant, and VQuadTree, which are the types with invariant proofs attached.
+- [QuadrantLenses.agda](https://github.com/JonathanBrouwer/research-project/tree/master/src/Data/QuadTree/Implementation/QuadrantLenses.agda) - Defines lensLeaf, and lensA/B/C/D, which are the lenses that act upon Quadrants.
+- [DataLenses.agda](https://github.com/JonathanBrouwer/research-project/tree/master/src/Data/QuadTree/Implementation/DataLenses.agda) - Defines lensWrappedTree, go, and atLocation, which are the lenses that act upon QuadTrees.
+- [SafeFunctions.agda](https://github.com/JonathanBrouwer/research-project/tree/master/src/Data/QuadTree/Implementation/SafeFunctions.agda) - Defines safe versions of makeTree, getLocation, and mapLocation, which are the versions which act upon VQuadTree.
+- [PublicFunctions.agda](https://github.com/JonathanBrouwer/research-project/tree/master/src/Data/QuadTree/Implementation/PublicFunctions.agda) - Defines public versions of makeTree, getLocation, and mapLocation, which are the versions which act upon QuadTree.
