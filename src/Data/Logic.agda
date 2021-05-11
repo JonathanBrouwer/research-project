@@ -494,11 +494,6 @@ postulate
 botToAny : {t : Set} -> ⊥ -> t
 botToAny ()
 
-impossible : {t : Set} -> t
-impossible = botToAny bot where
-  postulate bot : ⊥
-{-# FOREIGN AGDA2HS impossible = error "Impossible" #-}
-
 max4 : (a b c d : Nat) -> Nat
 max4 a b c d = max (max a b) (max c d)
 {-# COMPILE AGDA2HS max4 #-}
