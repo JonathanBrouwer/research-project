@@ -3,17 +3,18 @@ module Data.QuadTree.LensProofs.Valid-LensLeaf where
 open import Haskell.Prelude renaming (zero to Z; suc to S)
 open import Data.Lens.Lens
 open import Data.Logic
-open import Data.QuadTree.InternalAgda
 open import Agda.Primitive
 open import Data.Lens.Proofs.LensLaws
 open import Data.Lens.Proofs.LensPostulates
 open import Data.Lens.Proofs.LensComposition
+open import Data.QuadTree.InternalAgda
+open import Data.QuadTree.Implementation.QuadrantLenses
+open import Data.QuadTree.Implementation.Definition
+open import Data.QuadTree.Implementation.ValidTypes
 
 --- Lens laws for lensLeaf
 
-ValidLens-Leaf-ViewSet : 
-    {t : Set} {{eqT : Eq t}}
-    -> ViewSet (lensLeaf {t})
+ValidLens-Leaf-ViewSet : {t : Set} {{eqT : Eq t}} -> ViewSet (lensLeaf {t})
 ValidLens-Leaf-ViewSet v (CVQuadrant (Leaf x)) = refl
 
 ValidLens-Leaf-SetView : 

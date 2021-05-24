@@ -15,8 +15,6 @@ log2up Z = 0
 log2up (S Z) = 0
 log2up (S (S x)) = S (log2up (div (S (S (S x))) 2))
 
-impossible = error "Impossible"
-
 max4 :: Nat -> Nat -> Nat -> Nat -> Nat
 max4 a b c d = max (max a b) (max c d)
 

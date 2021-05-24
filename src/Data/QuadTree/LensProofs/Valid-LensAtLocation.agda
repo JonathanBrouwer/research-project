@@ -14,6 +14,12 @@ open import Data.QuadTree.LensProofs.Valid-LensWrappedTree
 open import Data.QuadTree.LensProofs.Valid-LensA
 open import Data.QuadTree.LensProofs.Valid-LensBCD
 open import Data.QuadTree.LensProofs.Valid-LensGo
+open import Data.QuadTree.Implementation.QuadrantLenses
+open import Data.QuadTree.Implementation.Definition
+open import Data.QuadTree.Implementation.ValidTypes
+open import Data.QuadTree.Implementation.SafeFunctions
+open import Data.QuadTree.Implementation.PublicFunctions
+open import Data.QuadTree.Implementation.DataLenses
 
 
 ---- Lens laws for go
@@ -44,6 +50,3 @@ ValidLens-AtLocation : {t : Set} {{eqT : Eq t}}
     -> {ins : IsTrue (isInsidePow loc dep)}
     -> ValidLens (VQuadTree t {dep}) t
 ValidLens-AtLocation {t} {{eqT}} (x , y) dep {ins} = CValidLens (atLocation (x , y) dep {ins}) (ValidLens-AtLocation-ViewSet (x , y) dep {ins}) (ValidLens-AtLocation-SetView (x , y) dep {ins}) (ValidLens-AtLocation-SetSet (x , y) dep {ins})
-
-test : {.(a : Bool)} -> Bool
-test = true

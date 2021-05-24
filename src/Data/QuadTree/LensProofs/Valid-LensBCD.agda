@@ -8,6 +8,12 @@ open import Agda.Primitive
 open import Data.Lens.Proofs.LensLaws
 open import Data.Lens.Proofs.LensPostulates
 open import Data.Lens.Proofs.LensComposition
+open import Data.QuadTree.Implementation.QuadrantLenses
+open import Data.QuadTree.Implementation.Definition
+open import Data.QuadTree.Implementation.ValidTypes
+open import Data.QuadTree.Implementation.SafeFunctions
+open import Data.QuadTree.Implementation.PublicFunctions
+open import Data.QuadTree.Implementation.DataLenses
 
 -- The lens laws have been proven for LensA, and the proof is quite long.
 -- The implementation of lens b/c/d is basically identical, so I won't bother to proof them for now

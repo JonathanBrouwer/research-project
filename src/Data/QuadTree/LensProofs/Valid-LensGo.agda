@@ -13,6 +13,12 @@ open import Data.QuadTree.LensProofs.Valid-LensLeaf
 open import Data.QuadTree.LensProofs.Valid-LensA
 open import Data.QuadTree.LensProofs.Valid-LensBCD
 open import Axiom.Extensionality.Propositional
+open import Data.QuadTree.Implementation.QuadrantLenses
+open import Data.QuadTree.Implementation.Definition
+open import Data.QuadTree.Implementation.ValidTypes
+open import Data.QuadTree.Implementation.SafeFunctions
+open import Data.QuadTree.Implementation.PublicFunctions
+open import Data.QuadTree.Implementation.DataLenses
 
 {-
 I spend close to 50 hours on this file, at the time of writing more than the rest of the lens proofs combined.
