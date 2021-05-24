@@ -7,6 +7,8 @@ open import Data.QuadTree.InternalAgda
 open import Agda.Primitive
 open import Data.QuadTree.FunctorProofs.FunctorLaws
 open import Data.QuadTree.FunctorProofs.Valid-QuadrantFunctor
+open import Data.QuadTree.Implementation.Definition
+open import Data.QuadTree.Implementation.Functors
 
 ValidFunctor-QuadTree-IdentityLaw : 
     IdentityLaw QuadTree
