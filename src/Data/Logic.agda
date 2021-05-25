@@ -264,6 +264,18 @@ zeroLteAny : (a : Nat) -> IsTrue (0 <= a)
 zeroLteAny Z = IsTrue.itsTrue
 zeroLteAny (S a) = IsTrue.itsTrue
 
+lteSum : (a b s : Nat) -> (a <= b) ≡ (s + a <= s + b)
+lteSum a b Z = refl
+lteSum a b (S s) = lteSum a b s
+
+lteSumOne : (a b s : Nat) -> IsTrue (a <= b) -> IsTrue (a <= s + b)
+lteSumOne a b Z ab = ab
+lteSumOne Z b (S n) ab = IsTrue.itsTrue
+lteSumOne (S Z) Z (S Z) ab = IsTrue.itsTrue
+lteSumOne (S (S n)) Z (S Z) ab = ab
+lteSumOne (S n₁) (S n) (S Z) ab = lteSumOne n₁ n 1 ab
+lteSumOne (S n₁) b (S (S n)) ab = lteSumOne n₁ (n + b) 1 (lteSumOne (S n₁) b (S n) ab)
+
 anyGteZero : (a : Nat) -> IsTrue (a >= 0)
 anyGteZero Z = IsTrue.itsTrue
 anyGteZero (S a) = IsTrue.itsTrue
@@ -497,3 +509,7 @@ botToAny ()
 max4 : (a b c d : Nat) -> Nat
 max4 a b c d = max (max a b) (max c d)
 {-# COMPILE AGDA2HS max4 #-}
+
+sub : (a b : Nat) -> {{ .( IsTrue (b <= a) ) }} -> Nat
+sub a Z {{ab}} = a
+sub (S a) (S b) {{ab}} = sub a b 

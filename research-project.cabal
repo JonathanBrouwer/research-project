@@ -31,6 +31,7 @@ library
       Data.QuadTree
       Data.QuadTree.Implementation.DataLenses
       Data.QuadTree.Implementation.Definition
+      Data.QuadTree.Implementation.Folding
       Data.QuadTree.Implementation.Functors
       Data.QuadTree.Implementation.PublicFunctions
       Data.QuadTree.Implementation.QuadrantLenses
