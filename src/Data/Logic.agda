@@ -513,3 +513,9 @@ max4 a b c d = max (max a b) (max c d)
 sub : (a b : Nat) -> {{ .( IsTrue (b <= a) ) }} -> Nat
 sub a Z {{ab}} = a
 sub (S a) (S b) {{ab}} = sub a b 
+
+diff : (a b : Nat) -> Nat
+diff Z Z = Z
+diff a Z = a
+diff Z b = b
+diff (S a) (S b) = diff a b 
