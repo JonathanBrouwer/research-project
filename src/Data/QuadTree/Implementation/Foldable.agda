@@ -22,8 +22,11 @@ import Data.QuadTree.Implementation.QuadrantLenses
 
 record FoldableEq (t : (y : Set) -> {{ eqT : Eq y }} -> Set) : Set₁ where
   field
-    foldEqMap : {a b : Set} -> {{ eqA : Eq a }} {{ eqB : Eq b }} 
+    foldMapₑ : {a b : Set} -> {{ eqA : Eq a }} {{ eqB : Eq b }} 
         -> {{ monB : Monoid b }} → (a → b) → t a → b
+
+  lengthₑ : {{eqA : Eq a}} -> t a → Nat
+  lengthₑ = foldMapₑ ⦃ monB = MonoidSum ⦄ (const 1)
 
 open FoldableEq public
 {-# COMPILE AGDA2HS FoldableEq class #-}
@@ -74,5 +77,5 @@ expand (TileC v (RegionC (lx , ly) (ux , uy))) =
 
 instance
   quadtreeFoldable : {dep : Nat} -> FoldableEq (λ y -> VQuadTree y {dep})
-  quadtreeFoldable {dep} .foldEqMap f t = foldMap f $ concat $ map expand (tilesQt t)
+  quadtreeFoldable {dep} .foldMapₑ f t = foldMap f $ concat $ map expand (tilesQt t)
 {-# COMPILE AGDA2HS quadtreeFoldable #-}
