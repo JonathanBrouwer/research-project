@@ -1,4 +1,4 @@
-module Data.QuadTree.Implementation.Folding where
+module Data.QuadTree.Implementation.Foldable where
 
 open import Haskell.Prelude renaming (zero to Z; suc to S)
 open import Data.Logic
@@ -22,7 +22,9 @@ import Data.QuadTree.Implementation.QuadrantLenses
 
 record FoldableEq (t : (y : Set) -> {{ eqT : Eq y }} -> Set) : Set₁ where
   field
-    foldEqMap : {a b : Set} -> {{ eqA : Eq a }} {{ eqB : Eq b }} {{ monB : Monoid b }} → (a → b) → t a → b
+    foldEqMap : {a b : Set} -> {{ eqA : Eq a }} {{ eqB : Eq b }} 
+        -> {{ monB : Monoid b }} → (a → b) → t a → b
+
 open FoldableEq public
 {-# COMPILE AGDA2HS FoldableEq class #-}
 
