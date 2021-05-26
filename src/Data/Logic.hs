@@ -18,3 +18,13 @@ log2up (S (S x)) = S (log2up (div (S (S (S x))) 2))
 max4 :: Nat -> Nat -> Nat -> Nat -> Nat
 max4 a b c d = max (max a b) (max c d)
 
+sub :: Nat -> Nat -> Nat
+sub a Z = a
+sub (S a) (S b) = sub a b
+sub Z (S b) = error "sub: impossible"
+
+diff :: Nat -> Nat -> Nat
+diff a Z = a
+diff Z b = b
+diff (S a) (S b) = diff a b
+

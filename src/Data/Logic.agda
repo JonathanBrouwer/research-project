@@ -513,8 +513,10 @@ max4 a b c d = max (max a b) (max c d)
 sub : (a b : Nat) -> {{ .( IsTrue (b <= a) ) }} -> Nat
 sub a Z {{ab}} = a
 sub (S a) (S b) {{ab}} = sub a b 
+{-# COMPILE AGDA2HS sub #-}
 
 diff : (a b : Nat) -> Nat
 diff a Z = a
 diff Z b = b
 diff (S a) (S b) = diff a b 
+{-# COMPILE AGDA2HS diff #-}
