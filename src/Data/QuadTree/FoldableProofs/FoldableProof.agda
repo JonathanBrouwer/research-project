@@ -151,9 +151,33 @@ line-split-left Z (S xm) (S x2) y x1m xm2 x12 =
     end
 line-split-left (S x1) (S xm) (S x2) y x1m xm2 x12 = line-split-left x1 xm x2 y x1m xm2 x12    
 
+line-split-right : (x1 xm x2 y : Nat) -> IsTrue (x1 <= xm) -> IsTrue (xm <= x2) -> IsTrue (x1 <= x2)
+    -> y * diff xm x1 + y * diff x2 xm ≡ y * diff x2 x1
+line-split-right x1 xm x2 y x1m xm2 x12 =
+    begin
+        y * diff xm x1 + y * diff x2 xm
+    =⟨ cong2 _+_ (mul-comm y (diff xm x1)) (mul-comm y (diff x2 xm)) ⟩
+        diff xm x1 * y + diff x2 xm * y
+    =⟨ line-split-left x1 xm x2 y x1m xm2 x12 ⟩
+        diff x2 x1 * y
+    =⟨ mul-comm (diff x2 x1) y ⟩
+        y * diff x2 x1
+    end
+
 square-split : (x1 y1 xm ym x2 y2 : Nat) -> IsTrue (x1 <= xm) -> IsTrue (xm <= x2) -> IsTrue (y1 <= ym) -> IsTrue (ym <= y2)
     -> diff xm x1 * diff ym y1 + diff x2 xm * diff ym y1 + diff xm x1 * diff y2 ym + diff x2 xm * diff y2 ym ≡ diff x2 x1 * diff y2 y1
-square-split x1 y1 xm ym x2 y2 x1m xm2 y1m ym2 = {!   !}
+square-split x1 y1 xm ym x2 y2 x1m xm2 y1m ym2 =
+    begin
+        diff xm x1 * diff ym y1 + diff x2 xm * diff ym y1 + diff xm x1 * diff y2 ym + diff x2 xm * diff y2 ym
+    =⟨ add-assoc ((diff xm x1 * diff ym y1) + (diff x2 xm * diff ym y1)) (diff xm x1 * diff y2 ym) (diff x2 xm * diff y2 ym) ⟩
+        (diff xm x1 * diff ym y1 + diff x2 xm * diff ym y1) + (diff xm x1 * diff y2 ym + diff x2 xm * diff y2 ym)
+    =⟨ cong2 _+_ 
+        (line-split-left x1 xm x2 (diff ym y1) x1m xm2 (lteTransitive x1 xm x2 x1m xm2)) 
+        (line-split-left x1 xm x2 (diff y2 ym) x1m xm2 (lteTransitive x1 xm x2 x1m xm2)) ⟩
+        (diff x2 x1 * diff ym y1) + (diff x2 x1 * diff y2 ym)
+    =⟨ line-split-right y1 ym y2 (diff x2 x1) y1m ym2 (lteTransitive y1 ym y2 y1m ym2) ⟩
+        diff x2 x1 * diff y2 y1
+    end
 
 length-tilesQd : {t : Set} {{eqT : Eq t}} {dep : Nat} -> (vqd : VQuadrant t {dep})
     -> (x1 y1 x2 y2 : Nat) -> IsTrue (x1 <= x2) -> IsTrue (y1 <= y2)
