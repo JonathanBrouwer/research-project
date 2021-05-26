@@ -195,7 +195,18 @@ min-rel-1 : (x1 mid x2 : Nat) -> IsTrue (x1 <= x2) -> IsTrue (x1 <= min x2 (mid 
 min-rel-1 x1 mid x2 x12 = min-comb x1 x2 (mid + x1) x12 (lteSumOne x1 x1 mid (lteSelf x1))
 
 min-rel-2 : (a b : Nat) -> IsTrue (min a b <= a)
-min-rel-2 a b = {!   !}
+min-rel-2 a b = useEq (sym $
+    begin
+        min a b <= a
+    =⟨ sym (propFnIf (λ z → (z <= a))) ⟩ 
+        (if b < a then b <= a else a <= a)
+    =⟨ ifTrueMap {c = b < a} (λ c -> isTrueToEquiv (orFst c)) ⟩
+        (if b < a then true else a <= a)
+    =⟨ cong (if_then_else_ (b < a) true) (isTrueToEquiv (lteSelf a)) ⟩
+        (if b < a then true else true)
+    =⟨ propIfBranchesSame true ⟩
+        true
+    end) IsTrue.itsTrue
 
 length-tilesQd : {t : Set} {{eqT : Eq t}} {dep : Nat} -> (vqd : VQuadrant t {dep})
     -> (x1 y1 x2 y2 : Nat) -> IsTrue (x1 <= x2) -> IsTrue (y1 <= y2)
@@ -221,7 +232,11 @@ length-tilesQd {dep = S dep} (CVQuadrant (Node a b c d) {p}) x1 y1 x2 y2 xp yp =
         sum (map lengthₙ (map expand ca) ++ map lengthₙ (map expand cb) ++ map lengthₙ (map expand cc) ++ map lengthₙ (map expand cd))
     =⟨ sum-concat4 (map lengthₙ (map expand ca)) (map lengthₙ (map expand cb)) (map lengthₙ (map expand cc)) (map lengthₙ (map expand cd)) ⟩
         sum (map lengthₙ (map expand ca)) + sum (map lengthₙ (map expand cb)) + sum (map lengthₙ (map expand cc)) + sum (map lengthₙ (map expand cd))
-    =⟨ {!   !} ⟩
+    =⟨ cong4 (λ a b c d -> a + b + c + d) 
+        (length-tilesQd (CVQuadrant a) x1 y1 (min x2 (mid + x1)) (min y2 (mid + y1)) (min-rel-1 x1 mid x2 xp) (min-rel-1 y1 mid y2 yp)) 
+        (length-tilesQd (CVQuadrant b) (min x2 (mid + x1)) y1 x2 (min y2 (mid + y1)) (min-rel-2 x2 (mid + x1)) (min-rel-1 y1 mid y2 yp)) 
+        (length-tilesQd (CVQuadrant c) x1 (min y2 (mid + y1)) (min x2 (mid + x1)) y2 (min-rel-1 x1 mid x2 xp) (min-rel-2 y2 (mid + y1))) 
+        (length-tilesQd (CVQuadrant d) (min x2 (mid + x1)) (min y2 (mid + y1)) x2 y2 (min-rel-2 x2 (mid + x1)) (min-rel-2 y2 (mid + y1))) ⟩
           diff (min x2 (mid + x1)) x1 * diff (min y2 (mid + y1)) y1 
         + diff x2 (min x2 (mid + x1)) * diff (min y2 (mid + y1)) y1  
         + diff (min x2 (mid + x1)) x1 * diff y2 (min y2 (mid + y1))

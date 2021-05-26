@@ -108,6 +108,9 @@ andRefl false true = refl
 andRefl true false = refl
 andRefl true true = refl
 
+orFst : {a b : Bool} -> IsTrue a -> IsTrue (a || b)
+orFst {true} {b} ap = IsTrue.itsTrue
+
 andFst : {a b : Bool} -> IsTrue (a && b) -> IsTrue a
 andFst {true} {true} ab = IsTrue.itsTrue
 
