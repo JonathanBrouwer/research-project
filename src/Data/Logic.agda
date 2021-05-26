@@ -14,6 +14,9 @@ import Data.Nat
 useEq : {x y : Bool} -> x ≡ y -> .(IsTrue x) -> IsTrue y
 useEq {true} {true} eq is = IsTrue.itsTrue
 
+isTrueToEquiv : {c : Bool} -> IsTrue c -> c ≡ true
+isTrueToEquiv {true} p = refl
+
 -- symmetry of equality
 sym : {u : Level} {A : Set u} {x y : A} → x ≡ y → y ≡ x
 sym refl = refl

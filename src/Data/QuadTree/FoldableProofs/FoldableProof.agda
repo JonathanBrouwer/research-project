@@ -179,6 +179,24 @@ square-split x1 y1 xm ym x2 y2 x1m xm2 y1m ym2 =
         diff x2 x1 * diff y2 y1
     end
 
+min-comb : (a b c : Nat) -> IsTrue (a <= b) -> IsTrue (a <= c) -> IsTrue (a <= min b c)
+min-comb a b c ab ac = useEq (sym $
+    begin
+        a <= min b c
+    =⟨ sym $ propFnIf {c = c < b} (_<=_ a) ⟩
+        (if _ then a <= c else a <= b)
+    =⟨ cong2 (if_then_else_ _) (isTrueToEquiv ac) (isTrueToEquiv ab)  ⟩
+        (if _ then true else true)
+    =⟨ propIfBranchesSame true ⟩
+        true
+    end) IsTrue.itsTrue
+
+min-rel-1 : (x1 mid x2 : Nat) -> IsTrue (x1 <= x2) -> IsTrue (x1 <= min x2 (mid + x1))
+min-rel-1 x1 mid x2 x12 = min-comb x1 x2 (mid + x1) x12 (lteSumOne x1 x1 mid (lteSelf x1))
+
+min-rel-2 : (a b : Nat) -> IsTrue (min a b <= a)
+min-rel-2 a b = {!   !}
+
 length-tilesQd : {t : Set} {{eqT : Eq t}} {dep : Nat} -> (vqd : VQuadrant t {dep})
     -> (x1 y1 x2 y2 : Nat) -> IsTrue (x1 <= x2) -> IsTrue (y1 <= y2)
     -> sum (map lengthₙ (map expand (tilesQd dep vqd (RegionC (x1 , y1) (x2 , y2))))) ≡ diff x2 x1 * diff y2 y1
@@ -208,7 +226,7 @@ length-tilesQd {dep = S dep} (CVQuadrant (Node a b c d) {p}) x1 y1 x2 y2 xp yp =
         + diff x2 (min x2 (mid + x1)) * diff (min y2 (mid + y1)) y1  
         + diff (min x2 (mid + x1)) x1 * diff y2 (min y2 (mid + y1))
         + diff x2 (min x2 (mid + x1)) * diff y2 (min y2 (mid + y1))
-    =⟨ {!   !} ⟩
+    =⟨ square-split x1 y1 (min x2 (mid + x1)) (min y2 (mid + y1)) x2 y2 (min-rel-1 x1 mid x2 xp) (min-rel-2 x2 (mid + x1)) (min-rel-1 y1 mid y2 yp) (min-rel-2 y2 (mid + y1)) ⟩
         diff x2 x1 * diff y2 y1
     end where
         mid = pow 2 dep
