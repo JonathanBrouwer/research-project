@@ -119,10 +119,46 @@ sum-concat4 a b c d =
         sum a + sum b + sum c + sum d
     end
 
+nat-distributive : (a b c : Nat) -> (a * c) + (b * c) ≡ (a + b) * c
+nat-distributive Z b c = refl
+nat-distributive (S a) b c =
+    begin
+        (S a * c) + (b * c)
+    =⟨ add-assoc c (a * c) (b * c) ⟩
+        c + ((a * c) + b * c)
+    =⟨ cong (_+_ c) (nat-distributive a b c) ⟩
+        c + ((a + b) * c)
+    =⟨⟩
+        (S a + b) * c
+    end
+
+add-diff : (a b : Nat) -> IsTrue (a <= b) -> a + diff b a ≡ b
+add-diff Z Z ab = refl
+add-diff Z (S b) ab = refl
+add-diff (S a) (S b) ab = cong S (add-diff a b ab)
+
+line-split-left : (x1 xm x2 y : Nat) -> IsTrue (x1 <= xm) -> IsTrue (xm <= x2) -> IsTrue (x1 <= x2)
+    -> diff xm x1 * y + diff x2 xm * y ≡ diff x2 x1 * y
+line-split-left Z Z Z y x1m xm2 x12 = refl
+line-split-left Z Z (S x2) y x1m xm2 x12 = refl
+line-split-left Z (S xm) (S x2) y x1m xm2 x12 =
+    begin
+        (S xm) * y + diff (S x2) (S xm) * y
+    =⟨ nat-distributive (S xm) (diff (S x2) (S xm)) y ⟩
+        ((S xm) + diff (S x2) (S xm)) * y
+    =⟨ cong (λ z → y + (z * y)) (add-diff xm x2 xm2) ⟩
+        (S x2) * y
+    end
+line-split-left (S x1) (S xm) (S x2) y x1m xm2 x12 = line-split-left x1 xm x2 y x1m xm2 x12    
+
+square-split : (x1 y1 xm ym x2 y2 : Nat) -> IsTrue (x1 <= xm) -> IsTrue (xm <= x2) -> IsTrue (y1 <= ym) -> IsTrue (ym <= y2)
+    -> diff xm x1 * diff ym y1 + diff x2 xm * diff ym y1 + diff xm x1 * diff y2 ym + diff x2 xm * diff y2 ym ≡ diff x2 x1 * diff y2 y1
+square-split x1 y1 xm ym x2 y2 x1m xm2 y1m ym2 = {!   !}
+
 length-tilesQd : {t : Set} {{eqT : Eq t}} {dep : Nat} -> (vqd : VQuadrant t {dep})
-    -> (x1 y1 x2 y2 : Nat)
+    -> (x1 y1 x2 y2 : Nat) -> IsTrue (x1 <= x2) -> IsTrue (y1 <= y2)
     -> sum (map lengthₙ (map expand (tilesQd dep vqd (RegionC (x1 , y1) (x2 , y2))))) ≡ diff x2 x1 * diff y2 y1
-length-tilesQd {t} {dep = dep} (CVQuadrant (Leaf v) {p}) x1 y1 x2 y2 =
+length-tilesQd {t} {dep = dep} (CVQuadrant (Leaf v) {p}) x1 y1 x2 y2 _ _ =
     begin
         sum (map lengthₙ (map expand (tilesQd dep (CVQuadrant (Leaf v) {p}) (RegionC (x1 , y1) (x2 , y2)))))
     =⟨⟩
@@ -132,51 +168,30 @@ length-tilesQd {t} {dep = dep} (CVQuadrant (Leaf v) {p}) x1 y1 x2 y2 =
     =⟨ length-replicateₙ (diff x2 x1 * diff y2 y1) v ⟩
         diff x2 x1 * diff y2 y1
     end
-length-tilesQd {dep = S dep} (CVQuadrant (Node a b c d) {p}) x1 y1 x2 y2 =
+length-tilesQd {dep = S dep} (CVQuadrant (Node a b c d) {p}) x1 y1 x2 y2 xp yp =
     begin
         sum (map lengthₙ (map expand (tilesQd (S dep) (CVQuadrant (Node a b c d) {p}) (RegionC (x1 , y1) (x2 , y2)))))
     =⟨⟩
-        sum (map lengthₙ (map expand (
-            ca ++ cb ++ cc ++ cd
-        )))
-    -- =⟨ cong (λ q -> sum (map lengthₙ q)) (map-concat4 
-    --     (tilesQd dep (CVQuadrant a) _) (tilesQd dep (CVQuadrant b) _) (tilesQd dep (CVQuadrant c) _) (tilesQd dep (CVQuadrant d) _) expand) ⟩
-    --     sum (map lengthₙ (
-    --          map expand (tilesQd dep (CVQuadrant a) (RegionC (x1 , y1) (mid + x1 , mid + y1)))
-    --         ++ map expand (tilesQd dep (CVQuadrant b) (RegionC ((mid + x1) , y1) ((mid + (mid + x1)) , (mid + y1))))
-    --         ++ map expand (tilesQd dep (CVQuadrant c) (RegionC (x1 , (mid + y1)) ((mid + x1) , (mid + (mid + y1)))))
-    --         ++ map expand (tilesQd dep (CVQuadrant d) (RegionC ((mid + x1) , (mid + y1)) ((mid + (mid + x1)) , (mid + (mid + y1)))))
-    --     ))
-    -- =⟨ cong sum (map-concat4 
-    --     (map expand (tilesQd dep (CVQuadrant a) _)) (map expand (tilesQd dep (CVQuadrant b) _)) (map expand (tilesQd dep (CVQuadrant c) _)) (map expand (tilesQd dep (CVQuadrant d) _)) lengthₙ) ⟩
-    --     sum (
-    --         map lengthₙ (map expand (tilesQd dep (CVQuadrant a) (RegionC (x1 , y1) (mid + x1 , mid + y1))))
-    --         ++ map lengthₙ (map expand (tilesQd dep (CVQuadrant b) (RegionC ((mid + x1) , y1) ((mid + (mid + x1)) , (mid + y1)))))
-    --         ++ map lengthₙ (map expand (tilesQd dep (CVQuadrant c) (RegionC (x1 , (mid + y1)) ((mid + x1) , (mid + (mid + y1))))))
-    --         ++ map lengthₙ (map expand (tilesQd dep (CVQuadrant d) (RegionC ((mid + x1) , (mid + y1)) ((mid + (mid + x1)) , (mid + (mid + y1))))))
-    --     )
-    -- =⟨ sum-concat4 
-    --     (map lengthₙ (map expand (tilesQd dep (CVQuadrant a) _))) 
-    --     (map lengthₙ (map expand (tilesQd dep (CVQuadrant b) _))) 
-    --     (map lengthₙ (map expand (tilesQd dep (CVQuadrant c) _))) 
-    --     (map lengthₙ (map expand (tilesQd dep (CVQuadrant d) _))) ⟩
-
-    --     sum (map lengthₙ (map expand (tilesQd dep (CVQuadrant a) (RegionC (x1 , y1) (mid + x1 , mid + y1)))))
-    --     + sum (map lengthₙ (map expand (tilesQd dep (CVQuadrant b) (RegionC ((mid + x1) , y1) ((mid + (mid + x1)) , (mid + y1))))))
-    --     + sum (map lengthₙ (map expand (tilesQd dep (CVQuadrant c) (RegionC (x1 , (mid + y1)) ((mid + x1) , (mid + (mid + y1)))))))
-    --     + sum (map lengthₙ (map expand (tilesQd dep (CVQuadrant d) (RegionC ((mid + x1) , (mid + y1)) ((mid + (mid + x1)) , (mid + (mid + y1)))))))
-    -- =⟨ {!   !} ⟩
-    --     diff (mid + x1) x1 * diff (mid + y1) y1
-    --     + diff (mid + (mid + x1)) (mid + x1) * diff (mid + y1) y1
-    --     + 
+        sum (map lengthₙ (map expand (ca ++ cb ++ cc ++ cd)))
+    =⟨ cong (λ q -> sum (map lengthₙ q)) (map-concat4 ca cb cc cd expand) ⟩
+        sum (map lengthₙ (map expand ca  ++ map expand cb ++ map expand cc ++ map expand cd))
+    =⟨ cong sum (map-concat4 (map expand ca) (map expand cb) (map expand cc) (map expand cd) lengthₙ) ⟩
+        sum (map lengthₙ (map expand ca) ++ map lengthₙ (map expand cb) ++ map lengthₙ (map expand cc) ++ map lengthₙ (map expand cd))
+    =⟨ sum-concat4 (map lengthₙ (map expand ca)) (map lengthₙ (map expand cb)) (map lengthₙ (map expand cc)) (map lengthₙ (map expand cd)) ⟩
+        sum (map lengthₙ (map expand ca)) + sum (map lengthₙ (map expand cb)) + sum (map lengthₙ (map expand cc)) + sum (map lengthₙ (map expand cd))
+    =⟨ {!   !} ⟩
+          diff (min x2 (mid + x1)) x1 * diff (min y2 (mid + y1)) y1 
+        + diff x2 (min x2 (mid + x1)) * diff (min y2 (mid + y1)) y1  
+        + diff (min x2 (mid + x1)) x1 * diff y2 (min y2 (mid + y1))
+        + diff x2 (min x2 (mid + x1)) * diff y2 (min y2 (mid + y1))
     =⟨ {!   !} ⟩
         diff x2 x1 * diff y2 y1
     end where
         mid = pow 2 dep
-        ca = tilesQd dep (CVQuadrant a) (RegionC (x1 , y1) (mid + x1 , mid + y1))
-        cb = tilesQd dep (CVQuadrant b) (RegionC ((mid + x1) , y1) ((diff mid x2) + (mid + x1) , mid + y1) )
-        cc = tilesQd dep (CVQuadrant c) (RegionC (x1 , mid + y1) (mid + x1 , (diff mid y2) + (mid + y1)) )
-        cd = tilesQd dep (CVQuadrant d) (RegionC (mid + x1 , mid + y1) ((diff mid x2) + (mid + x1) , (diff mid y2) + (mid + y1)) )
+        ca = tilesQd dep (CVQuadrant a) (RegionC (x1 , y1) (min x2 (mid + x1) , min y2 (mid + y1)) )
+        cb = tilesQd dep (CVQuadrant b) (RegionC (min x2 (mid + x1) , y1) (x2 , min y2 (mid + y1)) )
+        cc = tilesQd dep (CVQuadrant c) (RegionC (x1 , min y2 (mid + y1)) (min x2 (mid + x1) , y2) )
+        cd = tilesQd dep (CVQuadrant d) (RegionC (min x2 (mid + x1) , min y2 (mid + y1)) (x2 , y2) )
 
 proof-length : {t : Set} {{eqT : Eq t}} {dep : Nat} -> (vqt : VQuadTree t {dep}) -> lengthₑ (quadtreeFoldable dep) vqt ≡ size vqt
 proof-length {t} ⦃ eqT ⦄ {dep} vqt@(CVQuadTree (Wrapper (w , h) qd) {p1} {p2}) =
@@ -186,6 +201,6 @@ proof-length {t} ⦃ eqT ⦄ {dep} vqt@(CVQuadTree (Wrapper (w , h) qd) {p1} {p2
         lengthₙ (concat (map expand (tilesQd dep (CVQuadrant qd {p1}) (RegionC (0 , 0) (w , h)))))
     =⟨ length-concat (map expand (tilesQd dep (CVQuadrant qd {p1}) (RegionC (0 , 0) (w , h)))) ⟩
         sum (map lengthₙ (map expand (tilesQd dep (CVQuadrant qd {p1}) (RegionC (0 , 0) (w , h)))))
-    =⟨ length-tilesQd {dep = dep} (CVQuadrant qd {p1}) 0 0 w h ⟩
+    =⟨ length-tilesQd {dep = dep} (CVQuadrant qd {p1}) 0 0 w h (zeroLteAny w) (zeroLteAny h) ⟩
         w * h
     end

@@ -26,6 +26,12 @@ trans refl refl = refl
 cong : {u v : Level} {A : Set u} {B : Set v} {x y : A} → (f : A → B) → x ≡ y → f x ≡ f y
 cong f refl = refl
 
+cong2 : {A B T : Set} {a1 a2 : A} {b1 b2 : B} → (f : A → B -> T) → a1 ≡ a2 -> b1 ≡ b2 → f a1 b1 ≡ f a2 b2
+cong2 f refl refl = refl
+
+cong4 : {A B C D T : Set} {a1 a2 : A} {b1 b2 : B} {c1 c2 : C} {d1 d2 : D} → (f : A → B -> C -> D -> T) → a1 ≡ a2 -> b1 ≡ b2 → c1 ≡ c2 -> d1 ≡ d2 -> f a1 b1 c1 d1 ≡ f a2 b2 c2 d2
+cong4 f refl refl refl refl = refl
+
 begin_ : {u : Level} {A : Set u} → {x y : A} → x ≡ y → x ≡ y
 begin p = p
 

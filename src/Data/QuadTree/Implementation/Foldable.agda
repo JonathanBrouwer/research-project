@@ -43,21 +43,25 @@ tilesQd : {t : Set} {{eqT : Eq t}} (dep : Nat) -> VQuadrant t {dep}
     -> (reg : Region)
     -> List (Tile t)
 tilesQd dep (CVQuadrant (Leaf v)) reg = TileC v reg ∷ []
-tilesQd {t} (dep @ (S deps)) (CVQuadrant (Node a b c d) {p}) reg@(RegionC (xl , yl) (xh , yh)) =
+tilesQd {t} (dep @ (S deps)) (CVQuadrant (Node a b c d) {p}) reg@(RegionC (x1 , y1) (x2 , y2)) =
     let
         mid = pow 2 deps
         sA : List (Tile t)
-        sA = tilesQd deps (CVQuadrant a {aSub a b c d p}) 
-            (RegionC (xl , yl) (mid + xl , mid + yl))
+        sA = tilesQd deps (CVQuadrant a {aSub a b c d p}) (RegionC 
+            (x1 , y1) 
+            (min x2 (mid + x1) , min y2 (mid + y1)))
         sB : List (Tile t)
-        sB = tilesQd deps (CVQuadrant b {bSub a b c d p}) 
-            (RegionC ((mid + xl) , yl) ((diff mid xh) + (mid + xl) , mid + yl) )
+        sB = tilesQd deps (CVQuadrant b {bSub a b c d p}) (RegionC 
+            (min x2 (mid + x1) , y1) 
+            (x2 , min y2 (mid + y1)) )
         sC : List (Tile t)
-        sC = tilesQd deps (CVQuadrant c {cSub a b c d p})
-            (RegionC (xl , mid + yl) (mid + xl , (diff mid yh) + (mid + yl)) )
+        sC = tilesQd deps (CVQuadrant c {cSub a b c d p}) (RegionC 
+            (x1 , min y2 (mid + y1)) 
+            (min x2 (mid + x1) , y2) )
         sD : List (Tile t)
-        sD = tilesQd deps (CVQuadrant d {dSub a b c d p})
-            (RegionC (mid + xl , mid + yl) ((diff mid xh) + (mid + xl) , (diff mid yh) + (mid + yl)) )
+        sD = tilesQd deps (CVQuadrant d {dSub a b c d p}) (RegionC 
+            (min x2 (mid + x1) , min y2 (mid + y1)) 
+            (x2 , y2) )
     in sA ++ sB ++ sC ++ sD
 {-# COMPILE AGDA2HS tilesQd #-}
 
@@ -79,3 +83,8 @@ expand (TileC v (RegionC (lx , ly) (ux , uy))) =
 
 quadtreeFoldable : (dep : Nat) -> FoldableEq (λ y -> VQuadTree y {dep})
 quadtreeFoldable dep .foldMapₑ f t = foldMap f $ concat $ map expand (tilesQt dep t)
+
+
+qt : VQuadTree Bool {3}
+qt = CVQuadTree (Wrapper (2 , 8) (Node (Leaf false) (Leaf false) (Leaf true) (Leaf true))) {IsTrue.itsTrue} {IsTrue.itsTrue}
+
