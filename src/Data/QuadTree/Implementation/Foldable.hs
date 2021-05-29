@@ -24,22 +24,22 @@ data Tile t = TileC t Region
 tilesQd :: Eq t => Nat -> VQuadrant t -> Region -> [Tile t]
 tilesQd dep (CVQuadrant (Leaf v)) reg = [TileC v reg]
 tilesQd (S deps) (CVQuadrant (Node a b c d))
-  (RegionC (xl, yl) (xh, yh))
+  (RegionC (x1, y1) (x2, y2))
   = tilesQd deps (CVQuadrant a)
-      (RegionC (xl, yl) (pow 2 deps + xl, pow 2 deps + yl))
+      (RegionC (x1, y1)
+         (min x2 (pow 2 deps + x1), min y2 (pow 2 deps + y1)))
       ++
       tilesQd deps (CVQuadrant b)
-        (RegionC (pow 2 deps + xl, yl)
-           (diff (pow 2 deps) xh + (pow 2 deps + xl), pow 2 deps + yl))
+        (RegionC (min x2 (pow 2 deps + x1), y1)
+           (x2, min y2 (pow 2 deps + y1)))
         ++
         tilesQd deps (CVQuadrant c)
-          (RegionC (xl, pow 2 deps + yl)
-             (pow 2 deps + xl, diff (pow 2 deps) yh + (pow 2 deps + yl)))
+          (RegionC (x1, min y2 (pow 2 deps + y1))
+             (min x2 (pow 2 deps + x1), y2))
           ++
           tilesQd deps (CVQuadrant d)
-            (RegionC (pow 2 deps + xl, pow 2 deps + yl)
-               (diff (pow 2 deps) xh + (pow 2 deps + xl),
-                diff (pow 2 deps) yh + (pow 2 deps + yl)))
+            (RegionC (min x2 (pow 2 deps + x1), min y2 (pow 2 deps + y1))
+               (x2, y2))
 tilesQd Z (CVQuadrant (Node qd qd₁ qd₂ qd₃)) reg
   = error "tilesQd: impossible"
 

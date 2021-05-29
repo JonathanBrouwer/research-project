@@ -39,6 +39,10 @@ data Tile (t : Set) : Set where
     TileC : t -> Region -> Tile t
 {-# COMPILE AGDA2HS Tile #-}
 
+instance
+    tileFunctor : Functor Tile
+    tileFunctor .fmap f (TileC v r) = TileC (f v) r
+
 tilesQd : {t : Set} {{eqT : Eq t}} (dep : Nat) -> VQuadrant t {dep} 
     -> (reg : Region)
     -> List (Tile t)
@@ -83,8 +87,3 @@ expand (TileC v (RegionC (lx , ly) (ux , uy))) =
 
 quadtreeFoldable : (dep : Nat) -> FoldableEq (λ y -> VQuadTree y {dep})
 quadtreeFoldable dep .foldMapₑ f t = foldMap f $ concat $ map expand (tilesQt dep t)
-
-
-qt : VQuadTree Bool {3}
-qt = CVQuadTree (Wrapper (2 , 8) (Node (Leaf false) (Leaf false) (Leaf true) (Leaf true))) {IsTrue.itsTrue} {IsTrue.itsTrue}
-

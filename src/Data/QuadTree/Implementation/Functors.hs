@@ -12,12 +12,18 @@ import Data.Lens.Lens
 import Data.Logic
 import Data.QuadTree.Implementation.Definition
 import Data.QuadTree.Implementation.ValidTypes
+import Data.QuadTree.Implementation.QuadrantLenses
 
-instance Functor Quadrant where
-    fmap fn (Leaf x) = Leaf (fn x)
-    fmap fn (Node a b c d)
-      = Node (fmap fn a) (fmap fn b) (fmap fn c) (fmap fn d)
+class FunctorEq f where
+    fmapₑ :: Eq a => Eq b => (a -> b) -> f a -> f b
 
-instance Functor QuadTree where
-    fmap fn (Wrapper (w, h) q) = Wrapper (w, h) (fmap fn q)
+type VQuadTreeDep t = VQuadTree t
+
+quadtreeFunctor :: Nat -> FunctorEq VQuadTreeDep
+quadtreeFunctor dep
+  Data.QuadTree.Implementation.Functors.FunctorEq.fmapₑ fn
+  (CVQuadTree (Wrapper (w, h) qd)) = toQt (fmapₑ fn (CVQuadrant qd))
+  where
+    toQt :: VQuadrant b -> VQuadTree b
+    toQt (CVQuadrant qd₁) = CVQuadTree (Wrapper (w, h) qd₁)
 
