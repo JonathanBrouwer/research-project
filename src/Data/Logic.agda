@@ -14,8 +14,14 @@ import Data.Nat
 useEq : {x y : Bool} -> x ≡ y -> .(IsTrue x) -> IsTrue y
 useEq {true} {true} eq is = IsTrue.itsTrue
 
+useEqFalse : {x y : Bool} -> x ≡ y -> .(IsFalse x) -> IsFalse y
+useEqFalse {false} {false} eq is = IsFalse.itsFalse
+
 isTrueToEquiv : {c : Bool} -> IsTrue c -> c ≡ true
 isTrueToEquiv {true} p = refl
+
+isFalseToEquiv : {c : Bool} -> IsFalse c -> c ≡ false
+isFalseToEquiv {false} p = refl
 
 -- symmetry of equality
 sym : {u : Level} {A : Set u} {x y : A} → x ≡ y → y ≡ x
@@ -31,6 +37,9 @@ cong f refl = refl
 
 cong2 : {A B T : Set} {a1 a2 : A} {b1 b2 : B} → (f : A → B -> T) → a1 ≡ a2 -> b1 ≡ b2 → f a1 b1 ≡ f a2 b2
 cong2 f refl refl = refl
+
+cong3 : {A B C T : Set} {a1 a2 : A} {b1 b2 : B} {c1 c2 : C} → (f : A → B -> C -> T) → a1 ≡ a2 -> b1 ≡ b2 -> c1 ≡ c2 → f a1 b1 c1 ≡ f a2 b2 c2
+cong3 f refl refl refl = refl
 
 cong4 : {A B C D T : Set} {a1 a2 : A} {b1 b2 : B} {c1 c2 : C} {d1 d2 : D} → (f : A → B -> C -> D -> T) → a1 ≡ a2 -> b1 ≡ b2 → c1 ≡ c2 -> d1 ≡ d2 -> f a1 b1 c1 d1 ≡ f a2 b2 c2 d2
 cong4 f refl refl refl refl = refl
@@ -116,6 +125,9 @@ andFst {true} {true} ab = IsTrue.itsTrue
 
 andSnd : {a b : Bool} -> IsTrue (a && b) -> IsTrue b
 andSnd {true} {true} ab = IsTrue.itsTrue
+
+andSndI : {a b : Bool} -> .(IsTrue (a && b)) -> IsTrue b
+andSndI {true} {true} ab = IsTrue.itsTrue
 
 and1 : {a b c d : Bool} -> IsTrue (a && b && c && d) -> IsTrue a
 and1 {true} {true} {true} {true} abcd = IsTrue.itsTrue

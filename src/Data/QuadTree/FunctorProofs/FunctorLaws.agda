@@ -5,17 +5,15 @@ open import Haskell.Prelude renaming (zero to Z; suc to S)
 open import Data.Logic
 open import Data.QuadTree.InternalAgda
 open import Agda.Primitive
+open import Data.QuadTree.Implementation.Functors
 
 
 -- First, define the Functor laws
 
-IdentityLaw : (f : Set -> Set) -> {{ff : Functor f}} -> Set₁
-IdentityLaw f {{ff}} = {t : Set} -> (v : f t) -> fmap id v ≡ id v
+IdentityLaw : (f : (t : Set) -> {{ eqT : Eq t }} -> Set) -> {{ff : FunctorEq f}} -> Set₁
+IdentityLaw f {{ff}} = {t : Set} -> {{ eqT : Eq t }} 
+  -> (v : f t) -> fmapₑ ff id v ≡ id v
 
-CompositionLaw : (f : Set -> Set) -> {{ff : Functor f}} -> Set₁
-CompositionLaw f {{ff}} = {a b c : Set} -> (v : f a) -> (fun1 : a -> b) -> (fun2 : b -> c) -> fmap (fun2 ∘ fun1) v ≡ fmap fun2 (fmap fun1 v)
-
--- Define ValidFunctor as a functor for which the laws hold
-
-data ValidFunctor : Set₁ where
-  CValidFunctor : (f : Set -> Set) {{ff : Functor f}} -> IdentityLaw f -> CompositionLaw f -> ValidFunctor
+CompositionLaw : (f : (t : Set) -> {{ eqT : Eq t }} -> Set) -> {{ff : FunctorEq f}} -> Set₁
+CompositionLaw f {{ff}} = {a b c : Set} -> {{ eqA : Eq a }} {{ eqB : Eq b }} {{ eqC : Eq c }} 
+  -> (v : f a) -> (fun1 : a -> b) -> (fun2 : b -> c) -> fmapₑ ff (fun2 ∘ fun1) v ≡ fmapₑ ff fun2 (fmapₑ ff fun1 v)
