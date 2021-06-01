@@ -68,22 +68,33 @@ fmap-concat-expand f (x ∷ xs) =
     end
 
 
-tileQd-combine : {A B : Set} {{eqA : Eq A}} {{eqB : Eq B}} -> (f : A -> B) -> (deps x1 y1 x2 y2 : Nat) -> (qA qB qC qD : VQuadrant A {deps})
-    -> tilesQd (S deps) (combine 
-        (fmapₑ (quadrantFunctor deps) f qA)
-        (fmapₑ (quadrantFunctor deps) f qB)
-        (fmapₑ (quadrantFunctor deps) f qC)
-        (fmapₑ (quadrantFunctor deps) f qD)) (RegionC (x1 , y1) (x2 , y2))
-    ≡ (tilesQd deps 
-        (fmapₑ (quadrantFunctor deps) f qA) (RegionC (x1 , y1) (min x2 (pow 2 deps + x1) , min y2 (pow 2 deps + y1)))) 
-        ++ (tilesQd deps (fmapₑ (quadrantFunctor deps) f qB) (RegionC (min x2 (pow 2 deps + x1) , y1) (x2 , min y2 (pow 2 deps + y1)))) 
-        ++ (tilesQd deps (fmapₑ (quadrantFunctor deps) f qC) (RegionC (x1 , min y2 (pow 2 deps + y1)) (min x2 (pow 2 deps + x1) , y2) )) 
-        ++ (tilesQd deps (fmapₑ (quadrantFunctor deps) f qD) (RegionC (min x2 (pow 2 deps + x1) , min y2 (pow 2 deps + y1)) (x2 , y2) ))
-tileQd-combine f deps x1 y1 x2 y2 (CVQuadrant qa@(Leaf a)) (CVQuadrant qb@(Leaf b)) (CVQuadrant qc@(Leaf c)) (CVQuadrant qd@(Leaf d)) = {!  refl !}
-tileQd-combine f deps x1 y1 x2 y2 (CVQuadrant qa@(Leaf a)) (CVQuadrant qb@(Leaf b)) (CVQuadrant qc@(Leaf c)) (CVQuadrant qd@(Node d1 d2 d3 d4)) = {! refl  !}
-tileQd-combine f deps x1 y1 x2 y2 (CVQuadrant qa@(Leaf a)) (CVQuadrant qb@(Leaf b)) (CVQuadrant qc@(Node c1 c2 c3 c4)) (CVQuadrant qd) = {!   !}
-tileQd-combine f deps x1 y1 x2 y2 (CVQuadrant qa@(Leaf a)) (CVQuadrant qb@(Node b1 b2 b3 b4)) (CVQuadrant qc) (CVQuadrant qd) = {!   !}
-tileQd-combine f deps x1 y1 x2 y2 (CVQuadrant qa@(Node a1 a2 a3 a4)) (CVQuadrant qb) (CVQuadrant qc) (CVQuadrant qd) = {! refl  !}
+tileQd-combine : {A : Set} {{eqA : Eq A}} -> (deps x1 y1 x2 y2 : Nat) -> (qA qB qC qD : VQuadrant A {deps})
+    -> tilesQd (S deps) (combine qA qB qC qD) (RegionC (x1 , y1) (x2 , y2))
+         ≡ (tilesQd deps qA (RegionC (x1 , y1) (min x2 (pow 2 deps + x1) , min y2 (pow 2 deps + y1)))) 
+        ++ (tilesQd deps qB (RegionC (min x2 (pow 2 deps + x1) , y1) (x2 , min y2 (pow 2 deps + y1)))) 
+        ++ (tilesQd deps qC (RegionC (x1 , min y2 (pow 2 deps + y1)) (min x2 (pow 2 deps + x1) , y2) )) 
+        ++ (tilesQd deps qD (RegionC (min x2 (pow 2 deps + x1) , min y2 (pow 2 deps + y1)) (x2 , y2) ))
+tileQd-combine deps x1 y1 x2 y2 qA@(CVQuadrant qa@(Leaf va)) qB@(CVQuadrant qb@(Leaf vb)) qC@(CVQuadrant qc@(Leaf vc)) qD@(CVQuadrant qd@(Leaf vd)) =
+    ifc (va == vb) && (vb == vc) && (vc == vd)
+    then (λ {{p}} -> 
+        begin
+            tilesQd (S deps)
+                (ifc (va == vb) && (vb == vc) && (vc == vd)
+                    then CVQuadrant (Leaf va) 
+                    else CVQuadrant (Node (Leaf va) (Leaf vb) (Leaf vc) (Leaf vd)))
+                (RegionC (x1 , y1) (x2 , y2))
+        =⟨ cong (λ x -> tilesQd (S deps) x (RegionC (x1 , y1) (x2 , y2))) (ifcTrue ((va == vb) && (vb == vc) && (vc == vd)) p) ⟩
+            tilesQd (S deps)
+                (CVQuadrant (Leaf va) {IsTrue.itsTrue})
+                (RegionC (x1 , y1) (x2 , y2))
+        =⟨ {!   !} ⟩
+            {!   !}
+        end)
+    else (λ {{p}} -> {!   !})
+tileQd-combine deps x1 y1 x2 y2 (CVQuadrant qa@(Leaf a)) (CVQuadrant qb@(Leaf b)) (CVQuadrant qc@(Leaf c)) (CVQuadrant qd@(Node d1 d2 d3 d4)) = {! refl  !}
+tileQd-combine deps x1 y1 x2 y2 (CVQuadrant qa@(Leaf a)) (CVQuadrant qb@(Leaf b)) (CVQuadrant qc@(Node c1 c2 c3 c4)) (CVQuadrant qd) = {!   !}
+tileQd-combine deps x1 y1 x2 y2 (CVQuadrant qa@(Leaf a)) (CVQuadrant qb@(Node b1 b2 b3 b4)) (CVQuadrant qc) (CVQuadrant qd) = {!   !}
+tileQd-combine deps x1 y1 x2 y2 (CVQuadrant qa@(Node a1 a2 a3 a4)) (CVQuadrant qb) (CVQuadrant qc) (CVQuadrant qd) = {! refl  !}
 
 fmap-tilesQd : {A B : Set} {{eqA : Eq A}} {{eqB : Eq B}} -> (f : A -> B) -> (dep : Nat) -> (vqd : VQuadrant A {dep}) -> (reg : Region)
     -> (fmap (fmap f) $ tilesQd dep vqd reg) ≡ (tilesQd dep (fmapₑ (quadrantFunctor dep) f vqd) reg)
@@ -105,7 +116,7 @@ fmap-tilesQd {t} f dep@(S deps) vqd@(CVQuadrant qd@(Node a b c d) {p1}) reg@(Reg
         ++ (tilesQd deps (fmapₑ (quadrantFunctor deps) f qB) rB) 
         ++ (tilesQd deps (fmapₑ (quadrantFunctor deps) f qC) rC) 
         ++ (tilesQd deps (fmapₑ (quadrantFunctor deps) f qD) rD)
-    =⟨ sym $ tileQd-combine f deps x1 y1 x2 y2 qA qB qC qD ⟩
+    =⟨ sym $ tileQd-combine deps x1 y1 x2 y2 (fmapₑ (quadrantFunctor deps) f qA) (fmapₑ (quadrantFunctor deps) f qB) (fmapₑ (quadrantFunctor deps) f qC) (fmapₑ (quadrantFunctor deps) f qD) ⟩
         (tilesQd dep (fmapₑ (quadrantFunctor dep) f vqd) reg)
     end where
         mid = pow 2 deps
