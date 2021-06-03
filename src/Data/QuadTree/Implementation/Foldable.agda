@@ -78,7 +78,7 @@ replicateₙ Z v = []
 replicateₙ (S n) v = v ∷ replicateₙ n v
 {-# COMPILE AGDA2HS replicateₙ #-}
 
-expand : {t : Set} {{eqT : Eq t}} -> Tile t -> List t
+expand : {t : Set} -> Tile t -> List t
 expand (TileC v (RegionC (lx , ly) (ux , uy))) =
     replicateₙ (dx * dy) v where
         dx = diff ux lx
