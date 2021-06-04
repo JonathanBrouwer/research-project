@@ -11,9 +11,10 @@ data QuadTree t = Wrapper (Nat, Nat) (Quadrant t)
 \begin{wrapfigure}{r}{0.3\textwidth} %this figure will be at the right
     \includegraphics[width=0.3\textwidth]{graphics/test.png}
     \caption{An example QuadTree}
+    \label{quadtree}
 \end{wrapfigure}
 
-A QuadTree consists of the size of the QuadTree, and the root quadrant. A quadrant is either a leaf (in which case all the values inside the region of the quadrant is the same), or four other nodes. The four subquadrants are then called A (top left), B (top right), C (bottom left), and D (bottom right). Notice that in Figure 1, space is consistently split into four quadrants.
+A QuadTree consists of the size of the QuadTree, and the root quadrant. A quadrant is either a leaf (in which case all the values inside the region of the quadrant is the same), or four other nodes. The four subquadrants are then called A (top left), B (top right), C (bottom left), and D (bottom right). Notice that in Figure \ref{quadtree}, space is consistently split into four quadrants.
 
 There are five functions that can be used to interact with QuadTrees:
 \begin{minted}{haskell}

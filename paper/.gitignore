@@ -6,6 +6,10 @@
 *.ist
 *.acn
 *.acr
+*.alg
+*.aux
+*.bbl
+*.blg
 *.dvi
 *.glg
 *.gls
