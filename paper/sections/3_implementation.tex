@@ -1,0 +1,52 @@
+\section{Implementation}
+This section describes how the QuadTree library was implemented in Agda, and what challenges had to be overcome to do so. All the code for this project is available in the public domain. Each directory has a README.md which explains the purpose of all files and folders inside of the directory.
+It is available at: \textcolor{blue}{\href{https://github.com/JonathanBrouwer/research-project}{github.com/JonathanBrouwer/research-project}}. 
+
+\subsection{Implementing QuadTree}
+The QuadTree library is implemented by composing lenses, to finally build the atLocation lens, which takes a location and a QuadTree, and returns a lens to the location in the QuadTree.
+\begin{minted}{agda}
+atLocation : (Nat x Nat) -> (depth : Nat) -> Lens (QuadTree t) t
+\end{minted}
+atLocation is implemented by composing wrappedTree (which lenses from the QuadTree to its root quadrant) and go. go is the function that does most of the work. The function takes a coordinate and a maximum depth, and returns a lens from a quadrant to the location. Behind the scenes, if the maximum depth is zero, it calls lensLeaf. Otherwise, it composes lensA/B/C/D with a recursive call to itself, that does the rest of the lookup. For example, go (0 , 0) 5 = lensA \(\circ\) go (0 , 0) 4. 
+\begin{minted}{agda}
+lensWrappedTree : Lens (QuadTree t) (Quadrant t)
+go : (Nat x Nat) -> (depth : Nat) -> Lens (Quadrant t) t
+\end{minted}
+lensLeaf is a lens from a leaf quadrant to the value stored there. This function has as a precondition that the quadrant has a depth of 0 (a leaf). LensA/B/C/D is a lens from a quadrant to the A/B/C/D sub-quadrant. This function returns a lens from a quadrant with a certain maximum depth to a quadrant with a maximum depth that is one lower. 
+\begin{minted}{agda}
+lensLeaf : Lens (Quadrant t) t
+lensA : Lens (Quadrant t) (Quadrant t)
+\end{minted}
+get/set/mapLocation can then be defined using the atLocation lens, by composing them with the lens functions. They are shortcut functions so users of the library don't have to interact with lenses directly.
+\begin{minted}{agda}
+getLocation : (Nat x Nat) -> QuadTree t -> t
+getLocation = view ∘ atLocation
+setLocation : (Nat x Nat) -> t -> QuadTree t -> QuadTree t
+setLocation = set ∘ atLocation
+mapLocation : (Nat x Nat) -> (t -> t) -> QuadTree t -> t
+mapLocation = over ∘ atLocation
+\end{minted}
+Finally, makeTree makes a new QuadTree with the same value everywhere, simply by calling the QuadTree constructor
+\begin{minted}{agda}
+makeTree : (size : Nat × Nat) -> (v : t) -> QuadTree t
+\end{minted}
+
+Additionally, QuadTree implements Functor and Foldable. However, the implementation of functor in the original library breaks the compression invariant, so the implementation was changed slightly in this implementation to not break this invariant.
+
+\subsection{Challenges when converting Haskell to Agda}
+When converting Haskell to Agda, the challenge that Agda is a total language is encountered, so functions must terminate. Firstly, this is encountered when a function in the library is actually non-terminating. This would have to be solved by changing the function, or adding preconditions, such that the function does always terminate. Luckily, all the functions in the QuadTree library do always terminate, so this problem was not encountered. 
+
+Additionally, the totality of Agda can also be encountered when Agda is not convinced that a function is terminating, even though it is. This was actually encountered, and it was initially solved by adding the \{-\# TERMINATING \#-\} pragma in front of the function, together with an explanation for why the function is definitely terminating. Later on a different way of expressing the function was found that did not have this problem.
+
+Finally, while Haskell has some escape latches such as `error`, Agda does not. For example, the get/set/mapLocation functions throw an error when the location provided is outside of the QuadTree. This can be solved by adding a precondition to the function, which states that the location must be inside the QuadTree. However, having to already worry about this when implementing the library is bothersome, so an alternative that was used is to temporarily postulate an `error` function, and later on replacing it with preconditions.
+
+\subsection{Agda2hs modifications required}
+In order to make a working implementation, agda2hs needed some changes.
+\begin{itemize}
+    \item Add support for type synonyms (Fixed in PR \#56)
+    \item Insert parentheses where required in infix applications (Fixed in PR \#57)
+    \item Support for constructors with implicit arguments (Fixed in PR \#60)
+    \item Instance arguments fail to compile (Fixed in PR \#66)
+    \item Pattern matching on natural numbers does not compile correctly. (Fixed in custom version)
+\end{itemize}
+The first 4 problems have been solved by the Agda2hs contributors in the official Agda2hs version. The last has not been fixed in the official version, but has been fixed in a custom version which is available at \textcolor{blue}{\href{https://github.com/JonathanBrouwer/agda2hs}{github.com/JonathanBrouwer/agda2hs}}.

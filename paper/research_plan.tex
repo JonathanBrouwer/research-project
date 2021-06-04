@@ -1,0 +1,290 @@
+\documentclass[english]{article}
+\usepackage[T1]{fontenc}
+\usepackage[latin9]{inputenc}
+\usepackage{geometry}
+\usepackage{url}
+\geometry{verbose,tmargin=3cm,bmargin=3cm,lmargin=3cm,rmargin=3cm}
+
+\makeatletter
+\usepackage{url}
+
+\makeatother
+
+\usepackage{babel}
+
+
+\title{Research Plan for Practical Verification of QuadTrees}
+\author{Jonathan Brouwer}
+\date{April 19, 2021}
+
+\begin{document}
+\maketitle
+
+%\begin{namelist}{xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx}
+%\item[{\bf Title:}]
+%	A Very Good Thesis
+%\item[{\bf Author:}]
+%	Gosia Migut
+%\item[{\bf Responsible Professor:}]
+%	Mathijs de Weerdt
+%\item[{\bf (Optionally) Other Supervisor:}]
+%	Eva
+%\item[{\bf (Required for final version) Examiner:}]
+%	Another Professor (\emph{interested, but not involved})
+%\item[{\bf Peer group members:}]
+%	John Appleseed (MSc), Harry Btree (BSc), Mike C3PO (PhD)
+%(\emph{i.e., at least 3 other BSc/MSc/PhD students})
+%\end{namelist}
+
+
+\section*{Background of the research}
+Haskell \cite{haskell} is a strongly typed purely functional programming language. A big advantage of this is that it makes reasoning about the correctness of algorithms and data structures relatively easy. This is demonstrated in Chapter 16 of the Programming in Haskell by Graham Hutton, where he proofs certain properties of Haskell code. However, these proofs are all done on paper, and making a mistake in these proofs is notoriously easy. There is also always the risk that the proof is no longer valid after the code changes.
+
+Agda \cite{agda} is a dependently typed programming language and interactive theorem prover.  Using Agda and the Curry-Howard correspondence \cite{chc}, we can write a formal proof about the code in the language itself, and use the compiler to verify the correctness of the proof \cite{schwaab}\cite{van}. The compiler also verifies that the proof is still valid each time the code changes, and will refuse to compile the code if it is not.
+
+Agda2hs \cite{agda2hs} is a project that identifies a common subset of Agda and Haskell, and provides a tool that automatically translates code from this subset of Agda to Haskell. This lets you write your program in the subset, using full Agda to prove properties about it, and then translate it to nice looking readable Haskell code. However agda2hs is not finished yet, it still lacks some Agda features that it can not compile to Haskell.
+
+QuadTree \cite{quadtree} is a Haskell library that provides discrete region quadtrees that can be used as simple functional alternatives to 2D arrays. 
+
+\section*{Research Question}
+The goal of this research project is to investigate \textbf{whether agda2hs \cite{agda2hs} can be used to produce a verified implementation of QuadTree \cite{quadtree}}.
+We want to investigate this in order to get an insight into how difficult it is to prove properties of relatively complex libraries. 
+
+In particular, we ask the following questions:
+\begin{itemize}
+    \item Does the implementation of this library fall within the common subset of Haskell and Agda as identified by agda2hs? If not, is there an alternative implementation possible that does? Or else, what extensions to agda2hs are needed to implement the full functionality of the library?
+    \item What kind of properties and invariants does the library guarantee? Do the functions in the library require certain preconditions? Are there any ways the internal invariants of the library can be violated?
+    \item Is it possible to formally state and prove the correctness of Haskell libraries that are ported to Agda? How much time and effort does it take to verify the implementation compared to implementing the algorithm itself? What kind of simplifications could be made to reduce the cost of verification?
+\end{itemize}
+
+\section*{Method}
+In order to accomplish this goal, I will perform the following tasks:
+\begin{enumerate}
+    \item Create notes on the inner workings of the QuadTree library
+    \item Create notes on how to use Agda2hs
+    \item Create an implementation of QuadTree in the common subset of Haskell and Agda (depends on 1 and 2)
+    \item Find invariants and preconditions in the QuadTree library (depends on 1)
+    \item State these invariants and preconditions in the new implementation of QuadTree (depends on 3 and 4)
+    \item Attempt to prove these invariants and preconditions in the new implementation of QuadTree (depends on 5)
+    \item Find ways to reduce the cost of proving invariants and preconditions (depends on 6)
+\end{enumerate}
+
+For steps 2 and 7 I will collaborate with my peer group, while the other steps will done myself alone.
+
+\section*{Planning of the research project}
+The timetable for the research project is: \\
+Note: I am using "Due" for my own deadlines and "Deadline" for course deadlines.
+
+\begin{center}
+\begin{tabular}{| p{0.25\textwidth} | p{0.65\textwidth} | }
+\hline
+Day                  & Tasks                              \\
+\hline
+
+\multicolumn{2}{l}{Week 1} \\
+\hline
+
+19-04-2021 Monday    & 
+\begin{minipage}[t]{0.65\textwidth} \begin{itemize}
+    \item Create week 1 planning
+    \item DEADLINE: Week 1 planning
+    \item Install environment (Agda, Haskell, Agda2hs)
+\end{itemize} \end{minipage} \\   
+\hline
+
+20-04-2021 Tuesday    & 
+\begin{minipage}[t]{0.65\textwidth} \begin{itemize}
+    \item DEADLINE: Information Literacy
+\end{itemize} \end{minipage} \\   
+\hline
+
+21-04-2021 Wednesday    & 
+\begin{minipage}[t]{0.65\textwidth} \begin{itemize}
+    \item Due: (Task 1) Create notes on the inner workings of the QuadTree library
+\end{itemize} \end{minipage} \\   
+\hline
+
+23-04-2021 Friday    & 
+\begin{minipage}[t]{0.65\textwidth} \begin{itemize}
+    \item Due: (Task 2) Create notes on how to use Agda2hs
+\end{itemize} \end{minipage} \\   
+\hline
+
+25-04-2021 Sunday    & 
+\begin{minipage}[t]{0.65\textwidth} \begin{itemize}
+    \item DEADLINE: Finish the research plan
+\end{itemize} \end{minipage} \\   
+\hline
+
+\multicolumn{2}{l}{Week 2} \\
+\hline
+
+\multicolumn{2}{l}{Week 3} \\
+\hline
+
+Entire week    & 
+\begin{minipage}[t]{0.65\textwidth} \begin{itemize}
+    \item Write first 300 words of research paper
+\end{itemize} \end{minipage} \\   
+\hline
+
+09-05-2021 Sunday    & 
+\begin{minipage}[t]{0.65\textwidth} \begin{itemize}
+    \item Due: (Task 3) Create an implementation of QuadTree in the common subset of Haskell and Agda
+    \item Due: (Task 4) Find invariants and preconditions in the QuadTree library 
+\end{itemize} \end{minipage} \\   
+\hline
+
+\multicolumn{2}{l}{Week 4} \\
+\hline
+
+Entire week    & 
+\begin{minipage}[t]{0.65\textwidth} \begin{itemize}
+    \item Write "Methodology" of research paper
+    \item Work on midterm presentation
+\end{itemize} \end{minipage} \\   
+\hline
+
+16-05-2021 Sunday    & 
+\begin{minipage}[t]{0.65\textwidth} \begin{itemize}
+    \item Due: (Task 5) State these invariants and preconditions in the new implementation of QuadTree
+\end{itemize} \end{minipage} \\   
+\hline
+
+\multicolumn{2}{l}{Week 5} \\
+\hline
+
+Entire week    & 
+\begin{minipage}[t]{0.65\textwidth} \begin{itemize}
+    \item Write "Your Contribution" of research paper
+\end{itemize} \end{minipage} \\   
+\hline
+
+19-05-2021 Wednesday    & 
+\begin{minipage}[t]{0.65\textwidth} \begin{itemize}
+    \item DEADLINE: Midterm presentation
+\end{itemize} \end{minipage} \\   
+\hline
+
+\multicolumn{2}{l}{Week 6} \\
+\hline
+
+Entire week    & 
+\begin{minipage}[t]{0.65\textwidth} \begin{itemize}
+    \item Write "Experimental Setup and Results" of research paper
+\end{itemize} \end{minipage} \\   
+\hline
+
+30-05-2021 Sunday    & 
+\begin{minipage}[t]{0.65\textwidth} \begin{itemize}
+    \item Due (Task 6) Attempt to prove these invariants and preconditions in the new implementation of QuadTree
+    \item Due (Task 7) Find ways to reduce the cost of proving invariants and preconditions
+\end{itemize} \end{minipage} \\   
+\hline
+
+\multicolumn{2}{l}{Week 7} \\
+\hline
+
+Entire week    & 
+\begin{minipage}[t]{0.65\textwidth} \begin{itemize}
+    \item Write "Responsible Research" of research paper
+    \item Start working exclusively on the research paper. (Code freeze)
+    \item Extra time if needed
+\end{itemize} \end{minipage} \\   
+\hline
+
+\multicolumn{2}{l}{Week 8} \\
+\hline
+
+07-06-2021 Monday    & 
+\begin{minipage}[t]{0.65\textwidth} \begin{itemize}
+    \item DEADLINE: Paper Draft V1
+\end{itemize} \end{minipage} \\   
+\hline
+
+10-06-2021 Thursday    & 
+\begin{minipage}[t]{0.65\textwidth} \begin{itemize}
+    \item DEADLINE: Peer Review Draft V1
+\end{itemize} \end{minipage} \\   
+\hline
+
+\multicolumn{2}{l}{Week 9} \\
+\hline
+
+16-06-2021 Wednesday    & 
+\begin{minipage}[t]{0.65\textwidth} \begin{itemize}
+    \item DEADLINE: Paper Draft V2
+\end{itemize} \end{minipage} \\   
+\hline
+
+\multicolumn{2}{l}{Week 10} \\
+\hline
+
+27-06-2021 Sunday    & 
+\begin{minipage}[t]{0.65\textwidth} \begin{itemize}
+    \item DEADLINE: Final paper
+\end{itemize} \end{minipage} \\   
+\hline
+
+\multicolumn{2}{l}{Week 11} \\
+\hline
+
+29-06-2021 Tuesday    & 
+\begin{minipage}[t]{0.65\textwidth} \begin{itemize}
+    \item DEADLINE: Poster
+\end{itemize} \end{minipage} \\   
+\hline
+
+01-07-2021 Thursday    & 
+\begin{minipage}[t]{0.65\textwidth} \begin{itemize}
+    \item DEADLINE: Presentation
+\end{itemize} \end{minipage} \\   
+\hline
+
+02-07-2021 Friday    & 
+\begin{minipage}[t]{0.65\textwidth} \begin{itemize}
+    \item DEADLINE: Presentation
+\end{itemize} \end{minipage} \\   
+\hline
+
+\end{tabular}
+\end{center}
+
+All planned meetings are:
+\begin{center}
+ \begin{tabular}{|p{0.4\linewidth} | c | c|} 
+ \hline
+ Purpose & With & Date and time \\ [1ex] 
+ \hline
+ Initial Meeting & Professor + Peers & 1 April 2021 10:00  \\ 
+ \hline
+ \hline
+ Improve research plan & Everyone & 20 April 2021 10:00  \\ 
+ \hline
+ Recurring meeting & Everyone & 29 April 2021 10:00  \\ 
+ \hline
+ Recurring meeting & Everyone & 4 May 2021 10:00  \\ 
+ \hline 
+ Recurring meeting & Everyone & 11 May 2021 10:00  \\ 
+ \hline
+ Recurring meeting & Everyone & 18 May 2021 10:00  \\ 
+ \hline
+ Recurring meeting & Everyone & 25 May 2021 10:00  \\ 
+ \hline
+ Recurring meeting & Everyone & 1 June 2021 10:00  \\ 
+ \hline
+ Recurring meeting & Everyone & 8 June 2021 10:00  \\ 
+ \hline
+ Recurring meeting & Everyone & 15 June 2021 10:00  \\ 
+ \hline
+ Recurring meeting & Everyone & 22 June 2021 10:00  \\ 
+ \hline
+ Recurring meeting & Everyone & 29 June 2021 10:00  \\ 
+ \hline
+\end{tabular}
+\end{center}
+
+\bibliographystyle{unsrt}
+\bibliography{bibliography}
+
+\end{document}

@@ -1,0 +1,46 @@
+\documentclass[english]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\geometry{verbose,tmargin=3.5cm,bmargin=4cm,lmargin=3.8cm,rmargin=3.8cm}
+\usepackage{graphicx}
+\usepackage{wrapfig}
+\usepackage[hidelinks]{hyperref}
+\graphicspath{ {./graphics/} }
+
+\DeclareUnicodeCharacter{2261}{$\equiv$}
+\DeclareUnicodeCharacter{2218}{$\circ$}
+
+\makeatletter
+\usepackage{url}
+
+\usepackage{minted}
+
+\makeatother
+
+\usepackage{babel}
+\begin{document}
+
+\title{Practical Verification of QuadTrees}
+
+\author{Jonathan Brouwer <j.t.brouwer@student.tudelft.nl>}
+\date{}
+
+\maketitle
+
+\begin{abstract}
+Agda2hs is project which compiles a subset of Agda to Haskell. This paper aims to implement and verify the Haskell library QuadTree in this subset of Agda, so Agda2hs can then produce a verified Haskell implementation. Techniques are developed for proving invariants, preconditions, and postconditions, and are applied in order to implement and verify the QuadTree library. Additionally, recommendations are made to reduce the time needed for verification.
+\end{abstract}
+
+\input{sections/1_introduction}
+\input{sections/2_preliminaries}
+\input{sections/3_implementation}
+\input{sections/4_proving}
+\input{sections/5_responsible}
+\input{sections/6_discussion}
+\input{sections/7_conclusions}
+
+\bibliographystyle{unsrt}
+\bibliography{bibliography}
+
+\end{document}
