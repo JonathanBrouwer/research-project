@@ -21,17 +21,21 @@
 \makeatother
 
 \usepackage{babel}
-\begin{document}
+\usepackage{authblk}
 
 \title{Practical Verification of QuadTrees}
-
-\author{Jonathan Brouwer <j.t.brouwer@student.tudelft.nl>}
+\author[1]{Jonathan Brouwer}
+\author[1]{Jesper Cockx}
+\affil[1]{TU Delft}
 \date{}
+\renewcommand\Affilfont{\itshape\small}
+
+\begin{document}
 
 \maketitle
 
 \begin{abstract}
-Agda2hs is project which compiles a subset of Agda to Haskell. This paper aims to implement and verify the Haskell library QuadTree in this subset of Agda, so Agda2hs can then produce a verified Haskell implementation. Techniques are developed for proving invariants, preconditions, and postconditions, and are applied in order to implement and verify the QuadTree library. Additionally, recommendations are made to reduce the time needed for verification.
+Agda2hs is project which compiles a subset of Agda to Haskell. This paper aims to implement and verify the Haskell library QuadTree in this subset of Agda, so Agda2hs can then produce a verified Haskell implementation. Techniques are developed for proving invariants, preconditions, and post-conditions, and are applied in order to implement and verify the QuadTree library. Additionally, recommendations are made to reduce the time needed for verification.
 \end{abstract}
 
 \input{sections/1_introduction}
@@ -42,6 +46,7 @@ Agda2hs is project which compiles a subset of Agda to Haskell. This paper aims t
 \input{sections/6_discussion}
 \input{sections/7_conclusions}
 
+\newpage
 \bibliographystyle{unsrt}
 \bibliography{bibliography}
 
