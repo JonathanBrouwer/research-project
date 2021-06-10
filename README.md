@@ -1,7 +1,8 @@
 # Practical verification of QuadTrees
 
 ## What is this?
-//TODO add abstract + link to research paper here
+Agda2hs is project which compiles a subset of Agda to Haskell. This paper aims to implement and verify the Haskell library QuadTree in this subset of Agda, so Agda2hs can then produce a verified Haskell implementation. Techniques are developed for proving invariants, preconditions, and post-conditions, and are applied in order to implement and verify the QuadTree library. Additionally, recommendations are made to reduce the time needed for verification.
+The full paper is available [here.](https://github.com/JonathanBrouwer/research-project/blob/master/paper/research_paper.pdf)
 
 ## How to explore?
 Each directory in the sources has an explanation as to what each file is for.
