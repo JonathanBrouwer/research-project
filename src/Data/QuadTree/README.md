@@ -2,3 +2,5 @@
 - [Implementation/](https://github.com/JonathanBrouwer/research-project/tree/master/src/Data/QuadTree/Implementation) - This contains the implementation of QuadTrees.
 - [FunctorProofs/](https://github.com/JonathanBrouwer/research-project/tree/master/src/Data/QuadTree/FunctorProofs) - This contains the proofs that the functors defined in the implementation follow the functor laws.
 - [LensProofs/](https://github.com/JonathanBrouwer/research-project/tree/master/src/Data/QuadTree/LensProofs) - This contains the proofs that the lenses defined in the implementation follow the lens laws.
+- [FunctorProofs/](https://github.com/JonathanBrouwer/research-project/tree/master/src/Data/QuadTree/FunctorProofs) - This contains the proofs that the functors defined in the implementation follow the functor laws.
+- [FoldableProofs/](https://github.com/JonathanBrouwer/research-project/tree/master/src/Data/QuadTree/FoldableProofs) - This contains the proofs that the foldable instance defined in the implementation follow the foldable laws.
