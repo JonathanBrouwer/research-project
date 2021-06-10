@@ -1,0 +1,3 @@
+# src/Data/QuadTree/FunctorProofs
+- [FoldableProof.agda](https://github.com/JonathanBrouwer/research-project/tree/master/src/Data/QuadTree/FoldableProofs/FoldableProof.agda) - Proofs the foldable laws for the foldable instance
+- [FoldableFunctorProof.agda](https://github.com/JonathanBrouwer/research-project/tree/master/src/Data/QuadTree/FoldableProofs/FoldableFunctorProof.agda) - Proofs the foldable functor law for quadtrees

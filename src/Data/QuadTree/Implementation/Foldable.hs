@@ -51,7 +51,7 @@ replicateₙ :: Nat -> t -> [t]
 replicateₙ Z v = []
 replicateₙ (S n) v = v : replicateₙ n v
 
-expand :: Eq t => Tile t -> [t]
+expand :: Tile t -> [t]
 expand (TileC v (RegionC (lx, ly) (ux, uy)))
   = replicateₙ (dx * dy) v
   where
