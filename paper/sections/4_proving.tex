@@ -12,8 +12,8 @@ First, all things that have been proven are listed and sorted into one of the ty
 \textbf{Preconditions of a QuadTree:}
 \begin{itemize}
     \item When calling atLocation, getLocation, setLocation or mapLocation, the location must be inside of the QuadTree.
-    \item When calling lensLeaf, the quadrant needs to have a maximum depth of zero
-    \item When calling lensA/B/C/D, the quadrant needs to have a maximum depth that is greater than zero
+    \item When calling lensLeaf, the quadrant needs to have a depth of zero (i.e.  it must be a leaf)
+    \item When calling lensA/B/C/D, the quadrant needs to have a depth that is greater than zero (i.e.  it must not be a leaf)
 \end{itemize} 
 \textbf{Post-conditions of a QuadTree:}
 \begin{itemize}
@@ -58,7 +58,7 @@ The datatype for a valid QuadTree is defined very similarly. Agda2hs flawlessly 
 data VQuadrant t = CVQuadrant (Quadrant t)
 \end{minted}
 
-The advantage of making a new wrapper datatype over adding the proofs to the original datatype is that if the original datatype has multiple constructors, functions that use the proof do not need to be split into multiple cases (one for each constructor). The disadvantage is that this additional wrapper type is visible when compiled to Haskell. To avoid this, one can create an additional function for all public functions. This function then takes the invariance proof as a precondition, and calls the original function with the wrapper type. 
+The advantage of making a new wrapper datatype over adding the proofs to the original datatype is that if the original datatype has multiple constructors, functions that use the proof do not need to be split into multiple cases (one for each constructor). The disadvantage is that this additional wrapper type is visible when compiled to Haskell. To avoid this, it is possible to create an additional function for all public functions. This function then takes the invariance proof as a precondition, and calls the original function with the wrapper type. 
 
 \subsection{Techniques to prove preconditions}
 In this section 2 techniques to prove preconditions are presented.
@@ -86,7 +86,7 @@ getLocation :: (Nat, Nat) -> QuadTree t -> t
 \end{minted}
 
 \subsubsection{Using a datatype with invariants}
-Using the second technique, proofs are proven by passing in a datatype with an invariant, as was used in section 4.2. The simple example from 4.3.1 would then be written like this, using the type defined in section 4.2:
+Another technique to prove preconditions is by passing in a datatype with an invariant, as was used in section 4.2. The simple example from 4.3.1 would then be written like this, using the type defined in section 4.2:
 \begin{minted}{agda}
 takesGtFive : (n : GreaterThanFive) -> ?
 \end{minted}
@@ -99,7 +99,7 @@ lensA : {dep : Nat}
 \end{minted}
 
 \subsubsection{Comparison}
-The advantages of using implicit arguments is that one does not have to define a separate datatype, and that the precondition can be dependent on more than one argument. On the other hand, the advantages of using a datatype with an invariant is that the defined function are cleaner and more compact. It is then also possible to use the type as a parameter for another type, like it is used in lensLeaf and lensA. It also allows for cleaner reuse of the property, as it does not need to be repeated each time it is used.
+The advantages of using implicit arguments is that it is not necessary to define a separate datatype, and that the precondition can be dependent on more than one parameter of the function. On the other hand, the advantages of using a datatype with an invariant is that the defined function are cleaner and more compact. It is then also possible to use the type as a parameter for another type, like it is used in lensLeaf and lensA. It also allows for cleaner reuse of the property, as it does not need to be repeated each time it is used.
 
 \subsection{Techniques to prove post-conditions}
 Post-conditions are proven as separate functions. As a simple example, this is a proof that this function returns a number greater than 5.
@@ -122,16 +122,16 @@ ValidLens-Leaf-ViewSet v (CVQuadrant (Leaf x)) = refl
 When proving preconditions and invariants, these properties have to be marked as irrelevant. This is to ensure that when proving that two function calls are equal, one does not need to show that the proofs of the preconditions and invariants are equal, since the actual value of the proofs is irrelevant.
 
 \subsection{Results}
-All of the properties mentioned in section \ref{props_to_prove} have been successfully proven. The amount of lines of code that this took is shown in figure \ref{division}. The verification took about 3 times more lines of code than the implementation. While this comparison is an indication, this should not be taken to mean that the verification took 3 times as much effort, as the information density of the implementation and proofs is different.
+All of the properties mentioned in section \ref{props_to_prove} have been successfully proven. Most of these proofs have not been shown in the paper, since they are available in the source code. The amount of lines of code that this took is shown in figure \ref{division}.  This counts all non-empty lines. The verification took about 3 times more lines of code than the implementation. While this comparison is an indication, this should not be taken to mean that the verification took 3 times as much effort, as the information density of the implementation and proofs is different.
 
 In reality, the implementation took approximately one full-time week, while the verification took approximately five full-time weeks. This too should not be taken to mean the verification took 5 times as much effort, as this number may be biased by the fact that the implementation was just translation from Haskell.
 
 During the verification phase, one bug was found that was accidentally introduced during the translation to Agda. This was not caught by the tests, though this may be because the tests on the foldable implementation are very limited.
 
-Whether this time is worth it, depends on the situation. For example, in a situation where even one small error could bring down an airplane, this is clearly worth it, however in most situations it is not.
+Whether this time is worth the time spent, depends on the situation. For example, in a situation where even one small error could bring down an airplane, this is clearly worth it. However, in many common situations, this verification may not be worth it.
 
-\begin{figure}[hb!]
-	\begin{tikzpicture}
+\begin{figure}[H]
+	\begin{tikzpicture}[scale=0.8]
 		\pie[sum=auto]
 		{757/Implementation,
 			545/General Proofs,

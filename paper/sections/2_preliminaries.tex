@@ -1,8 +1,8 @@
 \section{Preliminaries}
 \subsection{Proofs using the Curry-Howard Correspondence}
-The Curry-Howard correspondence is a way to interpret typed computer programs as mathematical proofs \cite{chc}. This is done by representing false statements as empty types, and true statements as non-empty types. For example, take  \verb|IsTrue b|  where  \verb|b| is some boolean. The type is constructed in such a way that it is empty if  \verb|b| is false, and non-empty if b is true.  If one has a value of type  \verb|IsTrue b|, this value (often called a witness) is a proof that  \verb|b| must be true. 
+The Curry-Howard correspondence is a relationship that can be used to interpret typed computer programs as mathematical proofs \cite{chc}. This is done by representing false statements as empty types, and true statements as non-empty types. For example, take  \verb|IsTrue b|  where  \verb|b| is some boolean. The type is constructed in such a way that it is empty if  \verb|b| is false, and non-empty if b is true.  So if there exists a value of type  \verb|IsTrue b|, this value (often called a witness) is a proof that  \verb|b| must be true. 
 
-These proofs can be used as function arguments, constructor arguments or even as a function result. Since Agda is dependently typed, the proof can also refer to other arguments of a function. For example, this function may only be called when \verb|n| is greater than 3:
+These proofs can be used as function arguments, constructor arguments or even as a function result. Since Agda is dependently typed, the proof can also refer to other arguments of a function. For example, this function may only be called when \verb|n| is greater than 5:
 \begin{minted}{agda}
 takesGtFive : (n : Nat) -> IsTrue (n > 5) -> ?
 \end{minted}
@@ -39,7 +39,7 @@ mapLocation :: (Nat, Nat) -> (t -> t) -> QuadTree t -> QuadTree t
 \end{minted}
 
 \subsection{Lenses}
-The QuadTree library makes extensive use of Lenses. Lenses are composable functional references \cite{lens}. They allow one to access and modify data in some data structure. This paper chooses to use the Van Laarhoven representation \cite{laarhovenlens}, since this is what the original library used. It is defined as:
+The QuadTree library makes extensive use of Lenses. Lenses are composable functional references \cite{lens}. Using lenses, data in a data-structure can be accessed and modified. This paper chooses to use the Van Laarhoven representation \cite{laarhovenlens}, since this is what the Haskell implementation of the library uses. It is defined as:
 \begin{minted}{haskell}
 type Lens s a = forall f. Functor f => (a -> f a) -> s -> f s
 \end{minted}

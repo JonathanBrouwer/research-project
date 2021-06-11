@@ -1,0 +1,30 @@
+\section{Reducing the time required for verification}
+These are some techniques to reduce the time required for verification:
+\begin{itemize}
+    \item \textit{Postulate theorems about libraries.} For example, proving that the following 3 statements about lenses are true, turned out to be difficult. Intuitively these are clearly true, but proving this in Agda takes a lot of time which depending on the situation may not be worth doing. 
+    \begin{minted}{agda}
+    view (l1 ∘ l2) ≡ view l2 ∘ view l1
+    set (l1 ∘ l2) ≡ over l1 (set l2 t) v
+    over l ≡ set l (view l v) v
+    \end{minted}
+    \item \textit{Use Agda automatic proof search.} Automatic proof search often does not find a solution. But when it does it can save time. Searching is quick so it is worth trying the search.
+    \item \textit{First prove invariants and preconditions, then prove post-conditions.} Invariants and preconditions change the signature of the function, so when any of them are changed, the proofs for post-conditions have to be updated. To prevent the extra work of doing this, one should prove invariants and preconditions first.
+\end{itemize}
+
+\section{Future work}
+The techniques presented have only been used to verify this library, it is possible that other libraries cannot be verified using these techniques, so more research should be done to obtain general conclusions by trying to use these techniques with other libraries. 
+
+Additionally, there are some long-term recommendations to improve the process of verifying code in Agda:
+\begin{itemize}
+	\item \textit{A better interface to search for common proofs.} It is difficult for a novice Agda programmer to find and use the proofs that are already in the standard library. For example, associativity and commutativity of addition and multiplication do not have "associativity" or "commutativity" in their name. Though even if they did, there is no easy way to search the names of proofs.
+	\item \textit{Improvements to automatic proof search would be useful.} The automatic proof search often doesn't find a solution, even if the proof is relatively simple. For example, it cannot find a relatively simple proof such as \verb|(a + b) + c ≡ a + (b + c)|. This is because the proof requires \verb|cong|  and \verb|case splitting|, which the automatic proof search is not allowed to use by default. Giving it the options \verb|-c cong| allows automatic proof search to find the proof quickly, but the options required may be different for other proofs.
+\end{itemize}
+
+\section{Reproducibility and Availability}
+In this paper the QuadTree library is implemented and verified, and the techniques (method) used to do so are presented. These techniques are written with the goal that a reader who is trying to implement and verify their own library, can do so using these techniques, and reproduce the results. When there are doubts on how these techniques are actually applied, the code for this project is released on GitHub, so anyone who wants to verify that the techniques really work can see how they were applied in this project. It is also important that other research which aims to improve on the ideas presented in this paper, can do so. This is why the code is released to the public domain, so other researchers can use it and improve on it in their research.
+
+\section{Conclusions}
+In this paper, the QuadTree library is implemented and verified in the subset of Agda that Agda2hs supports to determine whether Agda2hs can be used to produce a verified implementation of a Haskell library. After some minor modifications to Agda2hs, the library has successfully been implemented. 
+
+The library was verified by verifying invariants by creating a wrapper datatype which takes the proof, verifying preconditions with implicit arguments to the function or by passing in a datatype with an invariant, and verifying post-conditions as separate functions.  Using these techniques, all the properties that were attempted to be verified, have been verified.
+
