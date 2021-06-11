@@ -1,8 +1,6 @@
 \section{Conclusions and Future Work}
-In this paper, the QuadTree library is implemented and verified in the subset of Agda that agda2hs supports to determine whether agda2hs can be used to produce a verified implementation of a Haskell library. After some minor modifications to agda2hs, the library has successfully been implemented. 
+In this paper, the QuadTree library is implemented and verified in the subset of Agda that Agda2hs supports to determine whether Agda2hs can be used to produce a verified implementation of a Haskell library. After some minor modifications to Agda2hs, the library has successfully been implemented. 
 
-Next, the library was verified, This was done by verifying invariants by creating a datatype which takes the proof, verifying preconditions by adding the proofs as implicit arguments to the function or by passing in a datatype with an invariant, and post-conditions are proven as separate functions.  Using these techniques, all the properties that were attempted to be verified, have been verified. 
-
-Finally, it was explained that the time spent to verify properties can be reduced by postulating theorems about libraries and using auto-proof. 
+The library was verified by verifying invariants by creating a wrapper datatype which takes the proof, verifying preconditions with implicit arguments to the function or by passing in a datatype with an invariant, and verifying post-conditions as separate functions.  Using these techniques, all the properties that were attempted to be verified, have been verified.
 
 The techniques presented have only been used to verify this library, it is possible that other libraries cannot be verified using these techniques, so more research should be done to obtain general conclusions by trying to use these techniques with other libraries. 

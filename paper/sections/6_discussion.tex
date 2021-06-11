@@ -1,19 +1,20 @@
 \section{Discussion}
 \subsection{Reducing the time required for verification}
-In this section, some techniques used to speed up the verification process are presented. First of all, these are some techniques to reduce the time required for verification:
+First of all, these are some techniques to reduce the time required for verification:
 \begin{itemize}
-    \item Postulate theorems about libraries. For example, proving that the following 3 statements about lenses are true, turned out to be difficult enough that it was not worth doing. Intuitively these are clearly true, but proving this in Agda takes a lot of time which depending on the situation may not be worth it. 
+    \item \textit{Postulate theorems about libraries.} For example, proving that the following 3 statements about lenses are true, turned out to be difficult enough that it was not worth doing. Intuitively these are clearly true, but proving this in Agda takes a lot of time which depending on the situation may not be worth it. 
     \begin{minted}{agda}
     view (l1 ∘ l2) ≡ view l2 ∘ view l1
     set (l1 ∘ l2) ≡ over l1 (set l2 t) v
     over l ≡ set l (view l v) v
     \end{minted}
-    \item Use Agda automatic proof search. Automatic proof search often doesn't find a solution, but sometimes it does, and trying it does not cost anything.
-    \item First prove invariants and preconditions, then prove postconditions. Invariants and preconditions change the signature of the function, so when any of them are changed, the proofs for postconditions have to be updated.
+    \item \textit{Use Agda automatic proof search.} Automatic proof search often does not find a solution, but sometimes it does, and trying it does not cost anything.
+    \item \textit{First prove invariants and preconditions, then prove post-conditions.} Invariants and preconditions change the signature of the function, so when any of them are changed, the proofs for post-conditions have to be updated. To prevent the extra work of doing this, one should prove invariants and preconditions first.
 \end{itemize}
 
+\subsection{Recommendations}
 Additionally, there are some long-term recommendations I would like to make to improve the process of verifying code in Agda:
 \begin{itemize}
-    \item It would be useful to have a better interface to search common proofs which already exist. It is difficult for a novice Agda programmer to find and use the proofs that are already in the standard library. For example, associativity and commutativity of addition and multiplication do not have "associativity" or "commutativity" in their name, though even if they did, there is no easy way to search the names of proofs.
-    \item Improvements to automatic proof search would be useful. The automatic proof search often doesn't find a solution, even if the proof is relatively simple. For example, it cannot find a relatively simple proof such as (a + b) + c ≡ a + (b + c). This is because the proof requires cong and case splitting, which the automatic proof search is not allowed to do by default. Giving it the options `-c cong` makes it find the proof quickly, but this is bothersome.
+    \item \textit{A better interface to search for common proofs.} It is difficult for a novice Agda programmer to find and use the proofs that are already in the standard library. For example, associativity and commutativity of addition and multiplication do not have "associativity" or "commutativity" in their name. Though even if they did, there is no easy way to search the names of proofs.
+    \item \textit{Improvements to automatic proof search would be useful.} The automatic proof search often doesn't find a solution, even if the proof is relatively simple. For example, it cannot find a relatively simple proof such as (a + b) + c ≡ a + (b + c). This is because the proof requires cong and case splitting, which the automatic proof search is not allowed to do by default. Giving it the options \verb|-c cong| makes it find the proof quickly, but the options required may be different for other proofs
 \end{itemize}

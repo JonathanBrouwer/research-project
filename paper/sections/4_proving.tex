@@ -1,21 +1,21 @@
 \section{Proving Techniques}
 
-The properties that have been proven can be divided into three types of properties: Preconditions, Invariants and Post-conditions \cite{meyer_1992}. Preconditions are properties that must be true when a function is called, post-conditions must be true after a function is called, and invariants are properties that must be true of all values of a certain type. In this section it will be shown that these three types of properties each have their own way to be proven in Agda.
+The properties that have been proven can be divided into three types: Preconditions, Invariants and Post-conditions \cite{meyer_1992}. Preconditions are properties that must be true before a function is called, post-conditions must be true after a function is called, and invariants are properties that must be true for all values of a certain type. In this section it will be shown that these three types of properties each have their own way to be proven in Agda.
 \subsection{Properties to prove}\label{props_to_prove}
 
-First, all things that have been proven are listed, sorted into one of the types of properties: \linebreak 
+First, all things that have been proven are listed and sorted into one of the types of properties: \linebreak 
 \textbf{Invariants of a QuadTree:}
 \begin{itemize}
-    \item Depth invariant: The depth of a QuadTree must be less than or equal to $\left \lceil{log_{2}( max(width, height))}\right \rceil$. This is to ensure that each coordinate maps to exactly one value.
+    \item Depth invariant: The depth of a QuadTree must be less than or equal to $\left \lceil{log_{2}( max(width, height))}\right \rceil$. This is to ensure that there is exactly one value at each location.
     \item Compression invariant: No node can have four leaves that are identical. These need to be fused into a single leaf quadrant. This is needed to keep the QuadTree fast and space efficient.
 \end{itemize} 
-\textbf{Preconditions}
+\textbf{Preconditions of a QuadTree:}
 \begin{itemize}
     \item When calling atLocation, getLocation, setLocation or mapLocation, the location must be inside of the QuadTree.
     \item When calling lensLeaf, the quadrant needs to have a maximum depth of zero
     \item When calling lensA/B/C/D, the quadrant needs to have a maximum depth that is greater than zero
 \end{itemize} 
-\textbf{Post-conditions}
+\textbf{Post-conditions of a QuadTree:}
 \begin{itemize}
     \item The lenses returned by all the lens functions satisfy the lens laws: \cite{lens}
         \begin{itemize}
@@ -39,48 +39,48 @@ First, all things that have been proven are listed, sorted into one of the types
 \end{itemize}
 
 \subsection{Techniques to prove invariants}
-Invariants are proven by creating a new datatype with one constructor, which takes the original datatype and a proof for all the invariants. As a simple example, this would be a natural number with the invariant that it is greater than 5.
+Invariants are proven by creating a new datatype with one constructor, which takes the original datatype and a proof for all the invariants. As a simple example, this datatype represents a natural number with the invariant that it is greater than 5.
 \begin{minted}{agda}
 data GreaterThanFive : Set where
   CGreaterThanFive : (n : Nat) -> { .( IsTrue (n > 5) ) } -> GreaterThanFive
 \end{minted}
 The proof is marked as implicit \{\} so that it is removed when compiled to Haskell, and it is marked as as irrelevant .() so that will not interfere when proving post-conditions later. 
 
-Using this technique, the datatype for a quadrant which is compressed and has a certain maximum depth is: (The datatype for a valid QuadTree is defined very similarly)
+Using this technique, the datatype for a compressed quadrant with a certain maximum depth is: 
 \begin{minted}{agda}
-data VQuadrant (t : Set) {dep : Nat} : Set where
+data VQuadrant (t : Set) {depth : Nat} : Set where
   CVQuadrant : (qd : Quadrant t) 
-            -> {.(IsTrue (depth qd <= dep && isCompressed qd))} 
-            -> VQuadrant t {dep}
+            -> {.(IsTrue (depth qd <= depth && isCompressed qd))} 
+            -> VQuadrant t {depth}
 \end{minted}
-Agda2hs flawlessly compiles this to the following, where the proof is erased:
+The datatype for a valid QuadTree is defined very similarly. Agda2hs flawlessly compiles this to the following Haskell code, where the proof is erased:
 \begin{minted}{haskell}
 data VQuadrant t = CVQuadrant (Quadrant t)
 \end{minted}
 
-The advantage of making a new datatype over adding the proofs to the original datatype is that if the original datatype has multiple constructors, the datatype does not have to be case split when access to the proofs is needed. The disadvantage is however that this additional wrapper type is visible when compiled to Haskell. To avoid this, one can create a second function of all public functions that take the invariance proof as a precondition, and call the original functions with the wrapper type. 
+The advantage of making a new wrapper datatype over adding the proofs to the original datatype is that if the original datatype has multiple constructors, functions that use the proof do not need to be split into multiple cases (one for each constructor). The disadvantage is that this additional wrapper type is visible when compiled to Haskell. To avoid this, one can create an additional function for all public functions. This function then takes the invariance proof as a precondition, and calls the original function with the wrapper type. 
 
 \subsection{Techniques to prove preconditions}
-There are 2 techniques to prove preconditions.
+In this section 2 techniques to prove preconditions are presented.
 
 \subsubsection{Using an implicit argument}
 Using the first technique, preconditions are proven by adding the proofs as implicit arguments to the function.
-As a simple example, this would be a function that takes a natural number greater than 5.
+As a simple example, this function takes a natural number that must be greater than 5.
 \begin{minted}{agda}
 takesGtFive : (n : Nat) -> { .( IsTrue (n > 5) ) } -> ?
 \end{minted}
 As with invariants, the proof is marked as implicit and irrelevant. 
 
-Using this technique, it can be proven that the location must be inside the tree for getLocation: (the proofs for setLocation and mapLocation are similar)
+Using this technique, a precondition can be used to ensure that the location given to the getLocation function must be inside the QuadTree:
 \begin{minted}{agda}
+-- Function that checks if a location is inside a given QuadTree
 isInsideQuadTree : (Nat × Nat) -> QuadTree t -> Bool
 isInsideQuadTree (x , y) (Wrapper (w , h) _) = x < w && y < h
 
-getLocation : (loc : Nat × Nat) -> {dep : Nat} 
-    -> (qt : QuadTree t) 
+getLocation : (loc : Nat × Nat) -> (qt : QuadTree t) 
     -> {.( IsTrue (isInsideQuadTree loc qt) )} -> t
 \end{minted}
-After being compiled with agda2hs, the implicit argument is removed from the function, just like with implicit constructor arguments.
+After being compiled with Agda2hs, the precondition is removed from the function, just like with invariants.
 \begin{minted}{haskell}
 getLocation :: (Nat, Nat) -> QuadTree t -> t
 \end{minted}
@@ -99,7 +99,7 @@ lensA : {dep : Nat}
 \end{minted}
 
 \subsubsection{Comparison}
-The advantages of using implicit arguments is that one does not have to be define a separate datatype, and that the proof can be dependent on more than one argument. On the other hand, the advantages of the second method is that the defined function are cleaner and more compact. It is then also possible to use the type as an parameter to another type, like it is used in lensLeaf and lensA, and it allows for cleaner reuse of the property.
+The advantages of using implicit arguments is that one does not have to define a separate datatype, and that the precondition can be dependent on more than one argument. On the other hand, the advantages of using a datatype with an invariant is that the defined function are cleaner and more compact. It is then also possible to use the type as a parameter for another type, like it is used in lensLeaf and lensA. It also allows for cleaner reuse of the property, as it does not need to be repeated each time it is used.
 
 \subsection{Techniques to prove post-conditions}
 Post-conditions are proven as separate functions. As a simple example, this is a proof that this function returns a number greater than 5.
@@ -119,18 +119,18 @@ ValidLens-Leaf-ViewSet :
 ValidLens-Leaf-ViewSet v (CVQuadrant (Leaf x)) = refl
 \end{minted}
 
-When proving preconditions and invariants, these properties have to be marked as irrelevant. This is to ensure that when proving that two function calls are equal, one does not need to show that the proves of the preconditions and invariants are equal (Since the actual value of proofs is irrelevant).
+When proving preconditions and invariants, these properties have to be marked as irrelevant. This is to ensure that when proving that two function calls are equal, one does not need to show that the proofs of the preconditions and invariants are equal, since the actual value of the proofs is irrelevant.
 
 \subsection{Results}
-All of the properties mentioned in section \ref{props_to_prove} have been successfully proven. Lines of code were divided as shown in figure \ref{division}. The verification took about 3 times more lines of code than the implementation. While this comparison is an indication, this should not be taken to mean that the verification took 3 times as much effort, as the information density of the implementation and proofs is different.
+All of the properties mentioned in section \ref{props_to_prove} have been successfully proven. The amount of lines of code that this took is shown in figure \ref{division}. The verification took about 3 times more lines of code than the implementation. While this comparison is an indication, this should not be taken to mean that the verification took 3 times as much effort, as the information density of the implementation and proofs is different.
 
-In reality, the implementation took approximately one full-time week, while the verification took approximately five full-time weeks. This too should not be taken to mean the verification took 5 times as much effort, as this number may be biased by the implementation just being a translation across languages.
+In reality, the implementation took approximately one full-time week, while the verification took approximately five full-time weeks. This too should not be taken to mean the verification took 5 times as much effort, as this number may be biased by the fact that the implementation was just translation from Haskell.
+
+During the verification phase, one bug was found that was accidentally introduced during the translation to Agda. This was not caught by the tests, though this may be because the tests on the foldable implementation are very limited.
 
 Whether this time is worth it, depends on the situation. For example, in a situation where even one small error could bring down an airplane, this is clearly worth it, however in most situations it is not.
 
-During the verification phase, one bug was found that was accidentally introduced during the translation to Agda. (The bug was in the foldable implementation with quadtrees that are very wide in comparison with their height). This was not caught by the tests, though this may be because the tests on the foldable implementation are very limited.
-
-\begin{figure}
+\begin{figure}[hb!]
 	\begin{tikzpicture}
 		\pie[sum=auto]
 		{757/Implementation,
