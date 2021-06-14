@@ -1,4 +1,4 @@
-\section{Implementation}
+\section{Implementation} \label{implementation}
 This section describes how the QuadTree library was implemented in Agda, and what challenges had to be overcome to do so. All the code for this project is available in the public domain. Each directory has a README.md which explains the purpose of all files and folders inside of the directory.
 It is available at: \textcolor{blue}{\href{https://github.com/JonathanBrouwer/research-project}{https://github.com/JonathanBrouwer/research-project}}. 
 
@@ -7,7 +7,7 @@ The QuadTree library is implemented by composing lenses. The lens that is finall
 \begin{minted}{agda}
 atLocation : (Nat x Nat) -> Lens (QuadTree t) t
 \end{minted}
- \verb|atLocation| is implemented by composing \verb|wrappedTree| (which is a lens from the QuadTree to its root quadrant) and  \verb|go|.   The function takes a location and a maximum depth, and returns a lens from a quadrant to the location. Behind the scenes, if the maximum depth is zero, it calls  \verb|lensLeaf|. Otherwise, it composes  \verb|lensA/B/C/D| with a recursive call to itself, that does the rest of the lookup. For example, \verb|go (0 , 0) 5 = lensA ∘ go (0 , 0) 4|.
+ \verb|atLocation| is implemented by composing \verb|wrappedTree| (which is a lens from the QuadTree to its root quadrant) and  \verb|go|.   The \verb|go| function takes a location and a maximum depth, and returns a lens from a quadrant to the location. Behind the scenes, if the maximum depth is zero, it calls  \verb|lensLeaf|. Otherwise, it composes  \verb|lensA/B/C/D| with a recursive call to itself, that does the rest of the lookup. For example, \verb|go (0 , 0) 5 = lensA ∘ go (0 , 0) 4|.
 \begin{minted}{agda}
 lensWrappedTree : Lens (QuadTree t) (Quadrant t)
 go : (Nat x Nat) -> (depth : Nat) -> Lens (Quadrant t) t
@@ -33,14 +33,19 @@ makeTree : (size : Nat × Nat) -> (v : t) -> QuadTree t
 
 Additionally, QuadTree implements Functor and Foldable. The implementation of functor in the original library breaks one of the QuadTree invariants, so the implementation given in this paper was changed slightly in this implementation to not break this invariant.
 
+\label{total-functions}
 \subsection{Issues when converting Haskell to Agda}
+\subsubsection{Totality}
 A number of issues arise when converting Haskell to Agda, because Agda is a total language and Haskell is not. Being a total language means that every function must terminate. 
 
 The first issue is encountered when a function in the library is actually non-terminating. This would have to be solved by changing the function, or adding preconditions, such that the function does always terminate. Luckily, all the functions in the QuadTree library do always terminate, so this was not a problem for this paper.
 
-Additionally, the totality of Agda can also be encountered when Agda is not able to automatically prove that a function terminates, even though it does. This did actually occur during the implementation of the QuadTree library in Agda. It was initially solved by adding the \{-\# TERMINATING \#-\} pragma (which instructs the compiler that this function is terminating) in front of the function, together with an explanation for why the function is definitely terminating. Later on this was solved by expressing the function differently.
+Additionally, the totality of Agda can also be encountered when Agda is not able to automatically prove that a function terminates, even though it does. This did actually occur during the implementation of the QuadTree library in Agda. It was initially solved by adding the \verb|\{-\# TERMINATING \#-\}| pragma (which instructs the compiler that this function is terminating) in front of the function, together with an explanation for why the function is definitely terminating. Later on this was solved by expressing the function differently.
 
-Finally, while Haskell has some escape latches such as `error`, Agda does not. For example, the get/set/mapLocation functions throw an error when the provided location is outside of the QuadTree. This can be solved by adding a precondition to the function, which states that the location must be inside the QuadTree. However, having to already worry about this when implementing the library is bothersome. An alternative that was used is to temporarily postulate an `error` function, and to replace it with preconditions in the verification phase.
+\subsubsection{Error}
+Finally, while Haskell has some escape latches such as \verb|error|, Agda does not. For example, the \verb|get/set/mapLocation| functions throw an error when the provided location is outside of the QuadTree. This can be solved by adding a precondition to the function, which states that the location must be inside the QuadTree. 
+
+This approach is different from the technique presented in \cite[p. 16]{BREITNER2021}. That technique adds a precondition that the error function may only be used with non-empty types, ensuring that the language stays sound. The technique was chosen because it allows for simpler automatic translation from Haskell. Since the translation in this paper is fully manual anyways, this does not add any value. The technique does come with the downside that the function can still be called with an incorrect input in Agda, resulting in an error at runtime rather than compile-time. Adding a precondition to the function prevents this.
 
 \subsection{Necessary modifications of Agda2hs}
 In order to make a working implementation, Agda2hs needed some changes.
