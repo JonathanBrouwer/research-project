@@ -1,6 +1,6 @@
 \section{Preliminaries}
 \subsection{Proofs using the Curry-Howard Correspondence}
-The Curry-Howard correspondence is a relationship that can be used to interpret typed computer programs as mathematical proofs \cite{chc}. This is done by representing false statements as empty types, and true statements as non-empty types. For example, take  \verb|IsTrue b|  where  \verb|b| is some boolean expression. The type is constructed in such a way that it is empty if  \verb|b| is false, and non-empty if b is true.  So if there exists a value of type  \verb|IsTrue b|, this value (often called a witness) is a proof that  \verb|b| must be true. 
+The Curry-Howard correspondence is a relationship that can be used to interpret typed computer programs as mathematical proofs \cite{chc}. This is done by representing false statements as empty types, and true statements as non-empty types. For example, take  \verb|IsTrue b|  where  \verb|b| is some boolean expression. The type is constructed in such a way that it is empty if  \verb|b| is false, and non-empty if b is true.  So if there exists a value of type  \verb|IsTrue b|, this value is a proof that  \verb|b| must be true. 
 
 These proofs can be used as function arguments, constructor arguments or even as a function result. Since Agda is dependently typed, the proof can also refer to other arguments of a function. For example, this function may only be called when \verb|n| is greater than 5:
 \begin{minted}{agda}
@@ -8,21 +8,21 @@ takesGtFive : (n : Nat) -> IsTrue (n > 5) -> ?
 \end{minted}
 
 \subsection{Lenses}
-The QuadTree library makes extensive use of Lenses. Lenses are composable functional references \cite{lens}. Using lenses, data in a data-structure can be accessed and modified. This paper chooses to use the Van Laarhoven representation \cite{laarhovenlens}, since this is what the Haskell implementation of the library uses. It is defined as:
+The QuadTree library makes extensive use of Lenses. Lenses are composable functional references \cite{lens}. Using lenses, data in a data-structure can be accessed and modified. This paper chooses to use the Van Laarhoven representation \cite{laarhovenlens}, since this is what the Haskell implementation of the QuadTree library uses. It is defined as:
 \begin{minted}{haskell}
-	type Lens s a = forall f. Functor f => (a -> f a) -> s -> f s
+type Lens s a = forall f. Functor f => (a -> f a) -> s -> f s
 \end{minted}
 Using this representation, \verb|Lens a b| means that given an object of type \verb|a|, we can view or modify an inner object of type \verb|b|.
 The functions to interact with lenses are:
 \begin{minted}{haskell}
-	-- Get the value at this lens
-	view :: Lens a b -> a -> b
-	-- Set the value at this lens
-	set :: Lens a b -> b -> a -> a
-	-- Map the value at this lens
-	over :: Lens a b -> (b -> b) -> a -> a
-	-- Compose two lenses (Note: This is actually just regular function composition!)
-	compose :: Lens a b -> Lens b c -> Lens a c
+-- Get the value at this lens
+view :: Lens a b -> a -> b
+-- Set the value at this lens
+set :: Lens a b -> b -> a -> a
+-- Map the value at this lens
+over :: Lens a b -> (b -> b) -> a -> a
+-- Compose two lenses (Note: This is actually just regular function composition!)
+compose :: Lens a b -> Lens b c -> Lens a c
 \end{minted}
 
 \subsection{QuadTrees}
@@ -48,7 +48,7 @@ There are five functions that can be used to interact with QuadTrees:
 \begin{minted}{haskell}
 -- Create a new QuadTree with the specified size
 makeTree :: (Nat, Nat) -> t -> QuadTree t
--- Get a lens to the specified location
+-- Obtain a lens to the specified location
 atLocation :: (Nat, Nat) -> Lens (QuadTree t) t
 -- Get the value at the specified location
 getLocation :: (Nat, Nat) -> QuadTree t -> t

@@ -14,7 +14,7 @@ The properties that have been proven can be divided into three types: Preconditi
 	\item Define a post-condition when there are type classes which come with laws that all instances of the type class should satisfy
 		\cite[p. 10]{BREITNER2021}
 \end{enumerate}
-Instead of defining a precondition when there is a risk of numeric overflow as described in technique 3, we switch to using unbounded integers in this papers' implementation of the QuadTree library. This is the same decision that \cite{BREITNER2021} made. Furthermore, the test suite of the QuadTree library consists only of tests that test the type class laws, so no additional properties could be derived from technique 2. Finally, one technique that was not mentioned in \cite{BREITNER2021} was used:
+Finally, one technique that was not mentioned in \cite{BREITNER2021} was used:
 \begin{enumerate}
 	\setcounter{enumi}{4}
 	\item Define a precondition if it is required to make the function total, as was described in section \ref{total-functions}
@@ -22,10 +22,13 @@ Instead of defining a precondition when there is a risk of numeric overflow as d
 
 
 \subsection{Properties to prove}\label{props_to_prove}
-Using technique 1, 4, and 5, the following properties of the QuadTree library were derived: \linebreak 
+
+Instead of defining a precondition when there is a risk of numeric overflow as described in technique 3, we switch to using unbounded integers in this papers' implementation of the QuadTree library. This is the same decision that \cite{BREITNER2021} made. Furthermore, the test suite of the QuadTree library consists only of tests that test the type class laws, so no additional properties could be derived from technique 2. Using technique 1, 4, and 5, the following properties of the QuadTree library were derived: 
+
+\setlength{\parindent}{0pt} \setlength{\parskip}{5pt}
 \textbf{Invariants of a QuadTree:}
 \begin{itemize}
-    \item Depth invariant: The depth of a QuadTree must be less than or equal to $\left \lceil{log_{2}( max(width, height))}\right \rceil$. This is to ensure that there is exactly one value at each location. (Technique 1)
+    \item Depth invariant: The depth of a QuadTree must be less than or equal to \linebreak $\left \lceil{log_{2}( max(width, height))}\right \rceil$. This is to ensure that there is exactly one value at each location. (Technique 1)
     \item Compression invariant: No node can have four leaves that are identical. These need to be fused into a single leaf quadrant. This is needed to keep the QuadTree fast and space efficient. (Technique 1)
 \end{itemize} 
 \textbf{Preconditions of a QuadTree:}
@@ -56,7 +59,8 @@ Using technique 1, 4, and 5, the following properties of the QuadTree library we
             \item \verb|foldMap f = fold . fmap f|
         \end{itemize}
 \end{itemize}
-
+	
+\setlength{\parindent}{15pt} \setlength{\parskip}{0pt}
 \subsection{Techniques to prove invariants} \label{prove_invariants}
 Invariants are proven by creating a new datatype with one constructor, which takes the original datatype and a proof for all the invariants. As a simple example, this datatype represents a natural number with the invariant that it is greater than 5.
 \begin{minted}{agda}
@@ -90,7 +94,7 @@ takesGtFive : (n : Nat) -> { .( IsTrue (n > 5) ) } -> ?
 \end{minted}
 As with invariants, the proof is marked as implicit and irrelevant. 
 
-Using this technique, a precondition can be used to ensure that the location given to the getLocation function must be inside the QuadTree:
+Using this technique, a precondition can be used to ensure that the location given to the \verb|getLocation| function must be inside the QuadTree:
 \begin{minted}{agda}
 -- Function that checks if a location is inside a given QuadTree
 isInsideQuadTree : (Nat × Nat) -> QuadTree t -> Bool
@@ -143,11 +147,11 @@ When proving preconditions and invariants, these properties have to be marked as
 \subsection{Results} \label{results}
 All of the properties mentioned in section \ref{props_to_prove} have been successfully proven. Most of these proofs have not been shown in the paper, since they are available in the source code. The amount of lines of code that this took is shown in figure \ref{division}.  This counts all non-empty lines. The verification took about 3 times more lines of code than the implementation. While this comparison is an indication, this should not be taken to mean that the verification took 3 times as much effort, as the information density of the implementation and proofs is different.
 
-In reality, the implementation took approximately one full-time week, while the verification took approximately five full-time weeks. This too should not be taken to mean the verification took 5 times as much effort, as this number may be biased by the fact that the implementation was just translation from Haskell.
+In reality, the implementation took approximately one full-time week, while the verification took approximately five full-time weeks. This too should not be taken to mean the verification took 5 times as much effort, as this number may be biased by the fact that the implementation was just a translation from Haskell.
 
 During the verification phase, one bug was found in this papers implementation of QuadTree that was accidentally introduced during the translation to Agda. This was not caught by the tests, though this may be because the tests on the foldable implementation are very limited.
 
-Whether this time is worth the time spent, depends on the situation. For example, in a situation where even one small error could bring down an airplane, this is clearly worth it. However, in many common situations, this verification may not be worth it.
+Whether the verification is worth the time spent, depends on the situation. For example, in a situation where even one small error could bring down an airplane, this is clearly worth it. However, in many common situations, this verification may not be worth it.
 
 \begin{figure}[H]
 	\begin{tikzpicture}[scale=0.8]

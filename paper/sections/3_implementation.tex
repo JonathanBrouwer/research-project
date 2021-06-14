@@ -7,17 +7,17 @@ The QuadTree library is implemented by composing lenses. The lens that is finall
 \begin{minted}{agda}
 atLocation : (Nat x Nat) -> Lens (QuadTree t) t
 \end{minted}
- \verb|atLocation| is implemented by composing \verb|wrappedTree| (which is a lens from the QuadTree to its root quadrant) and  \verb|go|.   The \verb|go| function takes a location and a maximum depth, and returns a lens from a quadrant to the location. Behind the scenes, if the maximum depth is zero, it calls  \verb|lensLeaf|. Otherwise, it composes  \verb|lensA/B/C/D| with a recursive call to itself, that does the rest of the lookup. For example, \verb|go (0 , 0) 5 = lensA ∘ go (0 , 0) 4|.
+ \verb|atLocation| is implemented by composing \verb|wrappedTree| (which is a lens from a QuadTree to its root quadrant) and  \verb|go|.   The \verb|go| function takes a location and a maximum depth, and returns a lens from a quadrant to the specified location. In its implementation, if the maximum depth is zero, it calls  \verb|lensLeaf|. Otherwise, it composes  \verb|lensA/B/C/D| with a recursive call to itself, that does the rest of the lookup. For example, \verb|go (0 , 0) 5 = lensA ∘ go (0 , 0) 4|.
 \begin{minted}{agda}
 lensWrappedTree : Lens (QuadTree t) (Quadrant t)
 go : (Nat x Nat) -> (depth : Nat) -> Lens (Quadrant t) t
 \end{minted}
- \verb|lensLeaf| is a lens from a leaf quadrant to the value stored there. This function has as a precondition that the quadrant has a depth of 0 (a leaf).  \verb|LensA/B/C/D| is a lens from a quadrant to the A/B/C/D sub-quadrant. This function returns a lens from a quadrant with a certain maximum depth to a quadrant with a maximum depth that is one lower. 
+ \verb|lensLeaf| is a lens from a leaf quadrant to the value stored there. This function has as a precondition that the quadrant has a depth of 0 (a leaf).  \verb|lensA/B/C/D| is a lens from a quadrant to the A/B/C/D sub-quadrant. This function returns a lens from a quadrant with a certain maximum depth to a quadrant with a maximum depth that is one lower. 
 \begin{minted}{agda}
 lensLeaf : Lens (Quadrant t) t
 lensA : Lens (Quadrant t) (Quadrant t)
 \end{minted}
- \verb|get/set/mapLocation| can then be defined using the  \verb|atLocation| lens, by composing them with the lens functions. They are shortcut functions so users of the library don't have to interact with lenses directly.
+ \verb|get/set/mapLocation| can then be defined using the  \verb|atLocation| lens, by composing them with the lens functions. They are shortcut functions so users of the library do not have to interact with lenses directly.
 \begin{minted}{agda}
 getLocation : (Nat x Nat) -> QuadTree t -> t
 getLocation = view ∘ atLocation
@@ -43,9 +43,9 @@ The first issue is encountered when a function in the library is actually non-te
 Additionally, the totality of Agda can also be encountered when Agda is not able to automatically prove that a function terminates, even though it does. This did actually occur during the implementation of the QuadTree library in Agda. It was initially solved by adding the \verb|\{-\# TERMINATING \#-\}| pragma (which instructs the compiler that this function is terminating) in front of the function, together with an explanation for why the function is definitely terminating. Later on this was solved by expressing the function differently.
 
 \subsubsection{Error}
-Finally, while Haskell has some escape latches such as \verb|error|, Agda does not. For example, the \verb|get/set/mapLocation| functions throw an error when the provided location is outside of the QuadTree. This can be solved by adding a precondition to the function, which states that the location must be inside the QuadTree. 
+Finally, while Haskell has some escape latches such as \verb|error|, Agda does not. For example, the \verb|get/set/mapLocation| functions call \verb|error| when the provided location is outside of the QuadTree. This can be solved by adding a precondition to the function, which states that the location must be inside the QuadTree. 
 
-This approach is different from the technique presented in \cite[p. 16]{BREITNER2021}. That technique adds a precondition that the error function may only be used with non-empty types, ensuring that the language stays sound. The technique was chosen because it allows for simpler automatic translation from Haskell. Since the translation in this paper is fully manual anyways, this does not add any value. The technique does come with the downside that the function can still be called with an incorrect input in Agda, resulting in an error at runtime rather than compile-time. Adding a precondition to the function prevents this.
+This approach is different from the technique presented in \cite[p. 16]{BREITNER2021}. The technique presented there is making sure that the \verb|error| function may only be used with non-empty types, thus ensuring that the language stays sound. The technique was chosen because it allows for simpler automatic translation from Haskell. Since the translation in this paper is fully manual anyways, this does not add any value. The technique does come with the downside that the function can still be called with an incorrect input in Agda, resulting in an error at runtime rather than compile-time. Adding a precondition to the function prevents this, therefore this has been chosen.
 
 \subsection{Necessary modifications of Agda2hs}
 In order to make a working implementation, Agda2hs needed some changes.
