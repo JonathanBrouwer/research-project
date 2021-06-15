@@ -118,12 +118,13 @@ concat-cme4 l1 l2 l3 l4 =
 
 tilesQd-concat : {A : Set} {{eqA : Eq A}} -> (deps : Nat) -> (a b c d : VQuadrant A {deps}) -> (x1 y1 x2 y2 : Nat)
     -> IsTrue (x1 <= x2) -> IsTrue (y1 <= y2)
+    -> ({a b : A} -> IsTrue (a == b) -> a ≡ b)
     -> (concat $ map expand $ (tilesQd deps a (RegionC (x1 , y1) (min x2 (pow 2 deps + x1) , min y2 (pow 2 deps + y1)))
         ++ tilesQd deps b (RegionC (min x2 (pow 2 deps + x1) , y1) (x2 , min y2 (pow 2 deps + y1)))
         ++ tilesQd deps c (RegionC (x1 , min y2 (pow 2 deps + y1)) (min x2 (pow 2 deps + x1) , y2) )
         ++ tilesQd deps d (RegionC (min x2 (pow 2 deps + x1) , min y2 (pow 2 deps + y1)) (x2 , y2) )))
     ≡ (concat $ map expand $ tilesQd (S deps) (combine a b c d) (RegionC (x1 , y1) (x2 , y2)))
-tilesQd-concat {A} deps a@(CVQuadrant (Leaf va)) b@(CVQuadrant (Leaf vb)) c@(CVQuadrant (Leaf vc)) d@(CVQuadrant (Leaf vd)) x1 y1 x2 y2 xp yp =
+tilesQd-concat {A} deps a@(CVQuadrant (Leaf va)) b@(CVQuadrant (Leaf vb)) c@(CVQuadrant (Leaf vc)) d@(CVQuadrant (Leaf vd)) x1 y1 x2 y2 xp yp peq =
     ifc (va == vb && vb == vc && vc == vd) 
     then (λ {{pc}} ->
         begin
@@ -133,13 +134,13 @@ tilesQd-concat {A} deps a@(CVQuadrant (Leaf va)) b@(CVQuadrant (Leaf vb)) c@(CVQ
         =⟨ cong (λ q -> replicateₙ (area rA) va ++ replicateₙ (area rB) vb ++ replicateₙ (area rC) vc ++ q) (concat-nothing _) ⟩
             replicateₙ (area rA) (va) ++ replicateₙ (area rB) (vb) ++ replicateₙ (area rC) (vc) ++ replicateₙ (area rD) vd
         =⟨ cong (λ v -> replicateₙ (area rA) (va) ++ replicateₙ (area rB) (vb) ++ replicateₙ (area rC) (vc) ++ replicateₙ (area rD) v) 
-            (sym $ proofEqToEquiv $ andSnd {vb == vc} $ andSnd {va == vb} pc) ⟩  
+            (sym $ peq $ andSnd {vb == vc} $ andSnd {va == vb} pc) ⟩  
             replicateₙ (area rA) (va) ++ replicateₙ (area rB) (vb) ++ replicateₙ (area rC) (vc) ++ replicateₙ (area rD) (vc)
         =⟨ cong (λ v -> replicateₙ (area rA) (va) ++ replicateₙ (area rB) (vb) ++ replicateₙ (area rC) (v) ++ replicateₙ (area rD) (v)) 
-            (sym $ proofEqToEquiv $ andFst {vb == vc} $ andSnd {va == vb} pc) ⟩
+            (sym $ peq $ andFst {vb == vc} $ andSnd {va == vb} pc) ⟩
             replicateₙ (area rA) (va) ++ replicateₙ (area rB) (vb) ++ replicateₙ (area rC) (vb) ++ replicateₙ (area rD) (vb)
         =⟨ cong (λ v -> replicateₙ (area rA) (va) ++ replicateₙ (area rB) (v) ++ replicateₙ (area rC) (v) ++ replicateₙ (area rD) (v)) 
-            (sym $ proofEqToEquiv $ andFst {va == vb} pc) ⟩
+            (sym $ peq $ andFst {va == vb} pc) ⟩
             replicateₙ (area rA) (va) ++ replicateₙ (area rB) (va) ++ replicateₙ (area rC) (va) ++ replicateₙ (area rD) (va)
         =⟨ replicate-concat4 (area rA) (area rB) (area rC) (area rD) (va) ⟩
             replicateₙ (area rA + area rB + area rC + area rD) (va)
@@ -168,20 +169,19 @@ tilesQd-concat {A} deps a@(CVQuadrant (Leaf va)) b@(CVQuadrant (Leaf vb)) c@(CVQ
         cme v = concat $ map expand $ v
         area : Region -> Nat
         area (RegionC (x1 , y1) (x2 , y2)) = diff x2 x1 * diff y2 y1
-        -- TODO: Move this as precondition
-        postulate
-            proofEqToEquiv : {a b : A} -> IsTrue (a == b) -> a ≡ b
-tilesQd-concat deps (CVQuadrant (Leaf x)) (CVQuadrant (Leaf x₁)) (CVQuadrant (Leaf x₂)) (CVQuadrant (Node d d₁ d₂ d₃)) x1 y1 x2 y2 xp yp = refl
-tilesQd-concat deps (CVQuadrant (Leaf x)) (CVQuadrant (Leaf x₁)) (CVQuadrant (Node c c₁ c₂ c₃)) (CVQuadrant d) x1 y1 x2 y2 xp yp = refl
-tilesQd-concat deps (CVQuadrant (Leaf x)) (CVQuadrant (Node b b₁ b₂ b₃)) (CVQuadrant c) (CVQuadrant d) x1 y1 x2 y2 xp yp = refl
-tilesQd-concat deps (CVQuadrant (Node a a₁ a₂ a₃)) (CVQuadrant b) (CVQuadrant c) (CVQuadrant d) x1 y1 x2 y2 xp yp = refl
+tilesQd-concat deps (CVQuadrant (Leaf x)) (CVQuadrant (Leaf x₁)) (CVQuadrant (Leaf x₂)) (CVQuadrant (Node d d₁ d₂ d₃)) x1 y1 x2 y2 xp yp peq = refl
+tilesQd-concat deps (CVQuadrant (Leaf x)) (CVQuadrant (Leaf x₁)) (CVQuadrant (Node c c₁ c₂ c₃)) (CVQuadrant d) x1 y1 x2 y2 xp yp peq = refl
+tilesQd-concat deps (CVQuadrant (Leaf x)) (CVQuadrant (Node b b₁ b₂ b₃)) (CVQuadrant c) (CVQuadrant d) x1 y1 x2 y2 xp yp peq = refl
+tilesQd-concat deps (CVQuadrant (Node a a₁ a₂ a₃)) (CVQuadrant b) (CVQuadrant c) (CVQuadrant d) x1 y1 x2 y2 xp yp peq = refl
 
 
 fmap-tilesQd : {A B : Set} {{eqA : Eq A}} {{eqB : Eq B}} -> (f : A -> B) -> (dep : Nat) -> (vqd : VQuadrant A {dep}) -> (x1 y1 x2 y2 : Nat)
     -> IsTrue (x1 <= x2) -> IsTrue (y1 <= y2)
+    -> ({a b : A} -> IsTrue (a == b) -> a ≡ b)
+    -> ({a b : B} -> IsTrue (a == b) -> a ≡ b)
     -> (concat $ map expand $ fmap (fmap f) $ tilesQd dep vqd (RegionC (x1 , y1) (x2 , y2))) ≡ (concat $ map expand $ tilesQd dep (fmapₑ (quadrantFunctor dep) f vqd) (RegionC (x1 , y1) (x2 , y2)))
-fmap-tilesQd f dep (CVQuadrant (Leaf v) {p1}) x1 y1 x2 y2 px py = refl
-fmap-tilesQd {A} {B} f dep@(S deps) vqd@(CVQuadrant (Node a@(Leaf va) b@(Leaf vb) c@(Leaf vc) d@(Leaf vd)) {p1}) x1 y1 x2 y2 xp yp =
+fmap-tilesQd f dep (CVQuadrant (Leaf v) {p1}) x1 y1 x2 y2 px py peqA peqB = refl
+fmap-tilesQd {A} {B} f dep@(S deps) vqd@(CVQuadrant (Node a@(Leaf va) b@(Leaf vb) c@(Leaf vc) d@(Leaf vd)) {p1}) x1 y1 x2 y2 xp yp peqA peqB =
     ifc ((va == vb) && (vb == vc) && (vc == vd))
     then (λ {{pc}} -> 
         (begin
@@ -193,13 +193,13 @@ fmap-tilesQd {A} {B} f dep@(S deps) vqd@(CVQuadrant (Node a@(Leaf va) b@(Leaf vb
         =⟨ cong (λ q -> replicateₙ (area rA) (f va) ++ replicateₙ (area rB) (f vb) ++ replicateₙ (area rC) (f vc) ++ q) (concat-nothing _) ⟩
             replicateₙ (area rA) (f va) ++ replicateₙ (area rB) (f vb) ++ replicateₙ (area rC) (f vc) ++ replicateₙ (area rD) (f vd)
         =⟨ cong (λ v -> replicateₙ (area rA) (f va) ++ replicateₙ (area rB) (f vb) ++ replicateₙ (area rC) (f vc) ++ replicateₙ (area rD) (f v)) 
-            (sym $ proofEqToEquiv $ andSnd {vb == vc} $ andSnd {va == vb} pc) ⟩  
+            (sym $ peqA $ andSnd {vb == vc} $ andSnd {va == vb} pc) ⟩  
             replicateₙ (area rA) (f va) ++ replicateₙ (area rB) (f vb) ++ replicateₙ (area rC) (f vc) ++ replicateₙ (area rD) (f vc)
         =⟨ cong (λ v -> replicateₙ (area rA) (f va) ++ replicateₙ (area rB) (f vb) ++ replicateₙ (area rC) (f v) ++ replicateₙ (area rD) (f v)) 
-            (sym $ proofEqToEquiv $ andFst {vb == vc} $ andSnd {va == vb} pc) ⟩
+            (sym $ peqA $ andFst {vb == vc} $ andSnd {va == vb} pc) ⟩
             replicateₙ (area rA) (f va) ++ replicateₙ (area rB) (f vb) ++ replicateₙ (area rC) (f vb) ++ replicateₙ (area rD) (f vb)
         =⟨ cong (λ v -> replicateₙ (area rA) (f va) ++ replicateₙ (area rB) (f v) ++ replicateₙ (area rC) (f v) ++ replicateₙ (area rD) (f v)) 
-            (sym $ proofEqToEquiv $ andFst {va == vb} pc) ⟩
+            (sym $ peqA $ andFst {va == vb} pc) ⟩
             replicateₙ (area rA) (f va) ++ replicateₙ (area rB) (f va) ++ replicateₙ (area rC) (f va) ++ replicateₙ (area rD) (f va)
         =⟨ replicate-concat4 (area rA) (area rB) (area rC) (area rD) (f va) ⟩
             replicateₙ (area rA + area rB + area rC + area rD) (f va)
@@ -255,10 +255,7 @@ fmap-tilesQd {A} {B} f dep@(S deps) vqd@(CVQuadrant (Node a@(Leaf va) b@(Leaf vb
         cme v = concat $ map expand $ v
         area : Region -> Nat
         area (RegionC (x1 , y1) (x2 , y2)) = diff x2 x1 * diff y2 y1
-        -- TODO: Move this as precondition
-        postulate
-            proofEqToEquiv : {a b : A} -> IsTrue (a == b) -> a ≡ b
-fmap-tilesQd {A} {B} f dep@(S deps) vqd@(CVQuadrant (Node a@(Leaf _) b@(Leaf _) c@(Leaf _) d@(Node _ _ _ _)) {p1}) x1 y1 x2 y2 xp yp =
+fmap-tilesQd {A} {B} f dep@(S deps) vqd@(CVQuadrant (Node a@(Leaf _) b@(Leaf _) c@(Leaf _) d@(Node _ _ _ _)) {p1}) x1 y1 x2 y2 xp yp peqA peqB =
     begin
         (cme $ fmap (fmap f) $ tilesQd dep vqd reg)
     =⟨⟩
@@ -278,10 +275,10 @@ fmap-tilesQd {A} {B} f dep@(S deps) vqd@(CVQuadrant (Node a@(Leaf _) b@(Leaf _) 
         ++ (cme $ fmap (fmap f) (tilesQd deps sC rC))
         ++ (cme $ fmap (fmap f) (tilesQd deps sD rD))
     =⟨ cong4 (λ l1 l2 l3 l4 -> l1 ++ l2 ++ l3 ++ l4) 
-        (fmap-tilesQd f deps sA x1 y1 (min x2 (mid + x1)) (min y2 (mid + y1)) (min-rel-1 x1 mid x2 xp) (min-rel-1 y1 mid y2 yp)) 
-        (fmap-tilesQd f deps sB (min x2 (mid + x1)) y1 x2 (min y2 (mid + y1)) (min-rel-2 x2 (mid + x1)) (min-rel-1 y1 mid y2 yp)) 
-        (fmap-tilesQd f deps sC x1 (min y2 (mid + y1)) (min x2 (mid + x1)) y2 (min-rel-1 x1 mid x2 xp) (min-rel-2 y2 (mid + y1))) 
-        (fmap-tilesQd f deps sD (min x2 (mid + x1)) (min y2 (mid + y1)) x2 y2 (min-rel-2 x2 (mid + x1)) (min-rel-2 y2 (mid + y1))) ⟩
+        (fmap-tilesQd f deps sA x1 y1 (min x2 (mid + x1)) (min y2 (mid + y1)) (min-rel-1 x1 mid x2 xp) (min-rel-1 y1 mid y2 yp) peqA peqB) 
+        (fmap-tilesQd f deps sB (min x2 (mid + x1)) y1 x2 (min y2 (mid + y1)) (min-rel-2 x2 (mid + x1)) (min-rel-1 y1 mid y2 yp) peqA peqB) 
+        (fmap-tilesQd f deps sC x1 (min y2 (mid + y1)) (min x2 (mid + x1)) y2 (min-rel-1 x1 mid x2 xp) (min-rel-2 y2 (mid + y1)) peqA peqB) 
+        (fmap-tilesQd f deps sD (min x2 (mid + x1)) (min y2 (mid + y1)) x2 y2 (min-rel-2 x2 (mid + x1)) (min-rel-2 y2 (mid + y1)) peqA peqB) ⟩
 
         (cme $ (tilesQd deps (fmapₑ (quadrantFunctor deps) f sA) rA))
         ++ (cme $ (tilesQd deps (fmapₑ (quadrantFunctor deps) f sB) rB))
@@ -294,7 +291,7 @@ fmap-tilesQd {A} {B} f dep@(S deps) vqd@(CVQuadrant (Node a@(Leaf _) b@(Leaf _) 
             ++ tilesQd deps (fmapₑ (quadrantFunctor deps) f sC) rC
             ++ tilesQd deps (fmapₑ (quadrantFunctor deps) f sD) rD
         ))
-    =⟨ tilesQd-concat deps (fmapₑ (quadrantFunctor deps) f sA) (fmapₑ (quadrantFunctor deps) f sB) (fmapₑ (quadrantFunctor deps) f sC) (fmapₑ (quadrantFunctor deps) f sD) x1 y1 x2 y2 xp yp ⟩
+    =⟨ tilesQd-concat deps (fmapₑ (quadrantFunctor deps) f sA) (fmapₑ (quadrantFunctor deps) f sB) (fmapₑ (quadrantFunctor deps) f sC) (fmapₑ (quadrantFunctor deps) f sD) x1 y1 x2 y2 xp yp peqB ⟩
         (cme $ tilesQd dep 
             (combine (fmapₑ (quadrantFunctor deps) f sA) (fmapₑ (quadrantFunctor deps) f sB) (fmapₑ (quadrantFunctor deps) f sC) (fmapₑ (quadrantFunctor deps) f sD)) reg)
     =⟨⟩
@@ -312,7 +309,7 @@ fmap-tilesQd {A} {B} f dep@(S deps) vqd@(CVQuadrant (Node a@(Leaf _) b@(Leaf _) 
         sB = CVQuadrant {dep = deps} b {bSub {dep = deps} a b c d p1}
         sC = CVQuadrant {dep = deps} c {cSub {dep = deps} a b c d p1}
         sD = CVQuadrant {dep = deps} d {dSub {dep = deps} a b c d p1}
-fmap-tilesQd {A} {B} f dep@(S deps) vqd@(CVQuadrant (Node a@(Leaf _) b@(Leaf _) c@(Node _ _ _ _) d) {p1}) x1 y1 x2 y2 xp yp =
+fmap-tilesQd {A} {B} f dep@(S deps) vqd@(CVQuadrant (Node a@(Leaf _) b@(Leaf _) c@(Node _ _ _ _) d) {p1}) x1 y1 x2 y2 xp yp peqA peqB =
     begin
         (cme $ fmap (fmap f) $ tilesQd dep vqd reg)
     =⟨⟩
@@ -332,10 +329,10 @@ fmap-tilesQd {A} {B} f dep@(S deps) vqd@(CVQuadrant (Node a@(Leaf _) b@(Leaf _) 
         ++ (cme $ fmap (fmap f) (tilesQd deps sC rC))
         ++ (cme $ fmap (fmap f) (tilesQd deps sD rD))
     =⟨ cong4 (λ l1 l2 l3 l4 -> l1 ++ l2 ++ l3 ++ l4) 
-        (fmap-tilesQd f deps sA x1 y1 (min x2 (mid + x1)) (min y2 (mid + y1)) (min-rel-1 x1 mid x2 xp) (min-rel-1 y1 mid y2 yp)) 
-        (fmap-tilesQd f deps sB (min x2 (mid + x1)) y1 x2 (min y2 (mid + y1)) (min-rel-2 x2 (mid + x1)) (min-rel-1 y1 mid y2 yp)) 
-        (fmap-tilesQd f deps sC x1 (min y2 (mid + y1)) (min x2 (mid + x1)) y2 (min-rel-1 x1 mid x2 xp) (min-rel-2 y2 (mid + y1))) 
-        (fmap-tilesQd f deps sD (min x2 (mid + x1)) (min y2 (mid + y1)) x2 y2 (min-rel-2 x2 (mid + x1)) (min-rel-2 y2 (mid + y1))) ⟩
+        (fmap-tilesQd f deps sA x1 y1 (min x2 (mid + x1)) (min y2 (mid + y1)) (min-rel-1 x1 mid x2 xp) (min-rel-1 y1 mid y2 yp) peqA peqB) 
+        (fmap-tilesQd f deps sB (min x2 (mid + x1)) y1 x2 (min y2 (mid + y1)) (min-rel-2 x2 (mid + x1)) (min-rel-1 y1 mid y2 yp) peqA peqB) 
+        (fmap-tilesQd f deps sC x1 (min y2 (mid + y1)) (min x2 (mid + x1)) y2 (min-rel-1 x1 mid x2 xp) (min-rel-2 y2 (mid + y1)) peqA peqB) 
+        (fmap-tilesQd f deps sD (min x2 (mid + x1)) (min y2 (mid + y1)) x2 y2 (min-rel-2 x2 (mid + x1)) (min-rel-2 y2 (mid + y1)) peqA peqB) ⟩
 
         (cme $ (tilesQd deps (fmapₑ (quadrantFunctor deps) f sA) rA))
         ++ (cme $ (tilesQd deps (fmapₑ (quadrantFunctor deps) f sB) rB))
@@ -348,7 +345,7 @@ fmap-tilesQd {A} {B} f dep@(S deps) vqd@(CVQuadrant (Node a@(Leaf _) b@(Leaf _) 
             ++ tilesQd deps (fmapₑ (quadrantFunctor deps) f sC) rC
             ++ tilesQd deps (fmapₑ (quadrantFunctor deps) f sD) rD
         ))
-    =⟨ tilesQd-concat deps (fmapₑ (quadrantFunctor deps) f sA) (fmapₑ (quadrantFunctor deps) f sB) (fmapₑ (quadrantFunctor deps) f sC) (fmapₑ (quadrantFunctor deps) f sD) x1 y1 x2 y2 xp yp ⟩
+    =⟨ tilesQd-concat deps (fmapₑ (quadrantFunctor deps) f sA) (fmapₑ (quadrantFunctor deps) f sB) (fmapₑ (quadrantFunctor deps) f sC) (fmapₑ (quadrantFunctor deps) f sD) x1 y1 x2 y2 xp yp peqB ⟩
         (cme $ tilesQd dep 
             (combine (fmapₑ (quadrantFunctor deps) f sA) (fmapₑ (quadrantFunctor deps) f sB) (fmapₑ (quadrantFunctor deps) f sC) (fmapₑ (quadrantFunctor deps) f sD)) reg)
     =⟨⟩
@@ -366,7 +363,7 @@ fmap-tilesQd {A} {B} f dep@(S deps) vqd@(CVQuadrant (Node a@(Leaf _) b@(Leaf _) 
         sB = CVQuadrant {dep = deps} b {bSub {dep = deps} a b c d p1}
         sC = CVQuadrant {dep = deps} c {cSub {dep = deps} a b c d p1}
         sD = CVQuadrant {dep = deps} d {dSub {dep = deps} a b c d p1}
-fmap-tilesQd {A} {B} f dep@(S deps) vqd@(CVQuadrant (Node a@(Leaf _) b@(Node _ _ _ _) c d) {p1}) x1 y1 x2 y2 xp yp =
+fmap-tilesQd {A} {B} f dep@(S deps) vqd@(CVQuadrant (Node a@(Leaf _) b@(Node _ _ _ _) c d) {p1}) x1 y1 x2 y2 xp yp peqA peqB =
     begin
         (cme $ fmap (fmap f) $ tilesQd dep vqd reg)
     =⟨⟩
@@ -386,10 +383,10 @@ fmap-tilesQd {A} {B} f dep@(S deps) vqd@(CVQuadrant (Node a@(Leaf _) b@(Node _ _
         ++ (cme $ fmap (fmap f) (tilesQd deps sC rC))
         ++ (cme $ fmap (fmap f) (tilesQd deps sD rD))
     =⟨ cong4 (λ l1 l2 l3 l4 -> l1 ++ l2 ++ l3 ++ l4) 
-        (fmap-tilesQd f deps sA x1 y1 (min x2 (mid + x1)) (min y2 (mid + y1)) (min-rel-1 x1 mid x2 xp) (min-rel-1 y1 mid y2 yp)) 
-        (fmap-tilesQd f deps sB (min x2 (mid + x1)) y1 x2 (min y2 (mid + y1)) (min-rel-2 x2 (mid + x1)) (min-rel-1 y1 mid y2 yp)) 
-        (fmap-tilesQd f deps sC x1 (min y2 (mid + y1)) (min x2 (mid + x1)) y2 (min-rel-1 x1 mid x2 xp) (min-rel-2 y2 (mid + y1))) 
-        (fmap-tilesQd f deps sD (min x2 (mid + x1)) (min y2 (mid + y1)) x2 y2 (min-rel-2 x2 (mid + x1)) (min-rel-2 y2 (mid + y1))) ⟩
+        (fmap-tilesQd f deps sA x1 y1 (min x2 (mid + x1)) (min y2 (mid + y1)) (min-rel-1 x1 mid x2 xp) (min-rel-1 y1 mid y2 yp) peqA peqB) 
+        (fmap-tilesQd f deps sB (min x2 (mid + x1)) y1 x2 (min y2 (mid + y1)) (min-rel-2 x2 (mid + x1)) (min-rel-1 y1 mid y2 yp) peqA peqB) 
+        (fmap-tilesQd f deps sC x1 (min y2 (mid + y1)) (min x2 (mid + x1)) y2 (min-rel-1 x1 mid x2 xp) (min-rel-2 y2 (mid + y1)) peqA peqB) 
+        (fmap-tilesQd f deps sD (min x2 (mid + x1)) (min y2 (mid + y1)) x2 y2 (min-rel-2 x2 (mid + x1)) (min-rel-2 y2 (mid + y1)) peqA peqB) ⟩
 
         (cme $ (tilesQd deps (fmapₑ (quadrantFunctor deps) f sA) rA))
         ++ (cme $ (tilesQd deps (fmapₑ (quadrantFunctor deps) f sB) rB))
@@ -402,7 +399,7 @@ fmap-tilesQd {A} {B} f dep@(S deps) vqd@(CVQuadrant (Node a@(Leaf _) b@(Node _ _
             ++ tilesQd deps (fmapₑ (quadrantFunctor deps) f sC) rC
             ++ tilesQd deps (fmapₑ (quadrantFunctor deps) f sD) rD
         ))
-    =⟨ tilesQd-concat deps (fmapₑ (quadrantFunctor deps) f sA) (fmapₑ (quadrantFunctor deps) f sB) (fmapₑ (quadrantFunctor deps) f sC) (fmapₑ (quadrantFunctor deps) f sD) x1 y1 x2 y2 xp yp ⟩
+    =⟨ tilesQd-concat deps (fmapₑ (quadrantFunctor deps) f sA) (fmapₑ (quadrantFunctor deps) f sB) (fmapₑ (quadrantFunctor deps) f sC) (fmapₑ (quadrantFunctor deps) f sD) x1 y1 x2 y2 xp yp peqB ⟩
         (cme $ tilesQd dep 
             (combine (fmapₑ (quadrantFunctor deps) f sA) (fmapₑ (quadrantFunctor deps) f sB) (fmapₑ (quadrantFunctor deps) f sC) (fmapₑ (quadrantFunctor deps) f sD)) reg)
     =⟨⟩
@@ -420,7 +417,7 @@ fmap-tilesQd {A} {B} f dep@(S deps) vqd@(CVQuadrant (Node a@(Leaf _) b@(Node _ _
         sB = CVQuadrant {dep = deps} b {bSub {dep = deps} a b c d p1}
         sC = CVQuadrant {dep = deps} c {cSub {dep = deps} a b c d p1}
         sD = CVQuadrant {dep = deps} d {dSub {dep = deps} a b c d p1}
-fmap-tilesQd {A} {B} f dep@(S deps) vqd@(CVQuadrant (Node a@(Node _ _ _ _) b c d) {p1}) x1 y1 x2 y2 xp yp =
+fmap-tilesQd {A} {B} f dep@(S deps) vqd@(CVQuadrant (Node a@(Node _ _ _ _) b c d) {p1}) x1 y1 x2 y2 xp yp peqA peqB =
     begin
         (cme $ fmap (fmap f) $ tilesQd dep vqd reg)
     =⟨⟩
@@ -440,10 +437,10 @@ fmap-tilesQd {A} {B} f dep@(S deps) vqd@(CVQuadrant (Node a@(Node _ _ _ _) b c d
         ++ (cme $ fmap (fmap f) (tilesQd deps sC rC))
         ++ (cme $ fmap (fmap f) (tilesQd deps sD rD))
     =⟨ cong4 (λ l1 l2 l3 l4 -> l1 ++ l2 ++ l3 ++ l4) 
-        (fmap-tilesQd f deps sA x1 y1 (min x2 (mid + x1)) (min y2 (mid + y1)) (min-rel-1 x1 mid x2 xp) (min-rel-1 y1 mid y2 yp)) 
-        (fmap-tilesQd f deps sB (min x2 (mid + x1)) y1 x2 (min y2 (mid + y1)) (min-rel-2 x2 (mid + x1)) (min-rel-1 y1 mid y2 yp)) 
-        (fmap-tilesQd f deps sC x1 (min y2 (mid + y1)) (min x2 (mid + x1)) y2 (min-rel-1 x1 mid x2 xp) (min-rel-2 y2 (mid + y1))) 
-        (fmap-tilesQd f deps sD (min x2 (mid + x1)) (min y2 (mid + y1)) x2 y2 (min-rel-2 x2 (mid + x1)) (min-rel-2 y2 (mid + y1))) ⟩
+        (fmap-tilesQd f deps sA x1 y1 (min x2 (mid + x1)) (min y2 (mid + y1)) (min-rel-1 x1 mid x2 xp) (min-rel-1 y1 mid y2 yp) peqA peqB) 
+        (fmap-tilesQd f deps sB (min x2 (mid + x1)) y1 x2 (min y2 (mid + y1)) (min-rel-2 x2 (mid + x1)) (min-rel-1 y1 mid y2 yp) peqA peqB) 
+        (fmap-tilesQd f deps sC x1 (min y2 (mid + y1)) (min x2 (mid + x1)) y2 (min-rel-1 x1 mid x2 xp) (min-rel-2 y2 (mid + y1)) peqA peqB) 
+        (fmap-tilesQd f deps sD (min x2 (mid + x1)) (min y2 (mid + y1)) x2 y2 (min-rel-2 x2 (mid + x1)) (min-rel-2 y2 (mid + y1)) peqA peqB) ⟩
 
         (cme $ (tilesQd deps (fmapₑ (quadrantFunctor deps) f sA) rA))
         ++ (cme $ (tilesQd deps (fmapₑ (quadrantFunctor deps) f sB) rB))
@@ -456,7 +453,7 @@ fmap-tilesQd {A} {B} f dep@(S deps) vqd@(CVQuadrant (Node a@(Node _ _ _ _) b c d
             ++ tilesQd deps (fmapₑ (quadrantFunctor deps) f sC) rC
             ++ tilesQd deps (fmapₑ (quadrantFunctor deps) f sD) rD
         ))
-    =⟨ tilesQd-concat deps (fmapₑ (quadrantFunctor deps) f sA) (fmapₑ (quadrantFunctor deps) f sB) (fmapₑ (quadrantFunctor deps) f sC) (fmapₑ (quadrantFunctor deps) f sD) x1 y1 x2 y2 xp yp ⟩
+    =⟨ tilesQd-concat deps (fmapₑ (quadrantFunctor deps) f sA) (fmapₑ (quadrantFunctor deps) f sB) (fmapₑ (quadrantFunctor deps) f sC) (fmapₑ (quadrantFunctor deps) f sD) x1 y1 x2 y2 xp yp peqB ⟩
         (cme $ tilesQd dep 
             (combine (fmapₑ (quadrantFunctor deps) f sA) (fmapₑ (quadrantFunctor deps) f sB) (fmapₑ (quadrantFunctor deps) f sC) (fmapₑ (quadrantFunctor deps) f sD)) reg)
     =⟨⟩
@@ -480,14 +477,16 @@ qdToQt : {A : Set} {{eqA : Eq A}} -> (dep w h : Nat) -> (vqd : VQuadrant A {dep}
 qdToQt dep w h (CVQuadrant qd {p}) q = refl
 
 fmap-tilesQt : {A B : Set} {{eqA : Eq A}} {{eqB : Eq B}} -> (f : A -> B) -> (dep : Nat) -> (vqt : VQuadTree A {dep})
+    -> ({a b : A} -> IsTrue (a == b) -> a ≡ b)
+    -> ({a b : B} -> IsTrue (a == b) -> a ≡ b)
     -> (concat $ map expand $ fmap (fmap f) $ tilesQt dep vqt) ≡ (concat $ map expand $ tilesQt dep $ fmapₑ (quadtreeFunctor dep) f vqt)
-fmap-tilesQt f dep (CVQuadTree (Wrapper (w , h) (Leaf v))) = refl
-fmap-tilesQt {A} {B} f dep@(S deps) vqt@(CVQuadTree (Wrapper (w , h) qd@(Node a b c d)) {p1} {p2}) =
+fmap-tilesQt f dep (CVQuadTree (Wrapper (w , h) (Leaf v))) peqA peqB = refl
+fmap-tilesQt {A} {B} f dep@(S deps) vqt@(CVQuadTree (Wrapper (w , h) qd@(Node a b c d)) {p1} {p2}) peqA peqB =
     begin
         (concat $ map expand $ fmap (fmap f) $ tilesQt dep vqt)
     =⟨⟩
         (concat $ map expand $ fmap (fmap f) $ tilesQd dep (CVQuadrant qd {p1}) (RegionC (0 , 0) (w , h)))
-    =⟨ fmap-tilesQd f dep (CVQuadrant qd {p1}) 0 0 w h (zeroLteAny w) (zeroLteAny h) ⟩
+    =⟨ fmap-tilesQd f dep (CVQuadrant qd {p1}) 0 0 w h (zeroLteAny w) (zeroLteAny h) peqA peqB ⟩
         (concat $ map expand $ tilesQd dep (fmapₑ (quadrantFunctor dep) f (CVQuadrant qd {p1})) (RegionC (0 , 0) (w , h)))
     =⟨ cong (λ l -> concat $ map expand l) (qdToQt dep w h (combine (fmapₑ (quadrantFunctor deps) f (CVQuadrant a)) _ _ _) p2) ⟩
         (concat $ map expand $ tilesQt dep (fmapₑ (quadtreeFunctor dep) f vqt))
@@ -495,8 +494,10 @@ fmap-tilesQt {A} {B} f dep@(S deps) vqt@(CVQuadTree (Wrapper (w , h) qd@(Node a 
 
 proof-foldfmap-qt : {t s : Set} {{eqT : Eq t}} {{eqS : Eq s}} {{monS : Monoid s}} {{monT : Monoid t}} (dep : Nat) -> (vqt : VQuadTree t {dep})
     -> (f : t -> s)
+    -> ({a b : t} -> IsTrue (a == b) -> a ≡ b)
+    -> ({a b : s} -> IsTrue (a == b) -> a ≡ b)
     -> foldMapₑ (quadtreeFoldable dep) f vqt ≡ foldMapₑ (quadtreeFoldable dep) id (fmapₑ (quadtreeFunctor dep) f vqt)
-proof-foldfmap-qt {t} {s} dep vqt@(CVQuadTree (Wrapper (w , h) (Leaf v)) {p} {q}) f = 
+proof-foldfmap-qt {t} {s} dep vqt@(CVQuadTree (Wrapper (w , h) (Leaf v)) {p} {q}) f peqA peqB = 
     begin
         foldMapₑ (quadtreeFoldable dep) f vqt
     =⟨⟩
@@ -512,7 +513,7 @@ proof-foldfmap-qt {t} {s} dep vqt@(CVQuadTree (Wrapper (w , h) (Leaf v)) {p} {q}
     =⟨⟩
         foldMapₑ (quadtreeFoldable dep) id (fmapₑ (quadtreeFunctor dep) f vqt)
     end
-proof-foldfmap-qt {t} {s} dep vqt@(CVQuadTree (Wrapper (w , h) (Node qd qd₁ qd₂ qd₃)) {p} {q}) f =
+proof-foldfmap-qt {t} {s} dep vqt@(CVQuadTree (Wrapper (w , h) (Node qd qd₁ qd₂ qd₃)) {p} {q}) f peqA peqB =
     begin
         foldMapₑ (quadtreeFoldable dep) f vqt
     =⟨⟩
@@ -521,7 +522,7 @@ proof-foldfmap-qt {t} {s} dep vqt@(CVQuadTree (Wrapper (w , h) (Node qd qd₁ qd
         (foldMap id $ fmap f $ concat $ map expand $ tilesQt dep vqt)
     =⟨ cong (foldMap id) (fmap-concat-expand f (tilesQt dep vqt)) ⟩
         (foldMap id $ concat $ map expand $ fmap (fmap f) $ tilesQt dep vqt)
-    =⟨ cong (foldMap id) (fmap-tilesQt f dep vqt) ⟩
+    =⟨ cong (foldMap id) (fmap-tilesQt f dep vqt peqA peqB) ⟩
         (foldMap id $ concat $ map expand $ tilesQt dep $ fmapₑ (quadtreeFunctor dep) f vqt)
     =⟨⟩ 
         foldMapₑ (quadtreeFoldable dep) id (fmapₑ (quadtreeFunctor dep) f vqt)
