@@ -11,6 +11,11 @@ These are some techniques to reduce the time required for verification:
     \item \textit{First prove invariants and preconditions, then prove post-conditions.} Invariants and preconditions change the signature of the function, so when any of them are changed, the proofs for post-conditions have to be updated. To prevent the extra work of doing this, one should prove invariants and preconditions first.
 \end{itemize}
 
+\section{Reproducibility and Integrity}
+In this paper the QuadTree library is implemented and verified, and the techniques (method) used to do so are presented. These techniques are written with the goal that a reader who is trying to implement and verify their own library, can do so using these techniques, and try to reproduce the results. When there are doubts on how these techniques are actually applied, the code for this project is released on GitHub, so anyone who wants to verify that the techniques really work can see how they were applied in this project. It is also important that other research which aims to improve on the ideas presented in this paper, can do so. This is why the code is released to the public domain, so other researchers can use it and improve on it in their research.
+
+All the conclusions made in this paper are specific to the implementation and verification of the QuadTree library. Since these techniques have not been applied to other libraries, no general conclusions can be made, and this has been made clear in the conclusions.
+
 \section{Future work}
 The techniques presented have only been used to verify this library, it is possible that other libraries cannot be verified using these techniques, so more research should be done to obtain general conclusions by trying to use these techniques with other libraries. 
 
@@ -25,7 +30,4 @@ In this paper, the QuadTree library is implemented and verified in the subset of
 
 With some minor modifications to Agda2hs, the implementation of the library in Agda was successful. Some issues that were encountered in the process and solutions to those issues were presented. Next, the properties that the library guarantees were determined by using techniques from \cite{BREITNER2021}. These properties were verified by using techniques developed for invariants, preconditions and post-conditions.  Using these techniques, all the properties that were attempted to be verified, have been verified. Finally, it has been shown that the time required for verification can be reduced by postulating theorems about libraries, using automatic proof search and carefully considering the order in which properties are proven.
 
-\section{Reproducibility and Integrity}
-In this paper the QuadTree library is implemented and verified, and the techniques (method) used to do so are presented. These techniques are written with the goal that a reader who is trying to implement and verify their own library, can do so using these techniques, and try to reproduce the results. When there are doubts on how these techniques are actually applied, the code for this project is released on GitHub, so anyone who wants to verify that the techniques really work can see how they were applied in this project. It is also important that other research which aims to improve on the ideas presented in this paper, can do so. This is why the code is released to the public domain, so other researchers can use it and improve on it in their research.
 
-All the conclusions made in this paper are specific to the implementation and verification of the QuadTree library. Since these techniques have not been applied to other libraries, no general conclusions can be made, and this has been made clear in the conclusions.
