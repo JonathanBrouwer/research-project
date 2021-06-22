@@ -35,12 +35,12 @@ Additionally, QuadTree implements Functor and Foldable. The implementation of fu
 
 \label{total-functions}
 \subsection{Issues when converting Haskell to Agda}
-\subsubsection{Totality}
-A number of issues arise when converting Haskell to Agda, because Agda is a total language and Haskell is not. Being a total language means that every function must terminate. 
+A number of issues arise when converting Haskell to Agda, because Agda is a total language and Haskell is not. Being a total language means that every function must terminate and return a value without any run-time errors.
 
+\subsubsection{Termination}
 The first issue is encountered when a function in the library is actually non-terminating. This would have to be solved by changing the function, or adding preconditions, such that the function does always terminate. Luckily, all the functions in the QuadTree library do always terminate, so this was not a problem for this paper.
 
-Additionally, the totality of Agda can also be encountered when Agda is not able to automatically prove that a function terminates, even though it does. This did actually occur during the implementation of the QuadTree library in Agda. It was initially solved by adding the \verb|\{-\# TERMINATING \#-\}| pragma (which instructs the compiler that this function is terminating) in front of the function, together with an explanation for why the function is definitely terminating. Later on this was solved by expressing the function differently.
+Additionally, the totality of Agda can also be encountered when Agda is not able to automatically prove that a function terminates, even though it does. This did actually occur during the implementation of the QuadTree library in Agda. It was initially solved by adding the \verb|{-# TERMINATING #-}| pragma (which instructs the compiler that this function is terminating) in front of the function, together with an explanation for why the function is definitely terminating. Later on this was solved by expressing the function differently.
 
 \subsubsection{Error}
 Finally, while Haskell has some escape latches such as \verb|error|, Agda does not. For example, the \verb|get/set/mapLocation| functions call \verb|error| when the provided location is outside of the QuadTree. This can be solved by adding a precondition to the function, which states that the location must be inside the QuadTree. 
