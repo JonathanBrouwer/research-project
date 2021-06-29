@@ -16,4 +16,3 @@ Each directory in the sources has an explanation as to what each file is for.
 - `make` (no arguments to the make needed)
 - It should now have compiled all agda files to haskell
 - To run Haskell quickcheck, run `stack test`
-a
