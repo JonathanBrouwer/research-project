@@ -15,4 +15,4 @@ Each directory in the sources has an explanation as to what each file is for.
 - `cd research-project`
 - `make` (no arguments to the make needed)
 - It should now have compiled all agda files to haskell
-- To run Haskell quickcheck, run `stack test`
+- To run Haskell quickcheck, run `stack test` 
